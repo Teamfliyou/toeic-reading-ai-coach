@@ -1,0 +1,631 @@
+{
+  "passages": [
+    {
+      "id": "p6-1",
+      "part": 6,
+      "title": "Note interne — Formation santé et sécurité",
+      "documents": [
+        {
+          "id": "p6-1-d1",
+          "kind": "memo",
+          "title": "À : Tout le personnel",
+          "body": [
+            "De : Service des Ressources Humaines",
+            "Objet : Formation annuelle santé et sécurité",
+            "Nous vous informons que la formation annuelle sur la santé et la sécurité au travail se déroulera le mois prochain. Tous les employés doivent assister à l'une des deux sessions (1)______ dans l'auditorium principal.",
+            "La formation (2)______ une présentation sur la sécurité incendie, suivie d'une démonstration pratique. Les participants sont encouragés à (3)______ des questions à la fin de chaque session.",
+            "Veuillez noter que les sessions sont limitées à quarante personnes. Nous vous recommandons donc de vous (4)______ dès que possible afin de garantir votre place."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p6-2",
+      "part": 6,
+      "title": "Article — Ouverture d'un centre de distribution",
+      "documents": [
+        {
+          "id": "p6-2-d1",
+          "kind": "article",
+          "title": "Global Foods annonce une expansion majeure",
+          "body": [
+            "Global Foods Inc. a annoncé hier qu'elle (1)______ un nouveau centre de distribution dans le sud de la France. Cette installation, qui devrait créer plus de 200 emplois, sera la plus grande du groupe en Europe.",
+            "Selon la directrice générale, cette décision a été prise (2)______ à la demande croissante dans la région. « Nos ventes en France ont doublé au cours des trois dernières années, a-t-elle déclaré, et cet investissement nous permettra de servir nos clients de manière plus (3)______. »",
+            "La construction doit commencer en avril et (4)______ d'ici la fin de l'année prochaine."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p7-1",
+      "part": 7,
+      "title": "E-mail — Modification d'horaires de vol",
+      "documents": [
+        {
+          "id": "p7-1-d1",
+          "kind": "email",
+          "title": "À : Marie Dubois",
+          "body": [
+            "De : Horizon Travel",
+            "Objet : Modification de votre horaire de vol",
+            "Madame Dubois,",
+            "Nous vous informons d'un changement concernant votre prochain vol à destination de Londres. En raison d'un ajustement d'horaires de la compagnie aérienne, votre départ du 12 mars est reporté de 9 h 15 à 11 h 40.",
+            "En conséquence, vous arriverez à l'aéroport d'Heathrow à 13 h 05 (heure locale), soit environ deux heures plus tard que prévu initialement. Nous vous prions de bien vouloir nous excuser pour ce désagrément.",
+            "Si ce nouvel horaire ne vous convient pas, veuillez contacter notre agence sous 24 heures et nous organiserons un vol de remplacement sans frais supplémentaires. Dans le cas contraire, aucune action n'est requise et votre réservation sera mise à jour automatiquement.",
+            "Nous vous remercions de votre compréhension.",
+            "Cordialement,",
+            "Service client Horizon Travel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p7-2",
+      "part": 7,
+      "title": "E-mail + Programme — Conférence annuelle",
+      "documents": [
+        {
+          "id": "p7-2-d1",
+          "kind": "email",
+          "title": "À : Tous les employés",
+          "body": [
+            "De : James Carter, Responsable des événements",
+            "Objet : Conférence annuelle",
+            "J'ai le plaisir de vous annoncer que la conférence annuelle se tiendra au City Convention Center du 10 au 12 juin. Tous les employés sont invités à assister au discours d'ouverture le premier jour. Veuillez consulter le programme ci-joint et vous inscrire aux ateliers de votre choix avant le 25 mai."
+          ]
+        },
+        {
+          "id": "p7-2-d2",
+          "kind": "schedule",
+          "title": "Programme — Jour 1 (10 juin)",
+          "body": [
+            "09 h 00 – 10 h 00 : Accueil et café",
+            "10 h 00 – 11 h 30 : Discours d'ouverture : « L'avenir du travail »",
+            "11 h 30 – 13 h 00 : Déjeuner (offert par TechNova)",
+            "13 h 00 – 15 h 00 : Atelier A : Compétences de leadership",
+            "15 h 00 – 17 h 00 : Atelier B : Marketing digital",
+            "17 h 00 – 18 h 00 : Cocktail de réseautage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p7-3",
+      "part": 7,
+      "title": "Réclamation + Politique de retour + Réponse",
+      "documents": [
+        {
+          "id": "p7-3-d1",
+          "kind": "email",
+          "title": "À : Service client",
+          "body": [
+            "De : Luc Moreau",
+            "Objet : Demande de remboursement — Commande n° 4821",
+            "Bonjour,",
+            "J'ai commandé un support pour ordinateur portable sur votre site le 3 mars et il est arrivé endommagé. J'ai essayé de vous joindre par téléphone, mais sans réponse. Je souhaite obtenir un remboursement intégral ou un remplacement dans les plus brefs délais. Merci de m'indiquer la marche à suivre.",
+            "Cordialement,",
+            "Luc Moreau"
+          ]
+        },
+        {
+          "id": "p7-3-d2",
+          "kind": "notice",
+          "title": "Politique de retour",
+          "body": [
+            "Nos clients peuvent retourner tout article dans les 30 jours suivant la livraison. Les articles arrivés endommagés peuvent être retournés pour un remboursement intégral ou remplacés gratuitement. Pour lancer un retour, le client doit remplir le formulaire en ligne sur notre site et joindre une photo de l'article endommagé. Les remboursements sont effectués dans un délai de 5 jours ouvrés après réception de l'article retourné."
+          ]
+        },
+        {
+          "id": "p7-3-d3",
+          "kind": "email",
+          "title": "À : Luc Moreau",
+          "body": [
+            "De : Amélie Bernard, Service client",
+            "Objet : Re : Demande de remboursement — Commande n° 4821",
+            "Monsieur Moreau,",
+            "Merci de nous avoir contactés. Nous vous présentons toutes nos excuses pour l'article endommagé et le retard de notre réponse. Veuillez remplir le formulaire de retour en ligne et joindre une photo du support. Dès réception de l'article, nous procéderons au remboursement intégral sous 5 jours ouvrés. À titre d'excuse, nous avons également ajouté une remise de 10 % sur votre compte pour votre prochain achat.",
+            "Cordialement,",
+            "Amélie Bernard"
+          ]
+        }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q5-01",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 1,
+      "prompt": "The quarterly report ______ submitted by Friday afternoon.",
+      "options": [
+        { "key": "A", "text": "must be" },
+        { "key": "B", "text": "must" },
+        { "key": "C", "text": "must have" },
+        { "key": "D", "text": "must to be" }
+      ],
+      "correctKey": "A",
+      "difficulty": 2
+    },
+    {
+      "id": "q5-02",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 2,
+      "prompt": "Despite ______ late, the train arrived on time.",
+      "options": [
+        { "key": "A", "text": "leaving" },
+        { "key": "B", "text": "to leave" },
+        { "key": "C", "text": "leave" },
+        { "key": "D", "text": "left" }
+      ],
+      "correctKey": "A",
+      "difficulty": 2
+    },
+    {
+      "id": "q5-03",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 3,
+      "prompt": "We would appreciate it if you ______ your invoice before the end of the month.",
+      "options": [
+        { "key": "A", "text": "send" },
+        { "key": "B", "text": "would send" },
+        { "key": "C", "text": "sent" },
+        { "key": "D", "text": "sending" }
+      ],
+      "correctKey": "C",
+      "difficulty": 3
+    },
+    {
+      "id": "q5-04",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 4,
+      "prompt": "The new software is ______ more efficient than the previous version.",
+      "options": [
+        { "key": "A", "text": "consider" },
+        { "key": "B", "text": "considerably" },
+        { "key": "C", "text": "considerable" },
+        { "key": "D", "text": "consideration" }
+      ],
+      "correctKey": "B",
+      "difficulty": 1
+    },
+    {
+      "id": "q5-05",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 5,
+      "prompt": "Ms. Tanaka has worked for the company ______ 2015.",
+      "options": [
+        { "key": "A", "text": "for" },
+        { "key": "B", "text": "since" },
+        { "key": "C", "text": "during" },
+        { "key": "D", "text": "from" }
+      ],
+      "correctKey": "B",
+      "difficulty": 1
+    },
+    {
+      "id": "q5-06",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 6,
+      "prompt": "Neither the manager nor his assistants ______ able to attend the meeting.",
+      "options": [
+        { "key": "A", "text": "was" },
+        { "key": "B", "text": "were" },
+        { "key": "C", "text": "is" },
+        { "key": "D", "text": "has been" }
+      ],
+      "correctKey": "B",
+      "difficulty": 3
+    },
+    {
+      "id": "q5-07",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 7,
+      "prompt": "The proposal was rejected ______ its high cost.",
+      "options": [
+        { "key": "A", "text": "because" },
+        { "key": "B", "text": "because of" },
+        { "key": "C", "text": "despite" },
+        { "key": "D", "text": "although" }
+      ],
+      "correctKey": "B",
+      "difficulty": 1
+    },
+    {
+      "id": "q5-08",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 8,
+      "prompt": "Please make sure all documents ______ before leaving the office.",
+      "options": [
+        { "key": "A", "text": "are filed" },
+        { "key": "B", "text": "filed" },
+        { "key": "C", "text": "are filing" },
+        { "key": "D", "text": "have file" }
+      ],
+      "correctKey": "A",
+      "difficulty": 2
+    },
+    {
+      "id": "q5-09",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 9,
+      "prompt": "The seminar will be held ______ the main conference hall on the second floor.",
+      "options": [
+        { "key": "A", "text": "at" },
+        { "key": "B", "text": "on" },
+        { "key": "C", "text": "in" },
+        { "key": "D", "text": "by" }
+      ],
+      "correctKey": "C",
+      "difficulty": 1
+    },
+    {
+      "id": "q5-10",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 10,
+      "prompt": "______ the heavy traffic, we arrived at the airport two hours early.",
+      "options": [
+        { "key": "A", "text": "Although" },
+        { "key": "B", "text": "Despite" },
+        { "key": "C", "text": "Because" },
+        { "key": "D", "text": "Since" }
+      ],
+      "correctKey": "B",
+      "difficulty": 2
+    },
+    {
+      "id": "q5-11",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 11,
+      "prompt": "Employees are ______ to wear their identification badges at all times.",
+      "options": [
+        { "key": "A", "text": "required" },
+        { "key": "B", "text": "requiring" },
+        { "key": "C", "text": "require" },
+        { "key": "D", "text": "requirement" }
+      ],
+      "correctKey": "A",
+      "difficulty": 1
+    },
+    {
+      "id": "q5-12",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 12,
+      "prompt": "The company has announced ______ it will open a new branch in Lyon next year.",
+      "options": [
+        { "key": "A", "text": "that" },
+        { "key": "B", "text": "which" },
+        { "key": "C", "text": "what" },
+        { "key": "D", "text": "whether" }
+      ],
+      "correctKey": "A",
+      "difficulty": 1
+    },
+    {
+      "id": "q5-13",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 13,
+      "prompt": "If the shipment ______ by Monday, we will cancel the order.",
+      "options": [
+        { "key": "A", "text": "doesn't arrive" },
+        { "key": "B", "text": "didn't arrive" },
+        { "key": "C", "text": "won't arrive" },
+        { "key": "D", "text": "wouldn't arrive" }
+      ],
+      "correctKey": "A",
+      "difficulty": 2
+    },
+    {
+      "id": "q5-14",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 14,
+      "prompt": "We need to find a ______ solution to reduce production costs.",
+      "options": [
+        { "key": "A", "text": "more cheaper" },
+        { "key": "B", "text": "cost-effective" },
+        { "key": "C", "text": "effectively" },
+        { "key": "D", "text": "cheap" }
+      ],
+      "correctKey": "B",
+      "difficulty": 2
+    },
+    {
+      "id": "q5-15",
+      "part": 5,
+      "passageId": null,
+      "orderIndex": 15,
+      "prompt": "The assistant apologized ______ the delay in responding to the email.",
+      "options": [
+        { "key": "A", "text": "for" },
+        { "key": "B", "text": "to" },
+        { "key": "C", "text": "about" },
+        { "key": "D", "text": "at" }
+      ],
+      "correctKey": "A",
+      "difficulty": 1
+    },
+    {
+      "id": "q6-1-1",
+      "part": 6,
+      "passageId": "p6-1",
+      "orderIndex": 1,
+      "prompt": "Tous les employés doivent assister à l'une des deux sessions (1)______ dans l'auditorium principal.",
+      "options": [
+        { "key": "A", "text": "scheduled" },
+        { "key": "B", "text": "scheduling" },
+        { "key": "C", "text": "schedule" },
+        { "key": "D", "text": "to schedule" }
+      ],
+      "correctKey": "A",
+      "difficulty": 2
+    },
+    {
+      "id": "q6-1-2",
+      "part": 6,
+      "passageId": "p6-1",
+      "orderIndex": 2,
+      "prompt": "La formation (2)______ une présentation sur la sécurité incendie, suivie d'une démonstration pratique.",
+      "options": [
+        { "key": "A", "text": "include" },
+        { "key": "B", "text": "includes" },
+        { "key": "C", "text": "including" },
+        { "key": "D", "text": "included" }
+      ],
+      "correctKey": "A",
+      "difficulty": 2
+    },
+    {
+      "id": "q6-1-3",
+      "part": 6,
+      "passageId": "p6-1",
+      "orderIndex": 3,
+      "prompt": "Les participants sont encouragés à (3)______ des questions à la fin de chaque session.",
+      "options": [
+        { "key": "A", "text": "ask" },
+        { "key": "B", "text": "put" },
+        { "key": "C", "text": "make" },
+        { "key": "D", "text": "give" }
+      ],
+      "correctKey": "A",
+      "difficulty": 1
+    },
+    {
+      "id": "q6-1-4",
+      "part": 6,
+      "passageId": "p6-1",
+      "orderIndex": 4,
+      "prompt": "Nous vous recommandons donc de vous (4)______ dès que possible afin de garantir votre place.",
+      "options": [
+        { "key": "A", "text": "register" },
+        { "key": "B", "text": "registration" },
+        { "key": "C", "text": "registered" },
+        { "key": "D", "text": "registering" }
+      ],
+      "correctKey": "A",
+      "difficulty": 3
+    },
+    {
+      "id": "q6-2-1",
+      "part": 6,
+      "passageId": "p6-2",
+      "orderIndex": 5,
+      "prompt": "Global Foods Inc. a annoncé hier qu'elle (1)______ un nouveau centre de distribution dans le sud de la France.",
+      "options": [
+        { "key": "A", "text": "would open" },
+        { "key": "B", "text": "will open" },
+        { "key": "C", "text": "opening" },
+        { "key": "D", "text": "opens" }
+      ],
+      "correctKey": "B",
+      "difficulty": 2
+    },
+    {
+      "id": "q6-2-2",
+      "part": 6,
+      "passageId": "p6-2",
+      "orderIndex": 6,
+      "prompt": "Cette décision a été prise (2)______ à la demande croissante dans la région.",
+      "options": [
+        { "key": "A", "text": "due" },
+        { "key": "B", "text": "because" },
+        { "key": "C", "text": "thanks" },
+        { "key": "D", "text": "owing" }
+      ],
+      "correctKey": "A",
+      "difficulty": 1
+    },
+    {
+      "id": "q6-2-3",
+      "part": 6,
+      "passageId": "p6-2",
+      "orderIndex": 7,
+      "prompt": "Cet investissement nous permettra de servir nos clients de manière plus (3)______.",
+      "options": [
+        { "key": "A", "text": "efficient" },
+        { "key": "B", "text": "efficiently" },
+        { "key": "C", "text": "efficiency" },
+        { "key": "D", "text": "efficiencies" }
+      ],
+      "correctKey": "B",
+      "difficulty": 1
+    },
+    {
+      "id": "q6-2-4",
+      "part": 6,
+      "passageId": "p6-2",
+      "orderIndex": 8,
+      "prompt": "La construction doit commencer en avril et (4)______ d'ici la fin de l'année prochaine.",
+      "options": [
+        { "key": "A", "text": "completed" },
+        { "key": "B", "text": "complete" },
+        { "key": "C", "text": "will complete" },
+        { "key": "D", "text": "be completed" }
+      ],
+      "correctKey": "D",
+      "difficulty": 2
+    },
+    {
+      "id": "q7-1-1",
+      "part": 7,
+      "passageId": "p7-1",
+      "orderIndex": 1,
+      "prompt": "What is the main purpose of the email?",
+      "options": [
+        { "key": "A", "text": "To confirm a hotel reservation" },
+        { "key": "B", "text": "To announce a change in departure time" },
+        { "key": "C", "text": "To advertise a new travel offer" },
+        { "key": "D", "text": "To request payment for a booking" }
+      ],
+      "correctKey": "B",
+      "difficulty": 1
+    },
+    {
+      "id": "q7-1-2",
+      "part": 7,
+      "passageId": "p7-1",
+      "orderIndex": 2,
+      "prompt": "According to the email, what should Ms. Dubois do if the new schedule is not suitable?",
+      "options": [
+        { "key": "A", "text": "Pay an additional fee" },
+        { "key": "B", "text": "Contact the office within 24 hours" },
+        { "key": "C", "text": "Go to the airport earlier" },
+        { "key": "D", "text": "Cancel her trip entirely" }
+      ],
+      "correctKey": "B",
+      "difficulty": 2
+    },
+    {
+      "id": "q7-1-3",
+      "part": 7,
+      "passageId": "p7-1",
+      "orderIndex": 3,
+      "prompt": "What is stated about Ms. Dubois's arrival time?",
+      "options": [
+        { "key": "A", "text": "It will be two hours later than planned" },
+        { "key": "B", "text": "It will be earlier than planned" },
+        { "key": "C", "text": "It has been confirmed for 9:15 a.m." },
+        { "key": "D", "text": "It has not yet been scheduled" }
+      ],
+      "correctKey": "A",
+      "difficulty": 2
+    },
+    {
+      "id": "q7-2-1",
+      "part": 7,
+      "passageId": "p7-2",
+      "orderIndex": 4,
+      "prompt": "When will the keynote speech begin?",
+      "options": [
+        { "key": "A", "text": "9:00" },
+        { "key": "B", "text": "10:00" },
+        { "key": "C", "text": "11:30" },
+        { "key": "D", "text": "13:00" }
+      ],
+      "correctKey": "B",
+      "difficulty": 1
+    },
+    {
+      "id": "q7-2-2",
+      "part": 7,
+      "passageId": "p7-2",
+      "orderIndex": 5,
+      "prompt": "By what date must employees register for workshops?",
+      "options": [
+        { "key": "A", "text": "June 10" },
+        { "key": "B", "text": "June 12" },
+        { "key": "C", "text": "May 25" },
+        { "key": "D", "text": "June 9" }
+      ],
+      "correctKey": "C",
+      "difficulty": 2
+    },
+    {
+      "id": "q7-2-3",
+      "part": 7,
+      "passageId": "p7-2",
+      "orderIndex": 6,
+      "prompt": "What will take place at 5 p.m.?",
+      "options": [
+        { "key": "A", "text": "A workshop on leadership" },
+        { "key": "B", "text": "Lunch" },
+        { "key": "C", "text": "Registration" },
+        { "key": "D", "text": "A networking reception" }
+      ],
+      "correctKey": "D",
+      "difficulty": 1
+    },
+    {
+      "id": "q7-3-1",
+      "part": 7,
+      "passageId": "p7-3",
+      "orderIndex": 7,
+      "prompt": "What did Mr. Moreau complain about?",
+      "options": [
+        { "key": "A", "text": "A late delivery" },
+        { "key": "B", "text": "A damaged item and no response to his call" },
+        { "key": "C", "text": "An incorrect price" },
+        { "key": "D", "text": "A missing accessory" }
+      ],
+      "correctKey": "B",
+      "difficulty": 1
+    },
+    {
+      "id": "q7-3-2",
+      "part": 7,
+      "passageId": "p7-3",
+      "orderIndex": 8,
+      "prompt": "According to the returns policy, what must Mr. Moreau include when completing the form?",
+      "options": [
+        { "key": "A", "text": "The original receipt" },
+        { "key": "B", "text": "A photo of the damaged item" },
+        { "key": "C", "text": "A letter of explanation" },
+        { "key": "D", "text": "His order number only" }
+      ],
+      "correctKey": "B",
+      "difficulty": 2
+    },
+    {
+      "id": "q7-3-3",
+      "part": 7,
+      "passageId": "p7-3",
+      "orderIndex": 9,
+      "prompt": "How long after receiving the returned item will the refund be processed?",
+      "options": [
+        { "key": "A", "text": "Within 24 hours" },
+        { "key": "B", "text": "Within 30 days" },
+        { "key": "C", "text": "Within 5 business days" },
+        { "key": "D", "text": "Within 10 business days" }
+      ],
+      "correctKey": "C",
+      "difficulty": 1
+    },
+    {
+      "id": "q7-3-4",
+      "part": 7,
+      "passageId": "p7-3",
+      "orderIndex": 10,
+      "prompt": "What additional gesture did the company make?",
+      "options": [
+        { "key": "A", "text": "A full replacement" },
+        { "key": "B", "text": "A 10% discount on the next purchase" },
+        { "key": "C", "text": "Free shipping" },
+        { "key": "D", "text": "A personal phone call" }
+      ],
+      "correctKey": "B",
+      "difficulty": 2
+    }
+  ]
+}

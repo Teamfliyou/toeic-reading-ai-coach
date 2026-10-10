@@ -1,0 +1,20 @@
+import "dotenv/config";
+import express from "express";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { handleExplain, handleHealth } from "./server/explain.mjs";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const app = express();
+
+app.get("/api/health", handleHealth);
+app.post("/api/explain", handleExplain);
+
+const distDir = join(__dirname, "dist");
+app.use(express.static(distDir));
+app.get("*", (_req, res) => res.sendFile(join(distDir, "index.html")));
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`TOEIC Reading AI Coach : http://localhost:${port}`);
+});
