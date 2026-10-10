@@ -1,6 +1,8 @@
 
 import { getPartInfo } from "@/lib/parts";
 import type { Part } from "@/lib/types";
+import { saveSession } from "@/lib/progress";
+import { useEffect } from "react";
 
 export default function ScoreBoard({
   part,
@@ -14,6 +16,7 @@ export default function ScoreBoard({
   onRestart: () => void;
 }) {
   const info = getPartInfo(part);
+  useEffect(() => { saveSession(part, correct, total); }, [part, correct, total]);
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
 
   const message =
@@ -30,38 +33,14 @@ export default function ScoreBoard({
           {info.name} — {info.tagline}
         </span>
 
-        <div className="my-6 flex items-center justify-center">
-          <div className="relative flex h-40 w-40 items-center justify-center">
-            <svg className="h-40 w-40 -rotate-90" viewBox="0 0 120 120">
-              <circle
-                cx="60"
-                cy="60"
-                r="52"
-                fill="none"
-                stroke="rgba(255,255,255,0.08)"
-                strokeWidth="10"
-              />
-              <circle
-                cx="60"
-                cy="60"
-                r="52"
-                fill="none"
-                stroke="url(#scoreGrad)"
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeDasharray={`${(pct / 100) * 326.7} 326.7`}
-              />
-              <defs>
-                <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" />
-                  <stop offset="100%" stopColor="#22d3ee" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div className="absolute text-center">
-              <div className="text-4xl font-bold gradient-text">{pct}%</div>
-              <div className="text-xs text-white/50">de réussite</div>
-            </div>
+        <div className="my-8 rounded-2xl border border-white/10 bg-white/[0.035] px-6 py-8">
+          <div className="text-6xl font-bold tracking-tight text-white">{pct}<span className="text-3xl text-cyan-300">%</span></div>
+          <p className="mt-2 text-sm text-white/55">Taux de réussite</p>
+          <div className="mt-6 h-2.5 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-cyan-400 transition-all duration-500" style={{width: `${pct}%`}} />
+          </div>
+          <div className="mt-4 flex justify-between text-sm text-white/65">
+            <span>{correct} bonnes réponses</span><span>{total-correct} erreurs</span>
           </div>
         </div>
 
@@ -79,7 +58,7 @@ export default function ScoreBoard({
             Recommencer cette partie
           </button>
           <a
-            href="/"
+            href="#/"
             className="glass-btn px-6 py-3 text-center text-sm font-semibold"
           >
             Retour au tableau de bord
