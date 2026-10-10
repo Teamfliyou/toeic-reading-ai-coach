@@ -3,12 +3,13 @@ import { PARTS } from "@/lib/parts";
 import PartIcon from "@/components/PartIcon";
 import SettingsButton from "@/components/SettingsButton";
 import { useSettings } from "@/lib/SettingsContext";
-import { readSessions, type Session } from "@/lib/progress";
+import { readSessions, readMistakes, type Session, type Mistake } from "@/lib/progress";
 
 export default function Dashboard() {
   const { hasPersonalKey } = useSettings();
   const [history, setHistory] = useState<Session[]>([]);
-  useEffect(() => { setHistory(readSessions()); }, []);
+  const [mistakes, setMistakes] = useState<Mistake[]>([]);
+  useEffect(() => { setHistory(readSessions()); setMistakes(readMistakes()); }, []);
   const attempted = history.reduce((n, item) => n + item.total, 0);
   const correct = history.reduce((n, item) => n + item.correct, 0);
   const average = attempted ? Math.round(correct / attempted * 100) : 0;
@@ -77,6 +78,21 @@ export default function Dashboard() {
         ))}
       </section>
 
+      <section className="mb-8 rounded-2xl border border-cyan-300/20 bg-[#152436] p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-cyan-300">Révisions personnalisées</span>
+            <h2 className="mt-1 text-xl font-bold text-white">Réviser mes erreurs</h2>
+            <p className="mt-1 text-sm text-white/60">{mistakes.length ? `${mistakes.length} question(s) à retravailler. Une bonne réponse les retire de la liste.` : "Vos questions ratées apparaîtront ici après vos entraînements."}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {([5,6,7] as const).map(part => {
+              const count = mistakes.filter(m => m.part === part).length;
+              return count ? <a key={part} href={`#/review/part${part}`} className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-2.5 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/20">Partie {part} · {count} →</a> : null;
+            })}
+          </div>
+        </div>
+      </section>
       <div className="mb-4 flex items-end justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-widest text-cyan-300">Programme</p>
           <h2 className="mt-1 text-xl font-semibold text-white">Choisissez votre entraînement</h2></div>
