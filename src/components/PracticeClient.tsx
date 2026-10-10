@@ -9,6 +9,7 @@ import type {
 } from "@/lib/types";
 import { useSettings } from "@/lib/SettingsContext";
 import ProgressBar from "./ProgressBar";
+import { recordMistake, resolveMistake } from "@/lib/progress";
 import PassageView from "./PassageView";
 import AiExplanation from "./AiExplanation";
 import ScoreBoard from "./ScoreBoard";
@@ -19,10 +20,12 @@ export default function PracticeClient({
   part,
   questions,
   passages,
+  reviewMode = false,
 }: {
   part: Part;
   questions: Question[];
   passages: Passage[];
+  reviewMode?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const [selectedKey, setSelectedKey] = useState<OptionKey | null>(null);
@@ -116,12 +119,14 @@ export default function PracticeClient({
     const isCorrect = selectedKey === question.correctKey;
     setStatus(isCorrect ? "correct" : "incorrect");
     if (isCorrect) {
+      if (reviewMode) resolveMistake(question.id);
       setCorrectCount((c) => c + 1);
       advanceTimer.current = setTimeout(goNext, 1200);
     } else {
+      recordMistake(question.id, part);
       fetchExplanation(question.id, selectedKey);
     }
-  }, [selectedKey, status, question, goNext, fetchExplanation]);
+  }, [selectedKey, status, question, goNext, fetchExplanation, part, reviewMode]);
 
   const handleVote = useCallback((_value: 1 | -1) => {
     // MVP : le vote 👍/👎 est déjà mémorisé par le composant AiExplanation.
