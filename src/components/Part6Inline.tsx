@@ -8,6 +8,7 @@ import type {
 import InlineSelect, { type BlankState } from "./InlineSelect";
 import AiExplanation from "./AiExplanation";
 import ScoreBoard from "./ScoreBoard";
+import { recordMistake } from "@/lib/progress";
 import { useSettings } from "@/lib/SettingsContext";
 
 const KIND_LABELS: Record<string, string> = {
@@ -178,6 +179,7 @@ export default function Part6Inline({
         };
       });
       if (key !== q.correctKey) {
+        recordMistake(q.id, 6);
         fetchExplanation(q, key, label);
       }
     },
