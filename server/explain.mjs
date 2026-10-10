@@ -9,7 +9,7 @@ const dataset = JSON.parse(
 );
 
 const BASE_URL = "https://api.deepseek.com";
-const MODEL = "deepseek-flash";
+const MODEL = "deepseek-chat";
 
 const SYSTEM_PROMPT = `Tu es un professeur d'anglais expert du TOEIC, pédagogue, précis et bienveillant. Tu expliques les erreurs de grammaire et de vocabulaire de la partie Reading (compréhension écrite) du nouveau TOEIC.
 
@@ -112,7 +112,7 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`DeepSeek a répondu ${res.status} : ${body.slice(0, 200)}`);
+      throw new Error(`DeepSeek a répondu ${res.status} : ${body.replace(/(Bearer\s+|sk-)[a-zA-Z0-9_-]{8,}/g, "[clé masquée]").slice(0, 200)}`);
     }
 
     const data = await res.json();
