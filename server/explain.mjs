@@ -65,8 +65,32 @@ function parseExplanation(raw) {
   }
 }
 
-export function findQuestion(questionId) {
-  return dataset.questions.find((q) => q.id === questionId) ?? null;
+export async function findQuestion(questionId) {
+  // Les IDs du seed Supabase sont des UUID, différents des IDs du JSON local.
+  const local = dataset.questions.find((q) => q.id === questionId);
+  if (local) return local;
+
+  const baseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const apiKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!baseUrl || !apiKey) return null;
+
+  const url = new URL("/rest/v1/questions", baseUrl);
+  url.searchParams.set("id", "eq." + questionId);
+  url.searchParams.set("select", "id,part,prompt,options,correct_key");
+  url.searchParams.set("limit", "1");
+
+  const response = await fetch(url, {
+    headers: { apikey: apiKey },
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) throw new Error("Impossible de récupérer la question Supabase.");
+  const rows = await response.json();
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    id: row.id, part: row.part, prompt: row.prompt,
+    options: row.options, correctKey: row.correct_key,
+  };
 }
 
 export async function explainMistake(questionId, selectedKey, userApiKey) {
@@ -79,7 +103,7 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
     );
   }
 
-  const question = findQuestion(questionId);
+  const question = await findQuestion(questionId);
   if (!question) {
     throw new Error("Question introuvable.");
   }
