@@ -3,9 +3,15 @@ import { PARTS } from "@/lib/parts";
 import PartIcon from "@/components/PartIcon";
 import SettingsButton from "@/components/SettingsButton";
 import { useSettings } from "@/lib/SettingsContext";
+import { readSessions, type Session } from "@/lib/progress";
 
 export default function Dashboard() {
   const { hasPersonalKey } = useSettings();
+  const [history, setHistory] = useState<Session[]>([]);
+  useEffect(() => { setHistory(readSessions()); }, []);
+  const attempted = history.reduce((n, item) => n + item.total, 0);
+  const correct = history.reduce((n, item) => n + item.correct, 0);
+  const average = attempted ? Math.round(correct / attempted * 100) : 0;
   const [hasDeepSeekKey, setHasDeepSeekKey] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -18,14 +24,14 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <main className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-10 sm:py-14">
+    <main className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-8 sm:py-12">
       <div className="absolute right-5 top-5 sm:right-6 sm:top-6">
         <SettingsButton withLabel />
       </div>
 
       <header className="mb-10 text-center animate-fade-up">
-        <span className="chip mb-5">Nouveau format TOEIC</span>
-        <h1 className="text-balance text-4xl font-bold leading-tight sm:text-5xl">
+        <span className="chip mb-5">Votre espace d’entraînement</span>
+        <h1 className="text-balance text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">
           <span className="gradient-text">TOEIC Reading</span>
           <br className="sm:hidden" /> AI Coach
         </h1>
@@ -57,20 +63,39 @@ export default function Dashboard() {
         )}
       </header>
 
-      <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
+      <section aria-label="Votre progression" className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {[
+          { label: "Sessions terminées", value: String(history.length), helper: "Entraînements réalisés" },
+          { label: "Réussite moyenne", value: attempted ? average + "%" : "—", helper: attempted ? correct + " bonnes réponses sur " + attempted : "Votre progression commence ici" },
+          { label: "Dernière session", value: history.length ? "Partie " + history[0].part : "—", helper: history.length ? new Date(history[0].date).toLocaleDateString("fr-FR") : "Aucune session pour le moment" },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+            <p className="text-xs font-medium text-white/55">{stat.label}</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-white">{stat.value}</p>
+            <p className="mt-1 text-xs text-white/45">{stat.helper}</p>
+          </div>
+        ))}
+      </section>
+
+      <div className="mb-4 flex items-end justify-between">
+        <div><p className="text-xs font-semibold uppercase tracking-widest text-cyan-300">Programme</p>
+          <h2 className="mt-1 text-xl font-semibold text-white">Choisissez votre entraînement</h2></div>
+        <span className="hidden text-sm text-white/45 sm:block">Reading · Parties 5, 6 et 7</span>
+      </div>
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {PARTS.map((part, i) => (
           <a
             key={part.part}
             href={`#/practice/${part.slug}`}
-            className="group glass-strong relative flex flex-col gap-4 overflow-hidden p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/20"
+            className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/10 bg-[#151c2b] p-6 transition-all duration-200 hover:-translate-y-1 hover:border-cyan-300/40 hover:bg-[#1b2638] hover:shadow-xl hover:shadow-black/20"
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div
-              className={`pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${part.accent} opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-40`}
+              className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-cyan-400/5 blur-2xl"
             />
 
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${part.accent} text-white`}
+              className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200"
             >
               <PartIcon name={part.icon} className="h-6 w-6" />
             </div>
@@ -89,7 +114,7 @@ export default function Dashboard() {
               {part.description}
             </p>
 
-            <div className="mt-auto flex items-center justify-between">
+            <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-4">
               <span className="chip">{part.questionCount}</span>
               <span className="flex items-center gap-1 text-sm font-semibold text-white/80 transition-all duration-200 group-hover:gap-2 group-hover:text-white">
                 Commencer
