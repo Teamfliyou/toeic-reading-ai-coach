@@ -110,6 +110,23 @@ npm install
 
 ## Configuration de l'IA (DeepSeek)
 
+Deux façons de fournir une clé API DeepSeek :
+
+### 1. Depuis l'interface (recommandé)
+
+Cliquez sur l'icône **Paramètres** (engrenage) dans le tableau de bord ou
+l'en-tête d'une session. Saisissez votre clé (`sk-...`) et cliquez sur
+**Enregistrer**. La clé est stockée dans le `localStorage` de votre navigateur
+(`deepseek_user_api_key`) et transmise au serveur via l'en-tête
+`X-DeepSeek-Api-Key` à chaque requête d'explication.
+
+Un indicateur vous indique l'état :
+
+- 🟢 **Clé personnelle active** — votre clé est utilisée.
+- 🔵 **Clé du serveur par défaut** — la clé du fichier `.env` est utilisée.
+
+### 2. Via le fichier `.env` (clé du serveur)
+
 1. Obtenez une clé API sur [platform.deepseek.com](https://platform.deepseek.com/api_keys).
 2. Créez un fichier `.env` à la racine (à partir de `.env.example`) :
 

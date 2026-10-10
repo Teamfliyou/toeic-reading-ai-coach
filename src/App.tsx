@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Part } from "@/lib/types";
+import { SettingsProvider } from "@/lib/SettingsContext";
+import SettingsModal from "@/components/SettingsModal";
 import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
 
@@ -17,10 +19,17 @@ export default function App() {
   const hash = useHashRoute();
 
   const match = hash.match(/^#\/practice\/(part[567])$/);
-  if (match) {
-    const part = Number(match[1].replace("part", "")) as Part;
-    return <Practice part={part} />;
-  }
+  const content =
+    match && match[1] ? (
+      <Practice part={Number(match[1].replace("part", "")) as Part} />
+    ) : (
+      <Dashboard />
+    );
 
-  return <Dashboard />;
+  return (
+    <SettingsProvider>
+      {content}
+      <SettingsModal />
+    </SettingsProvider>
+  );
 }

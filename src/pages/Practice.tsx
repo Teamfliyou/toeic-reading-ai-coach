@@ -3,6 +3,7 @@ import { getQuestions, getPassages } from "@/lib/data";
 import { getPartInfo } from "@/lib/parts";
 import PracticeClient from "@/components/PracticeClient";
 import Part6Inline from "@/components/Part6Inline";
+import SettingsButton from "@/components/SettingsButton";
 
 export default function Practice({ part }: { part: Part }) {
   const info = getPartInfo(part);
@@ -32,6 +33,7 @@ export default function Practice({ part }: { part: Part }) {
         <span className="text-sm font-semibold gradient-text">
           TOEIC Reading AI Coach
         </span>
+        <SettingsButton />
       </header>
 
       <div className="mb-6 animate-fade-up">

@@ -8,6 +8,7 @@ import type {
 import InlineSelect, { type BlankState } from "./InlineSelect";
 import AiExplanation from "./AiExplanation";
 import ScoreBoard from "./ScoreBoard";
+import { useSettings } from "@/lib/SettingsContext";
 
 const KIND_LABELS: Record<string, string> = {
   email: "E-mail",
@@ -44,6 +45,7 @@ export default function Part6Inline({
   const [finished, setFinished] = useState(false);
   const [expl, setExpl] = useState<ActiveExplanation | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const { apiKey } = useSettings();
 
   const groups = useMemo(
     () =>
@@ -116,9 +118,13 @@ export default function Part6Inline({
         latencyMs: null,
       });
       try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (apiKey) headers["X-DeepSeek-Api-Key"] = apiKey;
         const res = await fetch("/api/explain", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ questionId: q.id, selectedKey: key }),
         });
         const data = (await res.json()) as {
@@ -156,7 +162,7 @@ export default function Part6Inline({
         });
       }
     },
-    []
+    [apiKey]
   );
 
   const handleSelect = useCallback(

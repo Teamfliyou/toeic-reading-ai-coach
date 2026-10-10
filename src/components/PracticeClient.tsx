@@ -7,6 +7,7 @@ import type {
   Passage,
   Question,
 } from "@/lib/types";
+import { useSettings } from "@/lib/SettingsContext";
 import ProgressBar from "./ProgressBar";
 import PassageView from "./PassageView";
 import AiExplanation from "./AiExplanation";
@@ -34,6 +35,7 @@ export default function PracticeClient({
   const [correctCount, setCorrectCount] = useState(0);
 
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { apiKey } = useSettings();
 
   const question = questions[index];
   const passage = question?.passageId
@@ -72,9 +74,13 @@ export default function PracticeClient({
       setAiError(null);
       const started = performance.now();
       try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (apiKey) headers["X-DeepSeek-Api-Key"] = apiKey;
         const res = await fetch("/api/explain", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ questionId, selectedKey: key }),
         });
         const data = (await res.json()) as {
@@ -101,7 +107,7 @@ export default function PracticeClient({
         setAiLoading(false);
       }
     },
-    []
+    [apiKey]
   );
 
   const handleValidate = useCallback(() => {

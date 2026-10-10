@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { PARTS } from "@/lib/parts";
 import PartIcon from "@/components/PartIcon";
+import SettingsButton from "@/components/SettingsButton";
 
 export default function Dashboard() {
   const [hasDeepSeekKey, setHasDeepSeekKey] = useState<boolean | null>(null);
@@ -15,7 +16,11 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-10 sm:py-14">
+    <main className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-10 sm:py-14">
+      <div className="absolute right-5 top-5 sm:right-6 sm:top-6">
+        <SettingsButton withLabel />
+      </div>
+
       <header className="mb-10 text-center animate-fade-up">
         <span className="chip mb-5">Nouveau format TOEIC</span>
         <h1 className="text-balance text-4xl font-bold leading-tight sm:text-5xl">
@@ -44,7 +49,8 @@ export default function Dashboard() {
               <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
             </svg>
             Clé DeepSeek non détectée : les explications IA seront désactivées.
-            Ajoutez <code className="font-mono">DEEPSEEK_API_KEY</code> dans{" "}
+            Ajoutez votre clé dans les Paramètres (engrenage) ou définissez{" "}
+            <code className="font-mono">DEEPSEEK_API_KEY</code> dans{" "}
             <code className="font-mono">.env</code>.
           </p>
         )}

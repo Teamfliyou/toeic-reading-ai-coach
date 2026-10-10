@@ -69,11 +69,13 @@ export function findQuestion(questionId) {
   return dataset.questions.find((q) => q.id === questionId) ?? null;
 }
 
-export async function explainMistake(questionId, selectedKey) {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+export async function explainMistake(questionId, selectedKey, userApiKey) {
+  const apiKey =
+    (userApiKey && typeof userApiKey === "string" && userApiKey.trim()) ||
+    process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "Clé API DeepSeek absente. Définissez DEEPSEEK_API_KEY dans .env."
+      "Aucune clé API DeepSeek. Ajoutez votre clé dans les Paramètres ou définissez DEEPSEEK_API_KEY dans .env."
     );
   }
 
@@ -162,7 +164,10 @@ export async function handleExplain(req, res) {
       return sendJson(res, 400, { error: "`selectedKey` invalide." });
     }
 
-    const result = await explainMistake(questionId, selectedKey);
+    const rawHeader = req.headers["x-deepseek-api-key"];
+    const userApiKey = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+
+    const result = await explainMistake(questionId, selectedKey, userApiKey);
     return sendJson(res, 200, result);
   } catch (error) {
     const message =
