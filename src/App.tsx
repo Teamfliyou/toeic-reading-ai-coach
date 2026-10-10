@@ -19,7 +19,7 @@ export default function App() {
   const hash = useHashRoute();
 
   const match = hash.match(/^#\/practice\/(part[567])$/);
-  const reviewMatch = hash.match(/^#\\/review\\/(part[567])$/);
+  const reviewMatch = hash.match(/^#\/review\/(part[567])$/);
   const content =
     reviewMatch ? (
       <Practice part={Number(reviewMatch[1].replace("part", "")) as Part} reviewMode />
