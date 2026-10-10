@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #0b0d1a;
+  --background: #0b1220;
   --foreground: #f4f5fb;
 }
 
@@ -39,9 +39,7 @@ code,
   inset: 0;
   z-index: -2;
   overflow: hidden;
-  background: radial-gradient(1200px 800px at 15% -10%, #1e1b4b 0%, transparent 55%),
-    radial-gradient(1000px 700px at 85% 110%, #0c2f4a 0%, transparent 55%),
-    #0b0d1a;
+  background: radial-gradient(900px 500px at 50% -25%, #172c43 0%, transparent 70%), #0b1220;
 }
 
 .aurora::before,
@@ -50,7 +48,7 @@ code,
   position: absolute;
   border-radius: 50%;
   filter: blur(90px);
-  opacity: 0.5;
+  opacity: 0.08;
   mix-blend-mode: screen;
   will-change: transform;
 }
@@ -61,7 +59,7 @@ code,
   top: -160px;
   left: -120px;
   background: radial-gradient(circle, #6d28d9, transparent 70%);
-  animation: float-a 18s ease-in-out infinite;
+  animation: none;
 }
 
 .aurora::after {
@@ -70,7 +68,7 @@ code,
   bottom: -220px;
   right: -160px;
   background: radial-gradient(circle, #0891b2, transparent 70%);
-  animation: float-b 22s ease-in-out infinite;
+  animation: none;
 }
 
 @keyframes float-a {
@@ -86,7 +84,7 @@ code,
 /* ---- Glass surfaces ---- */
 @layer components {
   .glass {
-    @apply rounded-2xl border border-white/10 bg-white/[0.05];
+    @apply rounded-2xl border border-white/10 bg-[#141b29];
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     box-shadow: 0 8px 32px rgba(2, 6, 23, 0.35),
@@ -94,7 +92,7 @@ code,
   }
 
   .glass-strong {
-    @apply rounded-2xl border border-white/10 bg-white/[0.08];
+    @apply rounded-2xl border border-white/10 bg-[#151c2b];
     backdrop-filter: blur(28px) saturate(160%);
     -webkit-backdrop-filter: blur(28px) saturate(160%);
     box-shadow: 0 12px 48px rgba(2, 6, 23, 0.5),
@@ -116,7 +114,7 @@ code,
 
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(120deg, #c4b5fd, #67e8f9 60%, #a5b4fc);
+    background-image: linear-gradient(120deg, #e6f4ff, #67e8f9);
   }
 
   .chip {
@@ -156,3 +154,7 @@ code,
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+/* Interface plus calme et lisible */
+:focus-visible { outline: 2px solid #67e8f9; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
