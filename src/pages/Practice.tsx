@@ -26,11 +26,16 @@ export default function Practice({ part, reviewMode = false }: { part: Part; rev
       </header>
       <div className="mb-6 animate-fade-up">
         <p className="text-xs font-medium uppercase tracking-wider text-white/45">Partie {part} · {info.tagline}</p>
-        <h1 className="mt-1 text-2xl font-bold text-white/95">{reviewMode ? "Réviser mes erreurs" : info.name}</h1>\n        {reviewMode && <p className="mt-2 text-sm text-white/60">Partie {part} · Une bonne réponse retire la question de vos erreurs à revoir.</p>}
+        <h1 className="mt-1 text-2xl font-bold text-white/95">{reviewMode ? "Réviser mes erreurs" : info.name}</h1> 
+        {reviewMode && <p className="mt-2 text-sm text-white/60">Partie {part} · Une bonne réponse retire la question de vos erreurs à revoir.</p>}
       </div>
       {!dataset ? (
         <div className="glass p-8 text-center text-white/70">Chargement des exercices…</div>
-      ) : reviewMode && !dataset.questions.some(q => mistakeIds?.has(q.id)) ? (\n        <div className="glass p-8 text-center text-white/80">Aucune erreur à réviser pour cette partie. <a className="text-cyan-300 underline" href="#/">Retour à l’accueil</a></div>\n      ) : reviewMode ? (\n        <PracticeClient key={`${part}-review`} part={part} reviewMode questions={dataset.questions.filter(q => mistakeIds?.has(q.id))} passages={dataset.passages} />\n      ) : part === 6 ? (
+      ) : reviewMode && !dataset.questions.some(q => mistakeIds?.has(q.id)) ? ( 
+        <div className="glass p-8 text-center text-white/80">Aucune erreur à réviser pour cette partie. <a className="text-cyan-300 underline" href="#/">Retour à l’accueil</a></div> 
+      ) : reviewMode ? ( 
+        <PracticeClient key={`${part}-review`} part={part} reviewMode questions={dataset.questions.filter(q => mistakeIds?.has(q.id))} passages={dataset.passages} /> 
+      ) : part === 6 ? (
         <Part6Inline key={part} questions={dataset.questions} passages={dataset.passages} />
       ) : (
         <PracticeClient key={part} part={part} questions={dataset.questions} passages={dataset.passages} />
