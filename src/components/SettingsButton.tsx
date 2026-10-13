@@ -12,7 +12,7 @@ export default function SettingsButton({
       type="button"
       onClick={open}
       aria-label="Paramètres"
-      className={`glass-btn inline-flex items-center gap-2 ${
+      className={`settings-trigger inline-flex items-center gap-2 ${
         withLabel ? "" : "px-2.5 py-2"
       }`}
     >
