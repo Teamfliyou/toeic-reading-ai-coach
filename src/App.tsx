@@ -5,6 +5,7 @@ import SettingsModal from "@/components/SettingsModal";
 import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
 import Diagnostic from "@/pages/Diagnostic";
+import Admin from "@/pages/Admin";
 
 function useHashRoute() {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -20,7 +21,9 @@ export default function App() {
   const hash = useHashRoute();
   const match = hash.match(/^#\/practice\/(part[567])$/);
   const reviewMatch = hash.match(/^#\/review\/(part[567])$/);
-  const content = hash === "#/diagnostic" ? (
+  const content = hash === "#/admin" ? (
+    <Admin />
+  ) : hash === "#/diagnostic" ? (
     <Diagnostic />
   ) : reviewMatch ? (
     <Practice part={Number(reviewMatch[1].replace("part", "")) as Part} reviewMode />

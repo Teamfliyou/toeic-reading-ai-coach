@@ -3,11 +3,13 @@ import express from "express";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { handleExplain, handleHealth } from "./server/explain.mjs";
+import { handleAdmin } from "./server/admin.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 app.get("/api/health", handleHealth);
+app.all("/api/admin", handleAdmin);
 app.post("/api/explain", handleExplain);
 
 const distDir = join(__dirname, "dist");
