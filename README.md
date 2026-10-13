@@ -189,3 +189,15 @@ Supabase :
 ## Licence
 
 Distribué sous licence **MIT**. Voir le fichier [LICENSE](./LICENSE).
+
+
+## Administration multi-utilisateurs (Lexora)
+
+L'espace admin se trouve à `/#/admin`. Les comptes sont stockés dans `public.lexora_admin_users` dans Supabase avec un mot de passe haché avec scrypt et un sel aléatoire unique.
+
+1. Exécutez `supabase/admin_users.sql` dans le SQL Editor du projet Supabase.
+2. Définissez côté serveur `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET` (au moins 32 caractères), `ADMIN_INITIAL_USERNAME=admin` et `ADMIN_INITIAL_PASSWORD` (12 caractères minimum, fort et unique). Ne jamais préfixer ces secrets par `VITE_`.
+3. Redéployez. Lors de la première connexion, si la table est vide, le serveur crée automatiquement le compte `admin` avec le mot de passe fourni. Aucun mot de passe public par défaut n'est codé dans le dépôt.
+4. Dans **Administration → Utilisateurs**, créez des comptes `admin` ou `editor`, changez leur rôle, désactivez-les ou réinitialisez leur mot de passe.
+
+Un éditeur peut générer et publier des questions, mais ne peut pas gérer les autres comptes. Une modification de compte invalide immédiatement ses sessions. Pour des raisons de sécurité, la suppression définitive n'est pas proposée : désactivez un compte à la place. La configuration de `ADMIN_INITIAL_PASSWORD` reste requise par le serveur, mais modifier cette variable après le premier compte créé ne change pas son mot de passe ; utilisez l'interface pour cela.

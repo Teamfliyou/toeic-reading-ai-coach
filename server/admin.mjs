@@ -1,45 +1,20 @@
 import "dotenv/config";
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-
-const COOKIE = "lexora_admin";
-const secureFlag = req => (req.headers["x-forwarded-proto"] === "https" || req.socket?.encrypted) ? "Secure; " : "";
+import {authConfigured, bootstrap, currentUser, login, listUsers, addUser, modifyUser, cookie, publicUser} from "./admin-users.mjs";
 const MODEL = "deepseek-flash";
 const PRICES = { miss: 0.15, hit: 0.003, output: 0.60 };
 const loginAttempts = new Map();
 const buckets = new Map();
-function envSecret() {
-  if (!process.env.ADMIN_PASSWORD || !process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET.length < 32) return null;
-  return process.env.ADMIN_SESSION_SECRET;
-}
 function json(res, code, data) { res.statusCode=code;res.setHeader("Content-Type","application/json; charset=utf-8");res.setHeader("Cache-Control","no-store");res.end(JSON.stringify(data)); }
 async function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
-  let body="";for await (const chunk of req) { body+=chunk; if(body.length>32000) throw new Error("Requête trop volumineuse");}
+  let body="";for await(const chunk of req){body+=chunk;if(body.length>32000)throw Error("Requête trop volumineuse");}
   return JSON.parse(body||"{}");
 }
-function sign(data,secret){return createHmac("sha256",secret).update(data).digest("hex");}
-function cookies(req){return Object.fromEntries(String(req.headers.cookie||"").split(";").map(v=>v.trim().split(/=(.*)/s).slice(0,2)).filter(v=>v[0]));}
-function authorized(req) {
-  const secret=envSecret(), token=cookies(req)[COOKIE];if(!secret||!token)return false;
-  const pieces=token.split(".");if(pieces.length!==2)return false;
-  const [payload,signature]=pieces;const expected=sign(payload,secret);
-  if(signature.length!==expected.length||!timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return false;
-  const issued=Number(payload);return Number.isFinite(issued)&&issued<=Date.now()&&Date.now()-issued<8*3600*1000;
-}
 function sameOrigin(req) {
-  const origin=req.headers.origin; if(!origin)return false;
-  try {const u=new URL(origin);const host=req.headers["x-forwarded-host"]||req.headers.host;return u.host===host&&["https:","http:"].includes(u.protocol);}catch{return false;}
+ const origin=req.headers.origin;if(!origin)return false;
+ try{const u=new URL(origin),host=req.headers["x-forwarded-host"]||req.headers.host;return u.host===host&&["https:","http:"].includes(u.protocol);}catch{return false;}
 }
-function rate(map,key,max,windowMs){
-  const now=Date.now(),list=(map.get(key)||[]).filter(t=>now-t<windowMs);
-  if(list.length>=max){map.set(key,list);return false;}
-  list.push(now);map.set(key,list);if(map.size>2000)map.clear();return true;
-}
-function comparePassword(input,actual) {
-  const salt="lexora-admin-password-v1";
-  const a=scryptSync(input,salt,32),b=scryptSync(actual,salt,32);
-  return timingSafeEqual(a,b);
-}
+function rate(map,key,max,windowMs){const now=Date.now(),list=(map.get(key)||[]).filter(t=>now-t<windowMs);if(list.length>=max){map.set(key,list);return false;}list.push(now);map.set(key,list);if(map.size>2000)map.clear();return true;}
 function validateItem(x,part){
   if(!x||typeof x!=="object"||typeof x.prompt!=="string"||x.prompt.length<15||x.prompt.length>1500)return false;
   if(!Array.isArray(x.options)||x.options.length!==4)return false;
@@ -100,28 +75,45 @@ async function publish(body){
 }
 
 export async function handleAdmin(req,res) {
-  const action=new URL(req.url||"/api/admin","http://localhost").searchParams.get("action")||"session";
-  if(action==="session"&&req.method==="GET")return json(res,200,{authenticated:authorized(req),configured:Boolean(envSecret()),generationConfigured:Boolean(process.env.DEEPSEEK_API_KEY),publicationConfigured:Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY)});
+ const action=new URL(req.url||"/api/admin","http://localhost").searchParams.get("action")||"session";
+ try{
+  if(action==="session"&&req.method==="GET"){
+   const u=await currentUser(req);
+   return json(res,200,{authenticated:Boolean(u),user:u?publicUser(u):null,configured:authConfigured(),generationConfigured:Boolean(process.env.DEEPSEEK_API_KEY),publicationConfigured:Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY)});
+  }
   if(req.method!=="POST")return json(res,405,{error:"Méthode non autorisée"});
   if(!sameOrigin(req)||!String(req.headers["content-type"]||"").startsWith("application/json"))return json(res,403,{error:"Origine non autorisée"});
-  if(!envSecret())return json(res,503,{error:"ADMIN_PASSWORD et ADMIN_SESSION_SECRET doivent être configurés côté serveur."});
-  if(action==="logout"){res.setHeader("Set-Cookie",`${COOKIE}=; HttpOnly; ${secureFlag(req)}SameSite=Strict; Path=/api/admin; Max-Age=0`);return json(res,200,{ok:true});}
+  if(!authConfigured())return json(res,503,{error:"Configurez les variables de connexion et Supabase côté serveur."});
+  if(action==="logout"){res.setHeader("Set-Cookie",cookie(req,""));return json(res,200,{ok:true});}
   if(action==="login"){
-    const ip=String(req.headers["x-forwarded-for"]||req.socket?.remoteAddress||"unknown").split(",")[0];
-    if(!rate(loginAttempts,ip,5,15*60000))return json(res,429,{error:"Trop de tentatives. Réessayez ultérieurement."});
-    let body;try{body=await readBody(req);}catch{return json(res,400,{error:"JSON invalide"});}
-    const password=typeof body.password==="string"?body.password:"";
-    if(password.length>256||!comparePassword(password,process.env.ADMIN_PASSWORD))return json(res,401,{error:"Mot de passe incorrect"});
-    const ts=String(Date.now()),token=`${ts}.${sign(ts,envSecret())}`;
-    res.setHeader("Set-Cookie",`${COOKIE}=${token}; HttpOnly; ${secureFlag(req)}SameSite=Strict; Path=/api/admin; Max-Age=28800`);
-    return json(res,200,{ok:true});
+   const ip=String(req.headers["x-forwarded-for"]||req.socket?.remoteAddress||"unknown").split(",")[0];
+   if(!rate(loginAttempts,ip,5,900000))return json(res,429,{error:"Trop de tentatives. Réessayez plus tard."});
+   const body=await readBody(req),username=typeof body.username==="string"?body.username:"",password=typeof body.password==="string"?body.password:"";
+   if(username.length>32||password.length>256)return json(res,401,{error:"Identifiants incorrects"});
+   const session=await login(req,username,password);
+   if(!session)return json(res,401,{error:"Identifiants incorrects"});
+   res.setHeader("Set-Cookie",cookie(req,session.token));
+   return json(res,200,{ok:true,user:session.user});
   }
-  if(!authorized(req))return json(res,401,{error:"Connexion administrateur requise"});
+  const user=await currentUser(req);
+  if(!user)return json(res,401,{error:"Connexion requise"});
+  if(action==="users"){
+   if(user.role!=="admin")return json(res,403,{error:"Réservé aux administrateurs"});
+   return json(res,200,{users:await listUsers()});
+  }
+  if(action==="create-user"){
+   if(user.role!=="admin")return json(res,403,{error:"Réservé aux administrateurs"});
+   const created=await addUser(await readBody(req));return json(res,201,{user:created});
+  }
+  if(action==="update-user"){
+   if(user.role!=="admin")return json(res,403,{error:"Réservé aux administrateurs"});
+   const changed=await modifyUser(user,await readBody(req));return json(res,200,{user:changed});
+  }
   if(action==="publish"){try{return json(res,200,await publish(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Publication échouée"});}}
   if(action==="generate"){
-    if(!rate(buckets,"generation",10,3600000))return json(res,429,{error:"Limite de 10 générations par heure atteinte"});
-    try{return json(res,200,await generate(await readBody(req)));}
-    catch(e){return json(res,400,{error:e instanceof Error?e.message:"Erreur de génération"});}
+   if(!rate(buckets,user.id,10,3600000))return json(res,429,{error:"Limite de génération atteinte"});
+   try{return json(res,200,await generate(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Génération échouée"});}
   }
   return json(res,404,{error:"Action inconnue"});
+ }catch(e){return json(res,400,{error:e instanceof Error?e.message:"Erreur du serveur"});}
 }
