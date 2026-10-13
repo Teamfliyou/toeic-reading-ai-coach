@@ -120,15 +120,15 @@ export async function handleAdmin(req,res) {
    res.setHeader("Cache-Control","no-cache, no-transform");
    res.setHeader("X-Content-Type-Options","nosniff");
    res.flushHeaders?.();
-   const emit=(stage,message)=>res.write(JSON.stringify({type:"status",stage,message,at:Date.now()})+"\\n");
+   const emit=(stage,message)=>res.write(JSON.stringify({type:"status",stage,message,at:Date.now()})+"\n");
    try{
      emit("preparing","Préparation du lot de questions");
      const body=await readBody(req);
      emit("checking","Contrôle des paramètres");
      const data=await generate(body,emit);
-     res.write(JSON.stringify({type:"result",data})+"\\n");
+     res.write(JSON.stringify({type:"result",data})+"\n");
    }catch(e){
-     res.write(JSON.stringify({type:"error",message:e instanceof Error?e.message:"Erreur de génération"})+"\\n");
+     res.write(JSON.stringify({type:"error",message:e instanceof Error?e.message:"Erreur de génération"})+"\n");
    }finally{res.end();}
    return;
   }
