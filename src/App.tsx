@@ -4,6 +4,7 @@ import { SettingsProvider } from "@/lib/SettingsContext";
 import SettingsModal from "@/components/SettingsModal";
 import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
+import Diagnostic from "@/pages/Diagnostic";
 
 function useHashRoute() {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -17,22 +18,16 @@ function useHashRoute() {
 
 export default function App() {
   const hash = useHashRoute();
-
   const match = hash.match(/^#\/practice\/(part[567])$/);
   const reviewMatch = hash.match(/^#\/review\/(part[567])$/);
-  const content =
-    reviewMatch ? (
-      <Practice part={Number(reviewMatch[1].replace("part", "")) as Part} reviewMode />
-    ) : match && match[1] ? (
-      <Practice part={Number(match[1].replace("part", "")) as Part} />
-    ) : (
-      <Dashboard />
-    );
-
-  return (
-    <SettingsProvider>
-      {content}
-      <SettingsModal />
-    </SettingsProvider>
+  const content = hash === "#/diagnostic" ? (
+    <Diagnostic />
+  ) : reviewMatch ? (
+    <Practice part={Number(reviewMatch[1].replace("part", "")) as Part} reviewMode />
+  ) : match && match[1] ? (
+    <Practice part={Number(match[1].replace("part", "")) as Part} />
+  ) : (
+    <Dashboard />
   );
+  return <SettingsProvider>{content}<SettingsModal /></SettingsProvider>;
 }
