@@ -71,9 +71,37 @@ async function generate(body) {
   if(part!==5&&(!result.passage||!Array.isArray(result.passage.documents)||!result.passage.documents.length))throw new Error("Document absent du lot.");
   return {questions,passage:part===5?null:result.passage,cost:cost(payload.usage),notice:"Brouillon non publié : vérifiez les réponses avant export."};
 }
+
+async function publish(body){
+  const base=process.env.SUPABASE_URL, key=process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if(!base||!key)throw new Error("Publication indisponible : renseignez SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY côté serveur.");
+  const part=Number(body.part),questions=body.questions,passage=body.passage;
+  if(![5,6,7].includes(part)||!Array.isArray(questions)||questions.length<1||questions.length>20||!questions.every(x=>validateItem(x,part)))throw new Error("Lot à publier invalide");
+  if(part!==5&&(!passage||typeof passage.title!=="string"||!Array.isArray(passage.documents)||!passage.documents.length||passage.documents.length>3))throw new Error("Document invalide");
+  const url=new URL(base);
+  if(url.protocol!=="https:")throw new Error("SUPABASE_URL doit utiliser HTTPS");
+  const headers={apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json",Prefer:"return=representation"};
+  const endpoint=(table)=>new URL("/rest/v1/"+table,url).toString();
+  let passageId=null;
+  if(part!==5){
+    const r=await fetch(endpoint("passages"),{method:"POST",headers,body:JSON.stringify({part,title:passage.title.slice(0,250),documents:passage.documents}),signal:AbortSignal.timeout(12000)});
+    if(!r.ok)throw new Error("Impossible d'enregistrer le document dans Supabase");
+    const created=await r.json();passageId=created[0]?.id;
+    if(!passageId)throw new Error("Identifiant de document manquant");
+  }
+  const rows=questions.map((q,i)=>({part,passage_id:passageId,order_index:Date.now()%100000000+i,prompt:q.prompt,options:q.options,correct_key:q.correctKey,difficulty:[1,2,3].includes(Number(q.difficulty))?Number(q.difficulty):Number(body.difficulty)||2}));
+  const response=await fetch(endpoint("questions"),{method:"POST",headers,body:JSON.stringify(rows),signal:AbortSignal.timeout(20000)});
+  if(!response.ok) {
+    if(passageId)await fetch(endpoint("passages")+"?id=eq."+encodeURIComponent(passageId),{method:"DELETE",headers}).catch(()=>{});
+    throw new Error("Enregistrement des questions échoué");
+  }
+  const inserted=await response.json();
+  return {saved:inserted.length,passageSaved:Boolean(passageId)};
+}
+
 export async function handleAdmin(req,res) {
   const action=new URL(req.url||"/api/admin","http://localhost").searchParams.get("action")||"session";
-  if(action==="session"&&req.method==="GET")return json(res,200,{authenticated:authorized(req),configured:Boolean(envSecret()),generationConfigured:Boolean(process.env.DEEPSEEK_API_KEY)});
+  if(action==="session"&&req.method==="GET")return json(res,200,{authenticated:authorized(req),configured:Boolean(envSecret()),generationConfigured:Boolean(process.env.DEEPSEEK_API_KEY),publicationConfigured:Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY)});
   if(req.method!=="POST")return json(res,405,{error:"Méthode non autorisée"});
   if(!sameOrigin(req)||!String(req.headers["content-type"]||"").startsWith("application/json"))return json(res,403,{error:"Origine non autorisée"});
   if(!envSecret())return json(res,503,{error:"ADMIN_PASSWORD et ADMIN_SESSION_SECRET doivent être configurés côté serveur."});
@@ -89,6 +117,7 @@ export async function handleAdmin(req,res) {
     return json(res,200,{ok:true});
   }
   if(!authorized(req))return json(res,401,{error:"Connexion administrateur requise"});
+  if(action==="publish"){try{return json(res,200,await publish(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Publication échouée"});}}
   if(action==="generate"){
     if(!rate(buckets,"generation",10,3600000))return json(res,429,{error:"Limite de 10 générations par heure atteinte"});
     try{return json(res,200,await generate(await readBody(req)));}
