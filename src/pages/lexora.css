@@ -51,3 +51,6 @@
 .settings-trigger{display:inline-flex;align-items:center;gap:9px;background:#fff;color:#253b5c;border:1px solid #dbe1e9;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:none;backdrop-filter:none}
 .settings-trigger:hover{background:#f0f4f9;border-color:#b9c7d8}
 .settings-trigger:focus-visible{outline:3px solid #91b0d4;outline-offset:2px}
+
+.lexora-admin-input{display:block;width:100%;border:1px solid #d8e0ea;border-radius:9px;background:#fff;padding:12px;color:#172239;font-size:14px;margin-top:8px;outline-offset:2px}
+.lexora-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:19px}.lexora-admin-grid label,.lexora-card>label{font-size:13px;font-weight:650;color:#3a4b64}.lexora-admin-question{padding:20px 0;border-top:1px solid #e6ebf0;font-size:14px;line-height:1.65}.lexora-admin-question p{margin:10px 0;color:#4e607a}.lexora-admin-document{border:1px solid #e5eaf1;border-radius:10px;padding:20px;background:#fafcfe;margin:14px 0;line-height:1.7;font-size:14px}@media(max-width:640px){.lexora-admin-grid{grid-template-columns:1fr}}
