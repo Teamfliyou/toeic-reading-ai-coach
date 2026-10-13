@@ -46,3 +46,8 @@
 .lexora-resultmark{display:block;font-size:51px;letter-spacing:-2px;font-weight:800;color:#27456c}
 .lexora-subtle{font-size:13px;color:#7b8799}
 @media(max-width:700px){.lexora-shell{padding:0 18px}.lexora-content{padding-top:35px}.lexora-stats,.lexora-grid{grid-template-columns:1fr}.lexora-stats{gap:10px}.lexora-hero{display:block;padding:24px}.lexora-hero .lexora-primary{margin-top:19px}.lexora-navright{gap:10px}.lexora-smalllink{display:none}.lexora-heading{font-size:34px}.lexora-card{padding:21px}}
+
+/* Accessible settings in the light dashboard */
+.settings-trigger{display:inline-flex;align-items:center;gap:9px;background:#fff;color:#253b5c;border:1px solid #dbe1e9;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:none;backdrop-filter:none}
+.settings-trigger:hover{background:#f0f4f9;border-color:#b9c7d8}
+.settings-trigger:focus-visible{outline:3px solid #91b0d4;outline-offset:2px}
