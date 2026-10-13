@@ -20,7 +20,7 @@ async function generate(){
    if(!response.ok){const failure=await response.json().catch(()=>({error:"Service inaccessible"}));throw new Error(failure.error||"Erreur de génération");}
    if(!response.body)throw new Error("Votre navigateur ne permet pas de suivre la génération.");
    const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="",completed=false;
-   while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const lines=buffer.split("\\n");buffer=lines.pop()||"";
+   while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const lines=buffer.split("\n");buffer=lines.pop()||"";
      for(const line of lines){if(!line.trim())continue;const event=JSON.parse(line);
        if(event.type==="status"){setGenerationStage(event.stage);setGenerationMessage(event.message);}
        if(event.type==="result"){setResult(event.data as Generated);setGenerationStage("completed");setGenerationMessage("Lot généré : prêt pour votre relecture");completed=true;}
