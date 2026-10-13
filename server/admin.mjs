@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const COOKIE = "lexora_admin";
+const secureFlag = req => (req.headers["x-forwarded-proto"] === "https" || req.socket?.encrypted) ? "Secure; " : "";
 const MODEL = "deepseek-flash";
 const PRICES = { miss: 0.15, hit: 0.003, output: 0.60 };
 const loginAttempts = new Map();
@@ -76,7 +77,7 @@ export async function handleAdmin(req,res) {
   if(req.method!=="POST")return json(res,405,{error:"Méthode non autorisée"});
   if(!sameOrigin(req)||!String(req.headers["content-type"]||"").startsWith("application/json"))return json(res,403,{error:"Origine non autorisée"});
   if(!envSecret())return json(res,503,{error:"ADMIN_PASSWORD et ADMIN_SESSION_SECRET doivent être configurés côté serveur."});
-  if(action==="logout"){res.setHeader("Set-Cookie",`${COOKIE}=; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=0`);return json(res,200,{ok:true});}
+  if(action==="logout"){res.setHeader("Set-Cookie",`${COOKIE}=; HttpOnly; ${secureFlag(req)}SameSite=Strict; Path=/api/admin; Max-Age=0`);return json(res,200,{ok:true});}
   if(action==="login"){
     const ip=String(req.headers["x-forwarded-for"]||req.socket?.remoteAddress||"unknown").split(",")[0];
     if(!rate(loginAttempts,ip,5,15*60000))return json(res,429,{error:"Trop de tentatives. Réessayez ultérieurement."});
@@ -84,7 +85,7 @@ export async function handleAdmin(req,res) {
     const password=typeof body.password==="string"?body.password:"";
     if(password.length>256||!comparePassword(password,process.env.ADMIN_PASSWORD))return json(res,401,{error:"Mot de passe incorrect"});
     const ts=String(Date.now()),token=`${ts}.${sign(ts,envSecret())}`;
-    res.setHeader("Set-Cookie",`${COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/api/admin; Max-Age=28800`);
+    res.setHeader("Set-Cookie",`${COOKIE}=${token}; HttpOnly; ${secureFlag(req)}SameSite=Strict; Path=/api/admin; Max-Age=28800`);
     return json(res,200,{ok:true});
   }
   if(!authorized(req))return json(res,401,{error:"Connexion administrateur requise"});
