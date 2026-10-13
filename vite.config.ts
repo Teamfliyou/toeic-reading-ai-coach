@@ -8,6 +8,11 @@ export default defineConfig({
     {
       name: "toeic-api-proxy",
       configureServer(server) {
+        server.middlewares.use("/api/admin", async (req,res) => {
+          const { handleAdmin } = await import("./server/admin.mjs");
+          req.url = "/api/admin" + (req.url || "");
+          await handleAdmin(req,res);
+        });
         server.middlewares.use("/api/explain", async (req, res) => {
           if (req.method !== "POST") {
             res.statusCode = 405;
