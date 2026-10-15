@@ -243,9 +243,9 @@ export default function Part6Inline({
         </span>
       </div>
 
-      <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+      <div className="lexora-progress-track mb-3 h-1.5 w-full overflow-hidden rounded-full">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-violet-400 to-cyan-400 transition-all duration-500 ease-out"
+          className="lexora-progress-fill h-full rounded-full transition-all duration-500 ease-out"
           style={{ width: `${currentTotal ? (currentAnswered / currentTotal) * 100 : 0}%` }}
         />
       </div>
