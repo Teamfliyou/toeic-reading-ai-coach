@@ -1,5 +1,5 @@
 import "dotenv/config";
-import {authConfigured, bootstrap, currentUser, login, listUsers, addUser, modifyUser, cookie, publicUser} from "./admin-users.mjs";
+import {authConfigured, setupStatus, setupFirstAdmin, currentUser, login, listUsers, addUser, modifyUser, cookie, publicUser} from "./admin-users.mjs";
 const MODEL = "deepseek-flash";
 const PRICES = { miss: 0.15, hit: 0.003, output: 0.60 };
 const loginAttempts = new Map();
@@ -81,12 +81,19 @@ export async function handleAdmin(req,res) {
  const action=new URL(req.url||"/api/admin","http://localhost").searchParams.get("action")||"session";
  try{
   if(action==="session"&&req.method==="GET"){
-   const u=await currentUser(req);
-   return json(res,200,{authenticated:Boolean(u),user:u?publicUser(u):null,configured:authConfigured(),generationConfigured:Boolean(process.env.DEEPSEEK_API_KEY),publicationConfigured:Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY)});
+   const state=await setupStatus();
+   const u=state.configured ? await currentUser(req) : null;
+   return json(res,200,{authenticated:Boolean(u),user:u?publicUser(u):null,...state,configured:authConfigured(),generationConfigured:Boolean(process.env.DEEPSEEK_API_KEY),publicationConfigured:Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY)});
   }
   if(req.method!=="POST")return json(res,405,{error:"Méthode non autorisée"});
   if(!sameOrigin(req)||!String(req.headers["content-type"]||"").startsWith("application/json"))return json(res,403,{error:"Origine non autorisée"});
   if(!authConfigured())return json(res,503,{error:"Configurez les variables de connexion et Supabase côté serveur."});
+  if(action==="setup"){
+   const ip=String(req.headers["x-forwarded-for"]||req.socket?.remoteAddress||"unknown").split(",")[0];
+   if(!rate(loginAttempts,ip,5,900000))return json(res,429,{error:"Trop de tentatives. Réessayez plus tard."});
+   const user=await setupFirstAdmin(await readBody(req));
+   return json(res,201,{created:true,user});
+  }
   if(action==="logout"){res.setHeader("Set-Cookie",cookie(req,""));return json(res,200,{ok:true});}
   if(action==="login"){
    const ip=String(req.headers["x-forwarded-for"]||req.socket?.remoteAddress||"unknown").split(",")[0];
