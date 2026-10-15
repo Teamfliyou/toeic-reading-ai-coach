@@ -3,7 +3,7 @@ import {randomBytes,scryptSync,timingSafeEqual,createHmac} from "node:crypto";
 const COOKIE="lexora_admin";
 const headers=()=>({apikey:process.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+process.env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",Prefer:"return=representation"});
 const endpoint=(q="")=>new URL("/rest/v1/lexora_admin_users"+q,process.env.SUPABASE_URL).toString();
-export const authConfigured=()=>Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY&&process.env.ADMIN_SESSION_SECRET?.length>=32&&process.env.ADMIN_INITIAL_PASSWORD?.length>=12);
+export const authConfigured=()=>Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY&&process.env.ADMIN_SESSION_SECRET?.length>=32);
 async function sql(method,q="",body){
  const r=await fetch(endpoint(q),{method,headers:headers(),...(body?{body:JSON.stringify(body)}:{}) ,signal:AbortSignal.timeout(10000)});
  if(!r.ok)throw Error("Base des utilisateurs indisponible ("+r.status+"). Exécutez le schéma SQL.");
@@ -13,15 +13,31 @@ const safe=(u)=>({id:u.id,username:u.username,role:u.role,active:u.active,create
 const hash=(password,salt)=>scryptSync(password,salt,64).toString("hex");
 const verify=(password,user)=>{const a=Buffer.from(hash(password,user.password_salt),"hex"),b=Buffer.from(user.password_hash,"hex");return a.length===b.length&&timingSafeEqual(a,b);};
 function hashed(password){const salt=randomBytes(24).toString("hex");return {password_salt:salt,password_hash:hash(password,salt)};}
-export async function bootstrap(){
- if(!authConfigured())throw Error("Configurez ADMIN_INITIAL_PASSWORD (12 caractères minimum), ADMIN_SESSION_SECRET, SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY.");
- const rows=await sql("GET","?select=id&limit=1");
- if(rows.length)return;
- const username=process.env.ADMIN_INITIAL_USERNAME||"admin";
- if(!/^[a-zA-Z][a-zA-Z0-9_.-]{2,31}$/.test(username))throw Error("ADMIN_INITIAL_USERNAME invalide");
- // Concurrent serverless requests can race; unique username DB constraint prevents duplicated bootstrap.
- try{await sql("POST","",{username,role:"admin",active:true,...hashed(process.env.ADMIN_INITIAL_PASSWORD)});}
- catch(e){const recheck=await sql("GET","?select=id&limit=1");if(!recheck.length)throw e;}
+export async function setupStatus() {
+  if (!authConfigured()) return {configured:false,needsSetup:false};
+  const rows=await sql("GET","?select=id&limit=1");
+  return {configured:true,needsSetup:rows.length===0};
+}
+export async function setupFirstAdmin({setupCode,username,password}) {
+  if (!authConfigured()) throw Error("Configuration Supabase ou secret de session incomplet.");
+  // Setup is only authorized by the deployment owner who knows the private
+  // server-side bootstrap credential, never by visiting the public setup page.
+  const secret=process.env.ADMIN_INITIAL_PASSWORD;
+  if (!secret || secret.length<16) throw Error("Définissez ADMIN_INITIAL_PASSWORD (16 caractères minimum) dans Vercel pour activer la configuration initiale.");
+  if(typeof setupCode!=="string"||setupCode.length>256)throw Error("Code de configuration invalide.");
+  const received=Buffer.from(setupCode),expected=Buffer.from(secret);
+  if(received.length!==expected.length||!timingSafeEqual(received,expected))throw Error("Code de configuration invalide.");
+  if(!/^[a-zA-Z][a-zA-Z0-9_.-]{2,31}$/.test(username)||typeof password!=="string"||password.length<12||password.length>256)throw Error("Identifiant ou mot de passe invalide (12 caractères minimum).");
+  const current=await sql("GET","?select=id&limit=1");
+  if(current.length)throw Error("Un administrateur existe déjà. Connectez-vous pour gérer les comptes.");
+  try {
+    const created=await sql("POST","",{username,role:"admin",active:true,...hashed(password)});
+    return safe(created[0]);
+  } catch(e) {
+    const after=await sql("GET","?select=id&limit=1");
+    if(after.length)throw Error("Configuration initiale déjà terminée.");
+    throw e;
+  }
 }
 function sign(data){return createHmac("sha256",process.env.ADMIN_SESSION_SECRET).update(data).digest("hex");}
 function tokenFor(user){const raw=Buffer.from(JSON.stringify({id:user.id,at:Date.now(),version:user.session_version})).toString("base64url");return raw+"."+sign(raw);}
@@ -38,7 +54,6 @@ export async function currentUser(req){
  const u=rows[0];return u?.active&&u.session_version===payload.version?u:null;
 }
 export async function login(req,username,password){
- await bootstrap();
  const rows=await sql("GET","?username=eq."+encodeURIComponent(username)+"&select=*&limit=1");
  const u=rows[0];
  // Constant-time dummy password computation for nonexistent accounts.
