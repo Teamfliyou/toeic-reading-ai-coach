@@ -56,3 +56,43 @@
 .lexora-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:19px}.lexora-admin-grid label,.lexora-card>label{font-size:13px;font-weight:650;color:#3a4b64}.lexora-admin-question{padding:20px 0;border-top:1px solid #e6ebf0;font-size:14px;line-height:1.65}.lexora-admin-question p{margin:10px 0;color:#4e607a}.lexora-admin-document{border:1px solid #e5eaf1;border-radius:10px;padding:20px;background:#fafcfe;margin:14px 0;line-height:1.7;font-size:14px}@media(max-width:640px){.lexora-admin-grid{grid-template-columns:1fr}}
 
 .lexora-generation-status{border:1px solid #cbd8e7;background:#f6f9fd;border-radius:12px;padding:20px}.lexora-generation-status ol{padding:0;margin:18px 0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.lexora-generation-status li{display:flex;align-items:center;gap:9px;font-size:12px;color:#8d99a8}.lexora-generation-status li span{width:25px;height:25px;border-radius:100%;background:#e9edf2;color:#7a8898;display:grid;place-items:center;flex:none;font-weight:700}.lexora-generation-status li.active{color:#25476d;font-weight:700}.lexora-generation-status li.active span{background:#27456c;color:white}.lexora-generation-status li.done{color:#287761}.lexora-generation-status li.done span{background:#e3f4ec;color:#287761}@media(max-width:680px){.lexora-generation-status ol{grid-template-columns:1fr 1fr}}
+
+
+/* Shared Lexora visual language for every reading exercise, including Part 6,
+   answer feedback, explanations and score cards. Scoped to practice only. */
+.lexora-exercises{min-height:100vh;background:#f7f8fa;color:#172239}
+.lexora-exercises .lexora-practice-main{padding-top:42px;padding-bottom:84px}
+.lexora-exercises .lexora-practice-heading{margin:0 0 27px}
+.lexora-exercises .lexora-practice-heading h1{font-size:clamp(26px,3.3vw,38px);font-weight:780;letter-spacing:-1px;color:#172239;line-height:1.2;margin:8px 0}
+.lexora-exercises .glass,.lexora-exercises .glass-strong{background:#fff;border:1px solid #e5e9ef;border-radius:15px;box-shadow:0 3px 12px rgba(19,43,75,.035);backdrop-filter:none;-webkit-backdrop-filter:none}
+.lexora-exercises .glass-btn{background:#fff;border:1px solid #dbe1e9;border-radius:10px;color:#304461;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.lexora-exercises .glass-btn:hover{background:#f0f4f9;border-color:#aebdd0}
+.lexora-exercises .chip{background:#edf3fa;border:1px solid #dce6f0;color:#38577a;font-weight:700}
+.lexora-exercises .gradient-text{background:none;color:#27456c;-webkit-text-fill-color:currentColor}
+.lexora-exercises [class*="text-white"]{color:#33465e}
+.lexora-exercises [class*="text-cyan"]{color:#294d79}
+.lexora-exercises [class*="bg-white/"]{background-color:#f1f5f9}
+.lexora-exercises [class*="border-white/"]{border-color:#dfe6ee}
+.lexora-exercises [class*="bg-gradient-to-r"]{background:#27456c;color:#fff;box-shadow:none}
+.lexora-exercises button[class*="bg-gradient-to-r"]:hover{background:#173251;opacity:1}
+.lexora-exercises .glass-btn[class*="hover:bg-white"]:hover{background:#eef3f9}
+.lexora-exercises .lexora-answer-key{background:#eaf0f7;color:#29476d}
+.lexora-exercises button[class*="border-violet"]{background:#edf3fa;border-color:#27456c;color:#213c5c}
+.lexora-exercises button[class*="border-emerald"]{background:#ecf9f3;border-color:#83c7a4;color:#176443}
+.lexora-exercises button[class*="border-red"]{background:#fff1f1;border-color:#e5a4a4;color:#9a3232}
+.lexora-exercises [class*="bg-emerald-500/10"],.lexora-exercises [class*="bg-emerald-500/15"]{background:#ecf9f3;color:#176443}
+.lexora-exercises [class*="bg-red-500/10"],.lexora-exercises [class*="bg-red-500/15"]{background:#fff1f1;color:#9a3232}
+.lexora-exercises [class*="text-emerald"]{color:#176443}
+.lexora-exercises [class*="text-red"]{color:#9a3232}
+.lexora-exercises .lexora-progress-track{background:#e5eaf1}
+.lexora-exercises .lexora-progress-fill{background:#294d79}
+.lexora-exercises .lexora-inline-trigger{background:#fff;border:1px solid #afc0d3;color:#29476d}
+.lexora-exercises .lexora-inline-trigger:hover{background:#edf3fa}
+.lexora-exercises .lexora-inline-trigger[data-status="correct"]{background:#ecf9f3;color:#176443;border-color:#83c7a4}
+.lexora-exercises .lexora-inline-trigger[data-status="incorrect"]{background:#fff1f1;color:#9a3232;border-color:#e5a4a4}
+.lexora-exercises .lexora-inline-menu{background:#fff;border:1px solid #dce4ec;box-shadow:0 12px 28px rgba(19,43,75,.15)}
+.lexora-exercises .lexora-inline-menu button{color:#233b58}
+.lexora-exercises .lexora-inline-menu button:hover{background:#edf3fa}
+.lexora-exercises .lexora-inline-menu button span:first-child{background:#edf3fa;color:#29476d}
+.lexora-exercises :is(button,a):focus-visible{outline:3px solid #91b0d4;outline-offset:3px}
+@media(max-width:700px){.lexora-exercises .lexora-practice-main{padding-top:28px;padding-bottom:60px}.lexora-exercises .lexora-nav{height:72px}.lexora-exercises .lexora-practice-heading h1{font-size:28px}}
