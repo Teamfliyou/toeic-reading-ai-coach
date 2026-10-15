@@ -96,3 +96,15 @@
 .lexora-exercises .lexora-inline-menu button span:first-child{background:#edf3fa;color:#29476d}
 .lexora-exercises :is(button,a):focus-visible{outline:3px solid #91b0d4;outline-offset:3px}
 @media(max-width:700px){.lexora-exercises .lexora-practice-main{padding-top:28px;padding-bottom:60px}.lexora-exercises .lexora-nav{height:72px}.lexora-exercises .lexora-practice-heading h1{font-size:28px}}
+
+.lexora-lesson-hero{margin-top:22px;background:#f3f5fa}
+.lexora-lesson-list{display:grid;gap:14px;margin-top:30px}
+.lexora-lesson{padding:23px 27px}
+.lexora-lesson-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:20px;border:0;background:transparent;text-align:left;color:#172239;cursor:pointer;padding:0}
+.lexora-lesson-toggle strong{display:block;font-size:19px;margin-top:9px;line-height:1.35}
+.lexora-lesson-toggle>span:last-child{font-size:28px;color:#27456c}
+.lexora-lesson-content{border-top:1px solid #e5e9ef;margin-top:23px;padding-top:19px;line-height:1.75;color:#40516a}
+.lexora-lesson-content h3{font-size:16px;color:#172239;margin:21px 0 6px}
+.lexora-lesson-content p{white-space:pre-line}
+.lexora-lesson-content details{padding:13px 17px;background:#edf3fa;border-radius:9px;margin:14px 0}
+.lexora-lesson-content summary{font-weight:700;cursor:pointer;color:#27456c}
