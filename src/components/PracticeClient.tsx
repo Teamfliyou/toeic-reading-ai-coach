@@ -10,6 +10,7 @@ import type {
 import { useSettings } from "@/lib/SettingsContext";
 import ProgressBar from "./ProgressBar";
 import { recordMistake, resolveMistake } from "@/lib/progress";
+import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@/lib/lessons";
 import PassageView from "./PassageView";
 import AiExplanation from "./AiExplanation";
 import ScoreBoard from "./ScoreBoard";
@@ -73,6 +74,7 @@ export default function PracticeClient({
 
   const fetchExplanation = useCallback(
     async (questionId: string, key: OptionKey) => {
+      const lessonId = question ? startLesson(question, key) : null;
       setAiLoading(true);
       setAiError(null);
       const started = performance.now();
@@ -90,17 +92,24 @@ export default function PracticeClient({
           explanation?: AiExplanationData;
           latencyMs?: number;
           error?: string;
+          lesson?: GeneratedLesson | null;
         };
         if (!res.ok || data.error) {
+          if (lessonId) failLesson(lessonId);
           setAiError(
             data.error ??
               "Impossible d'obtenir une explication pour le moment."
           );
         } else if (data.explanation) {
           setExplanation(data.explanation);
+          if (lessonId) {
+            if (data.lesson) completeLesson(lessonId, data.lesson);
+            else failLesson(lessonId);
+          }
           setLatencyMs(data.latencyMs ?? null);
         }
       } catch {
+        if (lessonId) failLesson(lessonId);
         setAiError(
           "Connexion impossible au coach IA. Vérifiez votre connexion et la clé DEEPSEEK_API_KEY."
         );
@@ -110,7 +119,7 @@ export default function PracticeClient({
         setAiLoading(false);
       }
     },
-    [apiKey]
+    [apiKey, question]
   );
 
   const handleValidate = useCallback(() => {
@@ -296,6 +305,7 @@ export default function PracticeClient({
 
           {status === "incorrect" && (
             <div className="space-y-4">
+              <a href="#/lessons" className="lexora-secondary">Voir mes leçons →</a>
               <AiExplanation
                 explanation={explanation}
                 loading={aiLoading}

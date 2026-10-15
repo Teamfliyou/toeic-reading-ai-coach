@@ -5,6 +5,7 @@ import { useSettings } from "@/lib/SettingsContext";
 import { readSessions, readMistakes, type Session, type Mistake } from "@/lib/progress";
 import { readDiagnostic, type DiagnosticResult } from "./Diagnostic";
 import "./lexora.css";
+import { readLessons } from "@/lib/lessons";
 
 export default function Dashboard() {
   const { hasPersonalKey } = useSettings();
@@ -16,11 +17,12 @@ export default function Dashboard() {
     setHistory(readSessions()); setMistakes(readMistakes()); setDiagnostic(readDiagnostic());
     fetch("/api/health").then(r => r.json()).then((d: { hasDeepSeekKey?: boolean }) => setHasServerKey(Boolean(d.hasDeepSeekKey))).catch(() => setHasServerKey(false));
   }, []);
+  const lessonCount = readLessons().filter(l => l.status === "ready").length;
   const attempted = history.reduce((total, session) => total + session.total, 0);
   const correct = history.reduce((total, session) => total + session.correct, 0);
   const average = attempted ? Math.round(correct / attempted * 100) : null;
   return <div className="lexora-page">
-    <header className="lexora-nav"><div className="lexora-shell"><a href="#/" className="lexora-brand"><span className="lexora-mark">L</span> Lexora</a><div className="lexora-navright"><a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a><a className="lexora-admin-link" href="#/admin">Administration</a><SettingsButton withLabel /></div></div></header>
+    <header className="lexora-nav"><div className="lexora-shell"><a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a><div className="lexora-navright"><a className="lexora-smalllink" href="#/lessons">Mes leçons</a><a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a><a className="lexora-admin-link" href="#/admin">Administration</a><SettingsButton withLabel /></div></div></header>
     <main className="lexora-shell lexora-content">
       <p className="lexora-eyebrow">Mon espace d'apprentissage</p>
       <h1 className="lexora-heading">Votre anglais, à votre rythme.</h1>
@@ -31,11 +33,12 @@ export default function Dashboard() {
         <div className="lexora-card"><p className="lexora-statlabel">Diagnostic initial</p><p className="lexora-statvalue">{diagnostic ? `${Math.round(diagnostic.correct / diagnostic.total * 100)} %` : "—"}</p><span className="lexora-subtle">{diagnostic ? `${diagnostic.correct} bonnes réponses sur ${diagnostic.total}` : "Pas encore réalisé"}</span></div>
       </section>
       <section className="lexora-hero"><div><p className="lexora-eyebrow">Votre prochaine étape</p><h2>{diagnostic ? "Continuez à progresser" : "Découvrez vos points forts"}</h2><p className="lexora-muted">{diagnostic ? "Entraînez-vous sur les questions de grammaire, les textes à trous et la compréhension écrite." : "Commencez par un diagnostic de 15 questions maximum pour faire un premier point sur votre grammaire et votre vocabulaire."}</p></div><a className="lexora-primary" href={diagnostic ? "#/practice/part5" : "#/diagnostic"}>{diagnostic ? "Reprendre une séance" : "Commencer le diagnostic"} <span aria-hidden="true">→</span></a></section>
+      <section className="lexora-hero lexora-lesson-hero"><div><p className="lexora-eyebrow">Votre coach personnel</p><h2>Mes leçons personnalisées</h2><p className="lexora-muted">Chaque mauvaise réponse est analysée par thème pour vous expliquer la règle et proposer un exercice ciblé. {lessonCount} leçon(s) disponible(s).</p></div><a className="lexora-primary" href="#/lessons">Voir mes leçons →</a></section>
       <div className="lexora-sectionhead"><h2>Choisir un entraînement</h2><span className="lexora-subtle">Compréhension écrite</span></div>
       <section className="lexora-grid" aria-label="Exercices disponibles">{PARTS.map(part => <a key={part.part} href={`#/practice/${part.slug}`} className="lexora-card lexora-part"><span className="lexora-partno">Partie {part.part}</span><h3>{part.name}</h3><p className="lexora-muted">{part.description}</p><div className="lexora-arrow">S'entraîner <span aria-hidden="true">↗</span></div></a>)}</section>
       <section className="lexora-card lexora-review"><h2>Réviser mes erreurs</h2><p className="lexora-muted">{mistakes.length ? `${mistakes.length} question(s) à retravailler.` : "Vos erreurs seront enregistrées au fil de vos séances, pour faciliter vos révisions."}</p><div className="lexora-reviewlinks">{([5,6,7] as const).map(part => { const count=mistakes.filter(m => m.part===part).length; return count ? <a key={part} href={`#/review/part${part}`} className="lexora-secondary">Partie {part} · {count} →</a> : null; })}</div></section>
       {hasServerKey === false && !hasPersonalKey && <div className="lexora-notice" role="status">Les explications personnalisées ne sont pas encore activées. Ajoutez une clé DeepSeek dans les paramètres pour les utiliser. Les exercices restent accessibles.</div>}
-      <footer className="lexora-subtle" style={{marginTop:42}}>Lexora · Préparation indépendante à l'anglais professionnel. Nom de marque provisoire.</footer>
+      <footer className="lexora-subtle" style={{marginTop:42}}>Lernoviq · Préparation indépendante à l'anglais professionnel. Nom de marque provisoire.</footer>
     </main>
   </div>;
 }

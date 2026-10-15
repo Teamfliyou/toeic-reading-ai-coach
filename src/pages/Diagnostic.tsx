@@ -49,7 +49,7 @@ export default function Diagnostic() {
     } else setIndex(index + 1);
   }
   return <div className="lexora-page">
-    <header className="lexora-nav"><div className="lexora-shell"><a className="lexora-brand" href="#/"><span className="lexora-mark">L</span> Lexora</a><span className="lexora-subtle">Évaluation initiale · Reading</span></div></header>
+    <header className="lexora-nav"><div className="lexora-shell"><a className="lexora-brand" href="#/"><span className="lexora-mark">N</span> Lernoviq</a><span className="lexora-subtle">Évaluation initiale · Reading</span></div></header>
     <main className="lexora-shell"><div className="lexora-assessment">
       {loading ? <div className="lexora-card">Préparation de votre diagnostic…</div> :
        error || !questions.length ? <div className="lexora-card"><h1>Diagnostic indisponible</h1><p className="lexora-muted">Impossible de charger les questions pour le moment.</p><a className="lexora-secondary" href="#/">Retour à l'accueil</a></div> :

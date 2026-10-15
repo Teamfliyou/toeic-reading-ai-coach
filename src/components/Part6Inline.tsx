@@ -9,6 +9,7 @@ import InlineSelect, { type BlankState } from "./InlineSelect";
 import AiExplanation from "./AiExplanation";
 import ScoreBoard from "./ScoreBoard";
 import { recordMistake } from "@/lib/progress";
+import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@/lib/lessons";
 import { useSettings } from "@/lib/SettingsContext";
 
 const KIND_LABELS: Record<string, string> = {
@@ -110,6 +111,7 @@ export default function Part6Inline({
 
   const fetchExplanation = useCallback(
     async (q: Question, key: OptionKey, label: string) => {
+      const lessonId = startLesson(q, key);
       setExpl({
         questionId: q.id,
         label,
@@ -132,7 +134,10 @@ export default function Part6Inline({
           explanation?: AiExplanationData;
           latencyMs?: number;
           error?: string;
+          lesson?: GeneratedLesson | null;
         };
+        if (!res.ok || data.error || !data.lesson) failLesson(lessonId);
+        else completeLesson(lessonId, data.lesson);
         setExpl((prev) => {
           if (!prev || prev.questionId !== q.id) return prev;
           if (!res.ok || data.error) {
@@ -152,6 +157,7 @@ export default function Part6Inline({
           };
         });
       } catch {
+        failLesson(lessonId);
         setExpl((prev) => {
           if (!prev || prev.questionId !== q.id) return prev;
           return {
@@ -321,6 +327,7 @@ export default function Part6Inline({
                   </span>
                 )}
               </div>
+              <a className="lexora-secondary" href="#/lessons">Voir mes leçons →</a>
               <AiExplanation
                 explanation={expl.data}
                 loading={expl.loading}

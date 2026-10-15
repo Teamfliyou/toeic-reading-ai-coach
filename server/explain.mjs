@@ -15,7 +15,7 @@ const SYSTEM_PROMPT = `Tu es un professeur d'anglais expert du TOEIC, pédagogue
 
 Règles strictes :
 - Réponds TOUJOURS en français.
-- Sois concis : chaque champ fait au maximum 40 mots.
+- Les champs diagnostic, resolution et tip font chacun au maximum 50 mots. Le cours est plus détaillé.\n- Analyse le thème précis de la question (temps, prépositions, vocabulaire, connecteurs, compréhension...).\n- Explique une règle correcte, adapte-la à la faute précise et propose une mini-question inédite.
 - Ne répète pas la question, va droit au but.
 - Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans bloc de code.
 
@@ -23,7 +23,16 @@ Le format JSON attendu est exactement :
 {
   "diagnostic": "Pourquoi la réponse choisie par l'utilisateur est fausse",
   "resolution": "Pourquoi la bonne réponse est correcte",
-  "tip": "Une astuce courte pour repérer ce piège récurrent au TOEIC"
+  "tip": "Une astuce courte pour repérer ce piège récurrent au TOEIC",
+  "lesson": {
+    "topic": "Thème grammatical ou compétence précise, en français",
+    "title": "Titre clair du cours",
+    "rule": "Règle pédagogique en français, détaillée en 80 à 130 mots",
+    "example": "Un nouvel exemple anglais avec son explication française",
+    "exercise": "Une mini-question originale avec quatre choix A, B, C et D",
+    "answer": "Bonne lettre, réponse et justification pédagogique",
+    "tip": "Méthode concrète pour éviter cette erreur au TOEIC"
+  }
 }`;
 
 function buildUserPrompt(question, selectedKey) {
@@ -33,6 +42,7 @@ function buildUserPrompt(question, selectedKey) {
 
   return [
     `Partie ${question.part} du TOEIC.`,
+    question.context ? `Document à analyser :\\n${question.context.slice(0, 4500)}` : "",
     "",
     `Énoncé : ${question.prompt}`,
     "",
@@ -55,20 +65,31 @@ function parseExplanation(raw) {
 
   try {
     const parsed = JSON.parse(cleaned);
+    const lesson = parsed.lesson && typeof parsed.lesson === "object" ? parsed.lesson : {};
+    const safe = (s) => typeof s === "string" ? s.trim() : "";
     return {
+      lesson: {
+        topic: safe(lesson.topic), title: safe(lesson.title),
+        rule: safe(lesson.rule), example: safe(lesson.example),
+        exercise: safe(lesson.exercise), answer: safe(lesson.answer),
+        tip: safe(lesson.tip),
+      },
       diagnostic: String(parsed.diagnostic ?? "").trim(),
       resolution: String(parsed.resolution ?? "").trim(),
       tip: String(parsed.tip ?? "").trim(),
     };
   } catch {
-    return { diagnostic: "", resolution: "", tip: "" };
+    return { diagnostic: "", resolution: "", tip: "", lesson: null };
   }
 }
 
 export async function findQuestion(questionId) {
   // Les IDs du seed Supabase sont des UUID, différents des IDs du JSON local.
   const local = dataset.questions.find((q) => q.id === questionId);
-  if (local) return local;
+  if (local) {
+    const passage = dataset.passages.find(p => p.id === local.passageId);
+    return { ...local, context: passage?.documents?.map(d => `${d.title}\\n${d.body.join("\\n")}`).join("\\n\\n") ?? "" };
+  }
 
   const baseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const apiKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -76,7 +97,7 @@ export async function findQuestion(questionId) {
 
   const url = new URL("/rest/v1/questions", baseUrl);
   url.searchParams.set("id", "eq." + questionId);
-  url.searchParams.set("select", "id,part,prompt,options,correct_key");
+  url.searchParams.set("select", "id,part,prompt,options,correct_key,passage_id");
   url.searchParams.set("limit", "1");
 
   const response = await fetch(url, {
@@ -87,9 +108,29 @@ export async function findQuestion(questionId) {
   const rows = await response.json();
   const row = rows[0];
   if (!row) return null;
+  let context = "";
+  if (row.passage_id) {
+    const passageUrl = new URL("/rest/v1/passages", baseUrl);
+    passageUrl.searchParams.set("id", "eq." + row.passage_id);
+    passageUrl.searchParams.set("select", "documents");
+    passageUrl.searchParams.set("limit", "1");
+    try {
+      const passageResponse = await fetch(passageUrl, {
+        headers: { apikey: apiKey },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (passageResponse.ok) {
+        const passages = await passageResponse.json();
+        const docs = passages[0]?.documents ?? [];
+        context = Array.isArray(docs) ? docs.map(d =>
+          `${d.title ?? ""}\\n${Array.isArray(d.body) ? d.body.join("\\n") : ""}`
+        ).join("\\n\\n") : "";
+      }
+    } catch { /* Un passage indisponible ne bloque pas la correction. */ }
+  }
   return {
     id: row.id, part: row.part, prompt: row.prompt,
-    options: row.options, correctKey: row.correct_key,
+    options: row.options, correctKey: row.correct_key, context,
   };
 }
 
@@ -110,7 +151,7 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
 
   const startedAt = Date.now();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 9000);
+  const timeout = setTimeout(() => controller.abort(), 22000);
 
   try {
     const res = await fetch(`${BASE_URL}/chat/completions`, {
@@ -135,7 +176,7 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
     });
 
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
+      await res.text().catch(() => "");
       throw new Error(`DeepSeek a répondu ${res.status} : ${body.replace(/(Bearer\s+|sk-)[a-zA-Z0-9_-]{8,}/g, "[clé masquée]").slice(0, 200)}`);
     }
 
@@ -143,11 +184,12 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
     const content = data?.choices?.[0]?.message?.content ?? "";
     const explanation = parseExplanation(content);
 
-    if (!explanation.diagnostic && !explanation.resolution && !explanation.tip) {
+    if (!explanation.diagnostic || !explanation.resolution || !explanation.tip) {
       throw new Error("Réponse DeepSeek non parsable en JSON.");
     }
 
-    return { explanation, latencyMs: Date.now() - startedAt };
+    const { lesson, ...feedback } = explanation;
+    return { explanation: feedback, lesson: lesson?.title && lesson?.rule && lesson?.exercise && lesson?.answer ? lesson : null, latencyMs: Date.now() - startedAt };
   } finally {
     clearTimeout(timeout);
   }
