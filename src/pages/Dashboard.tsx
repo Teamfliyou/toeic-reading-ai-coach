@@ -22,7 +22,7 @@ export default function Dashboard() {
   const correct = history.reduce((total, session) => total + session.correct, 0);
   const average = attempted ? Math.round(correct / attempted * 100) : null;
   return <div className="lexora-page">
-    <header className="lexora-nav"><div className="lexora-shell"><a href="#/" className="lexora-brand"><span className="lexora-mark">L</span> Lexora</a><div className="lexora-navright"><a className="lexora-smalllink" href="#/lessons">Mes leçons</a><a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a><a className="lexora-admin-link" href="#/admin">Administration</a><SettingsButton withLabel /></div></div></header>
+    <header className="lexora-nav"><div className="lexora-shell"><a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a><div className="lexora-navright"><a className="lexora-smalllink" href="#/lessons">Mes leçons</a><a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a><a className="lexora-admin-link" href="#/admin">Administration</a><SettingsButton withLabel /></div></div></header>
     <main className="lexora-shell lexora-content">
       <p className="lexora-eyebrow">Mon espace d'apprentissage</p>
       <h1 className="lexora-heading">Votre anglais, à votre rythme.</h1>
@@ -38,7 +38,7 @@ export default function Dashboard() {
       <section className="lexora-grid" aria-label="Exercices disponibles">{PARTS.map(part => <a key={part.part} href={`#/practice/${part.slug}`} className="lexora-card lexora-part"><span className="lexora-partno">Partie {part.part}</span><h3>{part.name}</h3><p className="lexora-muted">{part.description}</p><div className="lexora-arrow">S'entraîner <span aria-hidden="true">↗</span></div></a>)}</section>
       <section className="lexora-card lexora-review"><h2>Réviser mes erreurs</h2><p className="lexora-muted">{mistakes.length ? `${mistakes.length} question(s) à retravailler.` : "Vos erreurs seront enregistrées au fil de vos séances, pour faciliter vos révisions."}</p><div className="lexora-reviewlinks">{([5,6,7] as const).map(part => { const count=mistakes.filter(m => m.part===part).length; return count ? <a key={part} href={`#/review/part${part}`} className="lexora-secondary">Partie {part} · {count} →</a> : null; })}</div></section>
       {hasServerKey === false && !hasPersonalKey && <div className="lexora-notice" role="status">Les explications personnalisées ne sont pas encore activées. Ajoutez une clé DeepSeek dans les paramètres pour les utiliser. Les exercices restent accessibles.</div>}
-      <footer className="lexora-subtle" style={{marginTop:42}}>Lexora · Préparation indépendante à l'anglais professionnel. Nom de marque provisoire.</footer>
+      <footer className="lexora-subtle" style={{marginTop:42}}>Lernoviq · Préparation indépendante à l'anglais professionnel. Nom de marque provisoire.</footer>
     </main>
   </div>;
 }
