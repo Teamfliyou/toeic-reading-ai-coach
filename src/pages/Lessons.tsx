@@ -9,7 +9,7 @@ export default function Lessons() {
   const ready = lessons.filter(l => l.status === "ready");
   return <div className="lexora-page">
     <header className="lexora-nav"><div className="lexora-shell">
-      <a className="lexora-brand" href="#/"><span className="lexora-mark">L</span> Lexora</a>
+      <a className="lexora-brand" href="#/"><span className="lexora-mark">N</span> Lernoviq</a>
       <div className="lexora-navright"><a className="lexora-smalllink" href="#/">Tableau de bord</a><SettingsButton withLabel /></div>
     </div></header>
     <main className="lexora-shell lexora-content">
