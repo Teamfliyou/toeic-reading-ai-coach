@@ -22,7 +22,7 @@ export default function Practice({ part, reviewMode = false }: { part: Part; rev
     <div className="lexora-page lexora-exercises">
       <header className="lexora-nav">
         <div className="lexora-shell">
-          <a href="#/" className="lexora-brand"><span className="lexora-mark">L</span> Lexora</a>
+          <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
           <div className="lexora-navright">
             <a className="lexora-smalllink" href="#/">Tableau de bord</a>
             <a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a>
