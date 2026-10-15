@@ -42,6 +42,7 @@ function buildUserPrompt(question, selectedKey) {
 
   return [
     `Partie ${question.part} du TOEIC.`,
+    question.context ? `Document à analyser :\\n${question.context.slice(0, 4500)}` : "",
     "",
     `Énoncé : ${question.prompt}`,
     "",
@@ -85,7 +86,10 @@ function parseExplanation(raw) {
 export async function findQuestion(questionId) {
   // Les IDs du seed Supabase sont des UUID, différents des IDs du JSON local.
   const local = dataset.questions.find((q) => q.id === questionId);
-  if (local) return local;
+  if (local) {
+    const passage = dataset.passages.find(p => p.id === local.passageId);
+    return { ...local, context: passage?.documents?.map(d => `${d.title}\\n${d.body.join("\\n")}`).join("\\n\\n") ?? "" };
+  }
 
   const baseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const apiKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -93,7 +97,7 @@ export async function findQuestion(questionId) {
 
   const url = new URL("/rest/v1/questions", baseUrl);
   url.searchParams.set("id", "eq." + questionId);
-  url.searchParams.set("select", "id,part,prompt,options,correct_key");
+  url.searchParams.set("select", "id,part,prompt,options,correct_key,passage_id");
   url.searchParams.set("limit", "1");
 
   const response = await fetch(url, {
@@ -104,9 +108,29 @@ export async function findQuestion(questionId) {
   const rows = await response.json();
   const row = rows[0];
   if (!row) return null;
+  let context = "";
+  if (row.passage_id) {
+    const passageUrl = new URL("/rest/v1/passages", baseUrl);
+    passageUrl.searchParams.set("id", "eq." + row.passage_id);
+    passageUrl.searchParams.set("select", "documents");
+    passageUrl.searchParams.set("limit", "1");
+    try {
+      const passageResponse = await fetch(passageUrl, {
+        headers: { apikey: apiKey },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (passageResponse.ok) {
+        const passages = await passageResponse.json();
+        const docs = passages[0]?.documents ?? [];
+        context = Array.isArray(docs) ? docs.map(d =>
+          `${d.title ?? ""}\\n${Array.isArray(d.body) ? d.body.join("\\n") : ""}`
+        ).join("\\n\\n") : "";
+      }
+    } catch { /* Un passage indisponible ne bloque pas la correction. */ }
+  }
   return {
     id: row.id, part: row.part, prompt: row.prompt,
-    options: row.options, correctKey: row.correct_key,
+    options: row.options, correctKey: row.correct_key, context,
   };
 }
 
