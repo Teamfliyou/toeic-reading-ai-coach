@@ -104,7 +104,8 @@ export default function InlineSelect({
           if (!answered) setOpen((o) => !o);
         }}
         disabled={answered}
-        className={`${triggerClass} ${answered ? "cursor-default" : "cursor-pointer"}`}
+        data-status={state?.status ?? "idle"}
+        className={`lexora-inline-trigger ${triggerClass} ${answered ? "cursor-default" : "cursor-pointer"}`}
       >
         {answered && selectedOption ? (
           <span className="font-semibold">
@@ -119,7 +120,7 @@ export default function InlineSelect({
       </button>
 
       {open && !answered && (
-        <div className="absolute left-0 top-full z-30 mt-2 w-72 max-w-[80vw] overflow-hidden rounded-xl border border-white/20 bg-slate-900 p-1.5 shadow-2xl shadow-black/60">
+        <div className="lexora-inline-menu absolute left-0 top-full z-30 mt-2 w-72 max-w-[80vw] overflow-hidden rounded-xl border border-white/20 bg-slate-900 p-1.5 shadow-2xl shadow-black/60">
           {question.options.map((opt) => (
             <button
               key={opt.key}
