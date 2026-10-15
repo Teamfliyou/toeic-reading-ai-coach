@@ -1,4 +1,4 @@
-# TOEIC Reading AI Coach
+# Lernoviq — Coach TOEIC
 
 > Application d'entraînement au **nouveau format du TOEIC** (section *Reading*),
 > avec un **coach IA DeepSeek** qui corrige vos erreurs et vous explique
@@ -191,7 +191,7 @@ Supabase :
 Distribué sous licence **MIT**. Voir le fichier [LICENSE](./LICENSE).
 
 
-## Administration multi-utilisateurs (Lexora)
+## Administration multi-utilisateurs (Lernoviq)
 
 L'espace admin se trouve à `/#/admin`. Les comptes sont stockés dans `public.lexora_admin_users` dans Supabase avec un mot de passe haché avec scrypt et un sel aléatoire unique.
 
