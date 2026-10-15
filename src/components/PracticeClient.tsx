@@ -229,7 +229,7 @@ export default function PracticeClient({
                       status === "idle" ? "hover:bg-white/[0.12]" : "cursor-default"
                     }`}
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10 text-xs font-bold text-white/80">
+                    <span className="lexora-answer-key flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold">
                       {opt.key}
                     </span>
                     <span className="flex-1">{opt.text}</span>
