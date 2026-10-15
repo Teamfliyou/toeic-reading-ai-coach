@@ -201,3 +201,15 @@ L'espace admin se trouve à `/#/admin`. Les comptes sont stockés dans `public.l
 4. Dans **Administration → Utilisateurs**, créez des comptes `admin` ou `editor`, changez leur rôle, désactivez-les ou réinitialisez leur mot de passe.
 
 Un éditeur peut générer et publier des questions, mais ne peut pas gérer les autres comptes. Une modification de compte invalide immédiatement ses sessions. Pour des raisons de sécurité, la suppression définitive n'est pas proposée : désactivez un compte à la place. La configuration de `ADMIN_INITIAL_PASSWORD` reste requise par le serveur, mais modifier cette variable après le premier compte créé ne change pas son mot de passe ; utilisez l'interface pour cela.
+
+
+## Initialisation sécurisée de l'administration (Vercel)
+
+- Déployez le schéma `supabase/admin_users.sql` dans **la base Supabase du projet**.
+- Dans Vercel (Production), définissez `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` et `ADMIN_SESSION_SECRET` (32 caractères minimum).
+- Définissez `ADMIN_INITIAL_PASSWORD` comme **code de configuration privé** fort (16 caractères minimum). Ce code ne devient **pas** le mot de passe du compte créé.
+- Ouvrez `/#/admin`. Si la table des utilisateurs est vide, l'assistant de configuration propose de créer le premier administrateur avec son identifiant, un mot de passe et sa confirmation.
+- La création du premier compte exige le code privé. Dès qu'un compte existe, l'inscription publique est fermée. Les comptes supplémentaires sont créés exclusivement par un administrateur authentifié dans l'onglet Utilisateurs.
+- Les comptes existants dans `lexora_admin_users` sont conservés : le nouveau processus ne les réinitialise pas, et n'affiche pas l'assistant si la base contient déjà un compte.
+
+**Important :** n'ajoutez jamais `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_INITIAL_PASSWORD` ou `ADMIN_SESSION_SECRET` à des variables `VITE_*` ni au code client. Les sessions sont signées, en cookies HttpOnly/SameSite, valables 8 h. La protection anti-bruteforce en mémoire est indicative sur Vercel Serverless : pour un site public exposé, ajouter une limitation distribuée (WAF/KV) et, à terme, la MFA.
