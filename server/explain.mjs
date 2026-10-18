@@ -11,6 +11,13 @@ const dataset = JSON.parse(
 const BASE_URL = "https://api.deepseek.com";
 const MODEL = "deepseek-chat";
 
+/** Masque toute clé API présente dans un message et borne sa longueur. */
+export function maskSecret(text) {
+  return String(text ?? "")
+    .replace(/(Bearer\s+|sk-)[A-Za-z0-9_-]{8,}/g, "[clé masquée]")
+    .slice(0, 200);
+}
+
 const SYSTEM_PROMPT = `Tu es un professeur d'anglais expert du TOEIC, pédagogue, précis et bienveillant. Tu expliques les erreurs de grammaire et de vocabulaire de la partie Reading (compréhension écrite) du nouveau TOEIC.
 
 Règles strictes :
@@ -176,8 +183,11 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
     });
 
     if (!res.ok) {
-      await res.text().catch(() => "");
-      throw new Error(`DeepSeek a répondu ${res.status} : ${body.replace(/(Bearer\s+|sk-)[a-zA-Z0-9_-]{8,}/g, "[clé masquée]").slice(0, 200)}`);
+      const raw = await res.text().catch(() => "");
+      const safe = maskSecret(raw);
+      throw new Error(
+        `DeepSeek a répondu ${res.status}${safe ? ` : ${safe}` : ""}`
+      );
     }
 
     const data = await res.json();

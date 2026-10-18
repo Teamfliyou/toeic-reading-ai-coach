@@ -1,4 +1,4 @@
-import { explainMistake } from "../server/explain.mjs";
+import { explainMistake, maskSecret } from "../server/explain.mjs";
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Méthode non autorisée." });
   try {
@@ -12,6 +12,6 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erreur du serveur.";
-    return res.status(500).json({ error: message.replace(/(Bearer\\s+|sk-)[a-zA-Z0-9_-]{8,}/g, "[clé masquée]") });
+    return res.status(500).json({ error: maskSecret(message) });
   }
 }
