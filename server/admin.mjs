@@ -1,6 +1,6 @@
 import "dotenv/config";
 import {authConfigured, setupStatus, setupFirstAdmin, currentUser, login, listUsers, addUser, modifyUser, cookie, publicUser} from "./admin-users.mjs";
-export const MODEL = "deepseek-chat";
+export const MODEL = "deepseek-flash";
 const PRICES = { miss: 0.15, hit: 0.003, output: 0.60 };
 const loginAttempts = new Map();
 const buckets = new Map();

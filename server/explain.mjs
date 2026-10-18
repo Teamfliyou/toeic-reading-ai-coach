@@ -10,7 +10,7 @@ const dataset = JSON.parse(
 );
 
 const BASE_URL = "https://api.deepseek.com";
-const MODEL = "deepseek-chat";
+const MODEL = "deepseek-flash";
 
 /** Masque toute clé API présente dans un message et borne sa longueur. */
 export function maskSecret(text) {

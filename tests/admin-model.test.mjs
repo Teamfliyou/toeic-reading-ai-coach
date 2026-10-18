@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { MODEL, generate } from "../server/admin.mjs";
 
 test("B1 : utilise un identifiant de modèle DeepSeek valide", () => {
-  assert.equal(MODEL, "deepseek-chat");
+  assert.equal(MODEL, "deepseek-flash");
 });
 
-test("B1 : la génération envoie bien « deepseek-chat » à l'API", async () => {
+test("B1 : la génération envoie bien « deepseek-flash » à l'API", async () => {
   const originalFetch = globalThis.fetch;
   const originalKey = process.env.DEEPSEEK_API_KEY;
   process.env.DEEPSEEK_API_KEY = "sk-test-key-000000000000";
@@ -26,7 +26,7 @@ test("B1 : la génération envoie bien « deepseek-chat » à l'API", async () =
       generate({ part: 5, quantity: 1, kind: "grammar", difficulty: 1, topic: "" }),
       /invalide|incomplet/i
     );
-    assert.equal(captured.model, "deepseek-chat");
+    assert.equal(captured.model, "deepseek-flash");
   } finally {
     globalThis.fetch = originalFetch;
     process.env.DEEPSEEK_API_KEY = originalKey;

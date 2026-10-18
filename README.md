@@ -53,7 +53,7 @@ sur mesure, structurée et concise.
 | Frontend   | **React 18 + TypeScript + Vite**                   |
 | Styles     | **Tailwind CSS** (design system liquid glass)      |
 | Backend    | **Express** (proxy sécurisé vers l'API DeepSeek)   |
-| IA         | **DeepSeek** (`deepseek-chat`)                     |
+| IA         | **DeepSeek** (`deepseek-flash`)                    |
 | Données    | JSON embarqué (`data/questions.json`) + Supabase (optionnel) |
 
 > La clé API DeepSeek n'est **jamais exposée côté client** : toutes les
