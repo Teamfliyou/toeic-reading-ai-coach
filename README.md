@@ -18,6 +18,7 @@ Interface **100 % en français**, au design moderne **liquid glass**
 - [Prérequis](#prérequis)
 - [Installation](#installation)
 - [Configuration de l'IA (DeepSeek)](#configuration-de-lia-deepseek)
+- [Explications IA gratuites (quotas & budget)](#explications-ia-gratuites-quotas--budget)
 - [Scripts disponibles](#scripts-disponibles)
 - [Structure du projet](#structure-du-projet)
 - [Base de données (optionnel — Supabase)](#base-de-données-optionnel--supabase)
@@ -145,6 +146,61 @@ Un indicateur vous indique l'état :
 > Sans clé, l'application fonctionne entièrement : seules les explications IA
 > sont désactivées (les réponses sont tout de même corrigées).
 
+## Explications IA gratuites (quotas & budget)
+
+Lernoviq peut offrir les explications IA à ses utilisateurs **tout en
+maîtrisant strictement le budget** : la clé DeepSeek reste sur le serveur et
+chaque appel à la clé du serveur est encadré par un quota et un budget
+atomiques.
+
+### Fonctionnement
+
+1. **Authentification Supabase Auth** (facultative au démarrage) : le
+   navigateur envoie `Authorization: Bearer <jwt>`. Le serveur valide le jeton
+   via `GET /auth/v1/user` (avec cache court).
+2. **Cache partagé** (`public.ai_explanations`) : une explication identique
+   (question + réponse choisie + version de prompt + modèle) est resservie
+   **sans consommer de quota ni appeler DeepSeek**.
+3. **Réservation atomique** (`public.ai_reserve_explain`) : quota quotidien,
+   débit par minute, unicité en vol et budget mensuel sont vérifiés **dans une
+   seule transaction Postgres** — aucune course possible en serverless.
+4. **Appel DeepSeek** encadré : `deepseek-flash`, mode *thinking* désactivé par
+   défaut, `max_tokens` borné, délai d'expiration, `user_id` d'isolation.
+5. **Enregistrement + finalisation** : la réponse IA est **enregistrée en base**
+   (historique + cache) puis la réservation est remplacée par le coût réel. En
+   cas d'échec, la réservation est **libérée** (budget remboursé).
+
+### Migration Supabase
+
+Exécutez `supabase/ai_explanations.sql` dans l'éditeur SQL du projet. Les tables
+sont accessibles uniquement au serveur (`service_role`), comme
+`public.lexora_admin_users`.
+
+### Variables d'environnement
+
+| Variable | Défaut | Rôle |
+| --- | --- | --- |
+| `DEEPSEEK_MODEL` | `deepseek-flash` | Modèle (source unique : `server/deepseek-config.mjs`). |
+| `DEEPSEEK_THINKING_ENABLED` | `false` | `true` réactive le mode *thinking* (coût des tokens de raisonnement). |
+| `DEEPSEEK_MAX_TOKENS` | `1024` | Plafond de tokens en sortie. |
+| `DEEPSEEK_TIMEOUT_MS` | `22000` | Délai maximal d'un appel DeepSeek. |
+| `AI_DAILY_LIMIT` | `10` | Quota quotidien par utilisateur connecté. |
+| `AI_PER_MINUTE` | `3` | Débit par minute et par utilisateur connecté. |
+| `AI_MONTHLY_LIMIT_EUR` | `10` | Budget mensuel (limite dure). |
+| `AI_MONTHLY_SUSPEND_EUR` | `8` | Seuil de suspension des nouvelles générations. |
+| `AI_USD_EUR_RATE` | `0.93` | Taux USD→EUR (DeepSeek facture en dollars). |
+| `AI_ESTIMATED_CALL_USD` | `0.002` | Réservation a priori par appel (majorée). |
+| `AI_FREE_REQUIRES_AUTH` | `false` | `true` exige un compte pour l'explication gratuite. |
+| `SUPABASE_ANON_KEY` | — | Vérification des jetons Supabase Auth (serveur). |
+| `SUPABASE_SERVICE_ROLE_KEY` | — | Persistance, quotas et budget (serveur uniquement). |
+
+### Disponibilité des exercices
+
+Les exercices TOEIC **restent accessibles** même si le quota ou le budget IA est
+épuisé : seul le panneau d'explication affiche un message (les corrections
+locales continuent de fonctionner). Aucune clé DeepSeek n'est exposée au
+navigateur.
+
 ## Scripts disponibles
 
 | Commande          | Description                                                       |
@@ -165,6 +221,10 @@ src/
   lib/                    # types, métadonnées des parties, accès aux données
 server/
   explain.mjs             # Proxy DeepSeek (prompt + appel API + parsing JSON)
+  deepseek-config.mjs     # Modèle, prix et version de prompt (source unique)
+  store.mjs               # Persistance + cache des explications (Supabase)
+  auth.mjs                # Vérification des jetons Supabase Auth
+  quota.mjs               # Quotas + budget (réservations atomiques)
 server.mjs                # Serveur de production (Express)
 data/questions.json       # Jeu de données local (fallback)
 supabase/                 # Schéma + seed SQL (optionnel)
