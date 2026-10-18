@@ -157,7 +157,10 @@ atomiques.
 
 1. **Authentification Supabase Auth** (facultative au démarrage) : le
    navigateur envoie `Authorization: Bearer <jwt>`. Le serveur valide le jeton
-   via `GET /auth/v1/user` (avec cache court).
+   via `GET /auth/v1/user` (avec cache court). Un bouton **Se connecter** (et
+   une modale e-mail + mot de passe) apparaît dans l'en-tête dès que
+   `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY` sont définis ; le
+   jeton est joint automatiquement aux requêtes d'explication.
 2. **Cache partagé** (`public.ai_explanations`) : une explication identique
    (question + réponse choisie + version de prompt + modèle) est resservie
    **sans consommer de quota ni appeler DeepSeek**.
