@@ -2,6 +2,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { checkRateLimit, clientIp } from "./rate-limit.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataset = JSON.parse(
@@ -16,6 +17,32 @@ export function maskSecret(text) {
   return String(text ?? "")
     .replace(/(Bearer\s+|sk-)[A-Za-z0-9_-]{8,}/g, "[clé masquée]")
     .slice(0, 200);
+}
+
+// Taille maximale acceptée pour le corps d'une requête d'explication (16 Ko).
+const MAX_BODY_BYTES = 16 * 1024;
+
+/** Lit un booléen d'environnement ; `fallback` si la variable est absente. */
+function envFlag(name, fallback) {
+  const value = process.env[name];
+  if (value === undefined || value === "") return fallback;
+  return String(value).toLowerCase() !== "false";
+}
+
+/**
+ * Refuse une requête navigateur provenant d'une autre origine (proxy ouvert).
+ * Les clients sans en-tête `Origin` (curl, serveur à serveur) restent acceptés.
+ */
+function isAllowedOrigin(req) {
+  if (!envFlag("EXPLAIN_RESTRICT_ORIGIN", true)) return true;
+  const origin = req?.headers?.origin;
+  if (!origin) return true;
+  try {
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
 }
 
 const SYSTEM_PROMPT = `Tu es un professeur d'anglais expert du TOEIC, pédagogue, précis et bienveillant. Tu expliques les erreurs de grammaire et de vocabulaire de la partie Reading (compréhension écrite) du nouveau TOEIC.
@@ -205,12 +232,42 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
   }
 }
 
-function readBody(req) {
+function readBody(req, maxBytes = MAX_BODY_BYTES) {
+  // Certains runtimes (ex. serverless) fournissent déjà le corps analysé.
+  if (req.body !== undefined && req.body !== null && typeof req.body !== "function") {
+    const text = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+    if (text.length > maxBytes) {
+      const error = new Error("Requête trop volumineuse.");
+      error.statusCode = 413;
+      return Promise.reject(error);
+    }
+    return Promise.resolve(text);
+  }
+
   return new Promise((resolve, reject) => {
     let data = "";
-    req.on("data", (chunk) => (data += chunk));
-    req.on("end", () => resolve(data));
-    req.on("error", reject);
+    let settled = false;
+    const fail = (error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    };
+    req.on("data", (chunk) => {
+      if (settled) return;
+      data += chunk;
+      if (data.length > maxBytes) {
+        const error = new Error("Requête trop volumineuse.");
+        error.statusCode = 413;
+        fail(error);
+        req.destroy?.();
+      }
+    });
+    req.on("end", () => {
+      if (settled) return;
+      settled = true;
+      resolve(data);
+    });
+    req.on("error", fail);
   });
 }
 
@@ -221,8 +278,54 @@ function sendJson(res, status, data) {
 }
 
 export async function handleExplain(req, res) {
+  if (req.method && req.method !== "POST") {
+    return sendJson(res, 405, { error: "Méthode non autorisée." });
+  }
+
+  if (!isAllowedOrigin(req)) {
+    return sendJson(res, 403, { error: "Origine non autorisée." });
+  }
+
+  const rawHeader = req.headers?.["x-deepseek-api-key"];
+  const userApiKey = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+  const hasUserKey =
+    typeof userApiKey === "string" && userApiKey.trim().length > 0;
+
   try {
-    const raw = await readBody(req);
+    // Anti-abus : on ne limite que l'usage de la clé du serveur. Un utilisateur
+    // qui fournit sa propre clé consomme ses propres crédits DeepSeek.
+    if (!hasUserKey) {
+      if (!envFlag("ALLOW_SERVER_KEY_FALLBACK", true)) {
+        return sendJson(res, 401, {
+          error:
+            "Clé API DeepSeek requise. Ajoutez votre clé dans les Paramètres.",
+        });
+      }
+      const limit = Number(process.env.EXPLAIN_RATE_LIMIT) || 60;
+      const windowMs = Number(process.env.EXPLAIN_RATE_WINDOW_MS) || 600000;
+      const rate = checkRateLimit(`explain:${clientIp(req)}`, {
+        limit,
+        windowMs,
+      });
+      if (!rate.ok) {
+        res.setHeader("Retry-After", String(rate.retryAfterSec));
+        return sendJson(res, 429, {
+          error:
+            "Trop de requêtes vers le coach IA. Merci de patienter quelques instants.",
+        });
+      }
+    }
+
+    let raw;
+    try {
+      raw = await readBody(req, MAX_BODY_BYTES);
+    } catch (error) {
+      if (error && error.statusCode === 413) {
+        return sendJson(res, 413, { error: "Requête trop volumineuse." });
+      }
+      throw error;
+    }
+
     let body = {};
     try {
       body = JSON.parse(raw || "{}");
@@ -231,23 +334,25 @@ export async function handleExplain(req, res) {
     }
 
     const { questionId, selectedKey } = body;
-    if (!questionId || !selectedKey) {
+    if (
+      typeof questionId !== "string" ||
+      !questionId.trim() ||
+      questionId.length > 200
+    ) {
       return sendJson(res, 400, {
-        error: "Champs `questionId` et `selectedKey` requis.",
+        error: "Champ `questionId` requis (chaîne de 200 caractères maximum).",
       });
     }
     if (!["A", "B", "C", "D"].includes(selectedKey)) {
       return sendJson(res, 400, { error: "`selectedKey` invalide." });
     }
 
-    const rawHeader = req.headers["x-deepseek-api-key"];
-    const userApiKey = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
-
     const result = await explainMistake(questionId, selectedKey, userApiKey);
     return sendJson(res, 200, result);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Erreur inconnue du serveur.";
+    const message = maskSecret(
+      error instanceof Error ? error.message : "Erreur inconnue du serveur."
+    );
     return sendJson(res, 500, { error: message });
   }
 }
