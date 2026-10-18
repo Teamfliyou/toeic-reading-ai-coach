@@ -8,6 +8,7 @@ import type {
   Question,
 } from "@/lib/types";
 import { useSettings } from "@/lib/SettingsContext";
+import { getAccessToken } from "@/lib/supabaseAuth";
 import ProgressBar from "./ProgressBar";
 import { recordMistake, resolveMistake } from "@/lib/progress";
 import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@/lib/lessons";
@@ -83,6 +84,8 @@ export default function PracticeClient({
           "Content-Type": "application/json",
         };
         if (apiKey) headers["X-DeepSeek-Api-Key"] = apiKey;
+        const token = await getAccessToken();
+        if (token) headers.Authorization = `Bearer ${token}`;
         const res = await fetch("/api/explain", {
           method: "POST",
           headers,

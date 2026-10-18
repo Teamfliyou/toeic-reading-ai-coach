@@ -5,6 +5,7 @@ import { getPartInfo } from "@/lib/parts";
 import PracticeClient from "@/components/PracticeClient";
 import Part6Inline from "@/components/Part6Inline";
 import SettingsButton from "@/components/SettingsButton";
+import AuthButton from "@/components/AuthButton";
 import { readMistakes } from "@/lib/progress";
 import "./lexora.css";
 
@@ -26,6 +27,7 @@ export default function Practice({ part, reviewMode = false }: { part: Part; rev
           <div className="lexora-navright">
             <a className="lexora-smalllink" href="#/">Tableau de bord</a>
             <a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a>
+            <AuthButton />
             <SettingsButton withLabel />
           </div>
         </div>

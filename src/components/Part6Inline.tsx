@@ -11,6 +11,7 @@ import ScoreBoard from "./ScoreBoard";
 import { recordMistake } from "@/lib/progress";
 import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@/lib/lessons";
 import { useSettings } from "@/lib/SettingsContext";
+import { getAccessToken } from "@/lib/supabaseAuth";
 
 const KIND_LABELS: Record<string, string> = {
   email: "E-mail",
@@ -125,6 +126,8 @@ export default function Part6Inline({
           "Content-Type": "application/json",
         };
         if (apiKey) headers["X-DeepSeek-Api-Key"] = apiKey;
+        const token = await getAccessToken();
+        if (token) headers.Authorization = `Bearer ${token}`;
         const res = await fetch("/api/explain", {
           method: "POST",
           headers,

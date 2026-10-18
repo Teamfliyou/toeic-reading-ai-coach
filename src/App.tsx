@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import type { Part } from "@/lib/types";
 import { SettingsProvider } from "@/lib/SettingsContext";
+import { AuthProvider } from "@/lib/AuthContext";
 import SettingsModal from "@/components/SettingsModal";
+import AuthModal from "@/components/AuthModal";
 import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
 import Diagnostic from "@/pages/Diagnostic";
@@ -35,5 +37,13 @@ export default function App() {
   ) : (
     <Dashboard />
   );
-  return <SettingsProvider>{content}<SettingsModal /></SettingsProvider>;
+  return (
+    <SettingsProvider>
+      <AuthProvider>
+        {content}
+        <SettingsModal />
+        <AuthModal />
+      </AuthProvider>
+    </SettingsProvider>
+  );
 }
