@@ -3,14 +3,21 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { checkRateLimit, clientIp } from "./rate-limit.mjs";
+import {
+  DEEPSEEK_BASE_URL,
+  DEEPSEEK_MODEL,
+  PROMPT_VERSION,
+  computeCost,
+  estimateCostUsd,
+} from "./deepseek-config.mjs";
+import { storeConfigured, getCachedExplanation, saveExplanation, touchExplanation } from "./store.mjs";
+import { quotaConfigured, reserve, finalize, release, currentMonth, budgetLimits } from "./quota.mjs";
+import { authConfigured, currentAiUser } from "./auth.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataset = JSON.parse(
   readFileSync(join(__dirname, "../data/questions.json"), "utf8")
 );
-
-const BASE_URL = "https://api.deepseek.com";
-const MODEL = "deepseek-flash";
 
 /** Masque toute clé API présente dans un message et borne sa longueur. */
 export function maskSecret(text) {
@@ -168,7 +175,7 @@ export async function findQuestion(questionId) {
   };
 }
 
-export async function explainMistake(questionId, selectedKey, userApiKey) {
+export async function explainMistake(questionId, selectedKey, userApiKey, options = {}) {
   const apiKey =
     (userApiKey && typeof userApiKey === "string" && userApiKey.trim()) ||
     process.env.DEEPSEEK_API_KEY;
@@ -185,36 +192,50 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
 
   const startedAt = Date.now();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 22000);
+  const timeout = setTimeout(
+    () => controller.abort(),
+    Number(process.env.DEEPSEEK_TIMEOUT_MS) || 22000
+  );
+
+  // Le mode « thinking » est désactivé par défaut : il facture des tokens de
+  // raisonnement sans bénéfice pour une explication courte. Mettre
+  // DEEPSEEK_THINKING_ENABLED=true pour le réactiver.
+  const thinkingEnabled = envFlag("DEEPSEEK_THINKING_ENABLED", false);
+
+  const payload = {
+    model: DEEPSEEK_MODEL,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: buildUserPrompt(question, selectedKey) },
+    ],
+    response_format: { type: "json_object" },
+    max_tokens: Number(process.env.DEEPSEEK_MAX_TOKENS) || 1024,
+    stream: false,
+  };
+  if (!thinkingEnabled) payload.thinking = { type: "disabled" };
+  // `user_id` aide DeepSeek à isoler l'ordonnancement et le cache par défaut.
+  if (options.userId) payload.user_id = String(options.userId).slice(0, 512);
 
   try {
-    const res = await fetch(`${BASE_URL}/chat/completions`, {
+    const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: buildUserPrompt(question, selectedKey),
-          },
-        ],
-        response_format: { type: "json_object" },
-        stream: false,
-      }),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
 
     if (!res.ok) {
       const raw = await res.text().catch(() => "");
       const safe = maskSecret(raw);
-      throw new Error(
+      const error = new Error(
         `DeepSeek a répondu ${res.status}${safe ? ` : ${safe}` : ""}`
       );
+      // Conservé pour que l'appelant distingue budget (402) et saturation (429).
+      error.statusCode = res.status;
+      throw error;
     }
 
     const data = await res.json();
@@ -226,7 +247,12 @@ export async function explainMistake(questionId, selectedKey, userApiKey) {
     }
 
     const { lesson, ...feedback } = explanation;
-    return { explanation: feedback, lesson: lesson?.title && lesson?.rule && lesson?.exercise && lesson?.answer ? lesson : null, latencyMs: Date.now() - startedAt };
+    return {
+      explanation: feedback,
+      lesson: lesson?.title && lesson?.rule && lesson?.exercise && lesson?.answer ? lesson : null,
+      latencyMs: Date.now() - startedAt,
+      usage: computeCost(data?.usage),
+    };
   } finally {
     clearTimeout(timeout);
   }
@@ -293,27 +319,52 @@ export async function handleExplain(req, res) {
   const hasUserKey =
     typeof userApiKey === "string" && userApiKey.trim().length > 0;
 
+  // Identité Supabase (facultative) : sert au quota par utilisateur.
+  let aiUser = null;
+  if (authConfigured()) {
+    aiUser = await currentAiUser(req).catch(() => null);
+  }
+
+  // Réservation de quota/budget à libérer en cas d'échec.
+  let eventId = null;
+
   try {
-    // Anti-abus : on ne limite que l'usage de la clé du serveur. Un utilisateur
-    // qui fournit sa propre clé consomme ses propres crédits DeepSeek.
     if (!hasUserKey) {
-      if (!envFlag("ALLOW_SERVER_KEY_FALLBACK", true)) {
+      const requireAuth = envFlag("AI_FREE_REQUIRES_AUTH", false);
+      const fallbackAllowed = envFlag("ALLOW_SERVER_KEY_FALLBACK", true);
+
+      if (requireAuth && !aiUser) {
         return sendJson(res, 401, {
-          error:
-            "Clé API DeepSeek requise. Ajoutez votre clé dans les Paramètres.",
+          error: "Connexion requise pour l'explication gratuite.",
+          code: "auth_required",
         });
       }
-      const limit = Number(process.env.EXPLAIN_RATE_LIMIT) || 60;
-      const windowMs = Number(process.env.EXPLAIN_RATE_WINDOW_MS) || 600000;
-      const rate = checkRateLimit(`explain:${clientIp(req)}`, {
-        limit,
-        windowMs,
-      });
+      if (!requireAuth && !fallbackAllowed) {
+        return sendJson(res, 401, {
+          error: "Clé API DeepSeek requise. Ajoutez votre clé dans les Paramètres.",
+          code: "key_required",
+        });
+      }
+
+      // Débit : par utilisateur connecté, sinon par IP. La limite par
+      // utilisateur est aussi appliquée de façon atomique en base (réservation).
+      const byUser = Boolean(aiUser);
+      const limit = byUser
+        ? Number(process.env.AI_PER_MINUTE) || 3
+        : Number(process.env.EXPLAIN_RATE_LIMIT) || 60;
+      const windowMs = byUser
+        ? Number(process.env.AI_PER_MINUTE_WINDOW_MS) || 60000
+        : Number(process.env.EXPLAIN_RATE_WINDOW_MS) || 600000;
+      const rate = checkRateLimit(
+        byUser ? `user:${aiUser.id}` : `explain:${clientIp(req)}`,
+        { limit, windowMs }
+      );
       if (!rate.ok) {
         res.setHeader("Retry-After", String(rate.retryAfterSec));
         return sendJson(res, 429, {
           error:
             "Trop de requêtes vers le coach IA. Merci de patienter quelques instants.",
+          code: "rate",
         });
       }
     }
@@ -349,9 +400,104 @@ export async function handleExplain(req, res) {
       return sendJson(res, 400, { error: "`selectedKey` invalide." });
     }
 
-    const result = await explainMistake(questionId, selectedKey, userApiKey);
-    return sendJson(res, 200, result);
+    // Cache partagé : une explication identique déjà générée est resservie
+    // sans consommer de quota ni appeler DeepSeek.
+    if (storeConfigured()) {
+      const cached = await getCachedExplanation({
+        questionId,
+        selectedKey,
+        promptVersion: PROMPT_VERSION,
+        model: DEEPSEEK_MODEL,
+      }).catch(() => null);
+      if (cached) {
+        touchExplanation(cached.id).catch(() => {});
+        return sendJson(res, 200, {
+          explanation: cached.payload,
+          lesson: cached.lesson ?? null,
+          latencyMs: 0,
+          cached: true,
+        });
+      }
+    }
+
+    // Réservation atomique du quota et du budget (clé serveur uniquement).
+    if (!hasUserKey && quotaConfigured()) {
+      const { limitUsd, suspendUsd } = budgetLimits();
+      const reservation = await reserve({
+        actor: aiUser ? `user:${aiUser.id}` : `ip:${clientIp(req)}`,
+        dailyLimit: aiUser ? Number(process.env.AI_DAILY_LIMIT) || 10 : 0,
+        perMinute: aiUser ? Number(process.env.AI_PER_MINUTE) || 3 : 0,
+        windowSeconds: 60,
+        estimatedUsd: estimateCostUsd(),
+        limitUsd,
+        suspendUsd,
+        month: currentMonth(),
+      });
+      if (!reservation.ok) {
+        const reasons = {
+          quota:
+            "Quota quotidien d'explications IA atteint. Réessayez demain ; les exercices restent accessibles.",
+          rate:
+            "Trop de requêtes vers le coach IA. Merci de patienter quelques instants.",
+          budget:
+            "Le budget mensuel d'explications IA est atteint ; les exercices restent accessibles.",
+          in_flight: "Une explication est déjà en cours pour ce compte.",
+          unavailable: "Service d'explications IA temporairement indisponible.",
+        };
+        return sendJson(res, 429, {
+          error: reasons[reservation.reason] || reasons.unavailable,
+          code: reservation.reason,
+        });
+      }
+      eventId = reservation.eventId;
+    }
+
+    const result = await explainMistake(questionId, selectedKey, userApiKey, {
+      userId: aiUser?.id,
+    });
+
+    // Enregistrement de la réponse IA : historique + cache partagé.
+    if (storeConfigured()) {
+      await saveExplanation({
+        questionId,
+        selectedKey,
+        promptVersion: PROMPT_VERSION,
+        model: DEEPSEEK_MODEL,
+        payload: result.explanation,
+        lesson: result.lesson,
+        userId: aiUser?.id ?? null,
+        usage: result.usage,
+      }).catch(() => {});
+    }
+
+    // Réconciliation du budget : la réservation devient le coût réel.
+    if (eventId) {
+      await finalize(eventId, result.usage?.estimatedUsd ?? 0).catch(() => {});
+      eventId = null;
+    }
+
+    return sendJson(res, 200, {
+      explanation: result.explanation,
+      lesson: result.lesson,
+      latencyMs: result.latencyMs,
+    });
   } catch (error) {
+    if (eventId) {
+      await release(eventId).catch(() => {});
+      eventId = null;
+    }
+
+    // 402 = solde DeepSeek insuffisant ; traité comme budget épuisé.
+    if (error && (error.statusCode === 402 || error.statusCode === 429)) {
+      const isBudget = error.statusCode === 402;
+      return sendJson(res, isBudget ? 503 : 429, {
+        error: isBudget
+          ? "Le budget d'explications IA est épuisé ; les exercices restent accessibles."
+          : "Le service d'explications IA est momentanément saturé. Réessayez dans un instant.",
+        code: isBudget ? "budget" : "rate",
+      });
+    }
+
     const message = maskSecret(
       error instanceof Error ? error.message : "Erreur inconnue du serveur."
     );
