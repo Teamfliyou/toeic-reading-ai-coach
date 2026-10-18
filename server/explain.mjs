@@ -259,7 +259,9 @@ function readBody(req, maxBytes = MAX_BODY_BYTES) {
         const error = new Error("Requête trop volumineuse.");
         error.statusCode = 413;
         fail(error);
-        req.destroy?.();
+        // On draine le reste du corps sans l'accumuler, afin de pouvoir
+        // renvoyer une réponse 413 propre au lieu de couper la connexion.
+        req.resume?.();
       }
     });
     req.on("end", () => {
