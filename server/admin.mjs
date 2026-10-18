@@ -31,7 +31,7 @@ function cost(usage){
   const rate=peakUTC()?2:1;
   return {inputTokens:input,outputTokens:output,cacheHitTokens:hit,estimatedUsd:Number(((miss*PRICES.miss+hit*PRICES.hit+output*PRICES.output)/1e6*rate).toFixed(6)),ratePeriod:rate===2?"peak":"off-peak",model:MODEL,priceReference:"https://api-docs.deepseek.com/quick_start/pricing/"};
 }
-async function generate(body, emit = () => {}) {
+export async function generate(body, emit = () => {}) {
   const part=Number(body.part),quantity=Number(body.quantity),topic=String(body.topic||"").slice(0,120),difficulty=Number(body.difficulty),kind=String(body.kind||"");
   if(![5,6,7].includes(part)||!Number.isInteger(quantity)||quantity<1||quantity>20||![1,2,3].includes(difficulty)||!["grammar","vocabulary","email","memo","article","schedule","notice"].includes(kind))throw new Error("Paramètres de génération invalides");
   if(!process.env.DEEPSEEK_API_KEY)throw new Error("Clé DEEPSEEK_API_KEY absente du serveur");
