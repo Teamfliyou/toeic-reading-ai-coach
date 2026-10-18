@@ -231,3 +231,21 @@ test("sans Supabase configuré : comportement d'origine conservé (200)", async 
   assert.equal(res.statusCode, 200);
   assert.equal(parseBody(res).explanation.diagnostic, "d");
 });
+
+test("réservation indisponible (migration absente) → 503, budget protégé", async () => {
+  setSupabaseEnv();
+  const router = makeRouter([
+    { match: "/auth/v1/user", handler: () => jsonResponse({ id: "user-1" }) },
+    { match: "rpc/ai_reserve_explain", method: "POST", handler: () => jsonResponse({ message: "not found" }, 404) },
+    { match: "rest/v1/ai_explanations", handler: () => jsonResponse([]) },
+    { match: "api.deepseek.com", handler: () => deepseekOk() },
+  ]);
+  globalThis.fetch = router;
+
+  const res = makeRes();
+  await handleExplain(authReq(), res);
+
+  assert.equal(res.statusCode, 503);
+  assert.equal(parseBody(res).code, "unavailable");
+  assert.ok(!called(router, "api.deepseek.com"), "aucun appel facturé sans réservation");
+});

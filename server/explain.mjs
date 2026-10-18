@@ -423,16 +423,28 @@ export async function handleExplain(req, res) {
     // Réservation atomique du quota et du budget (clé serveur uniquement).
     if (!hasUserKey && quotaConfigured()) {
       const { limitUsd, suspendUsd } = budgetLimits();
-      const reservation = await reserve({
-        actor: aiUser ? `user:${aiUser.id}` : `ip:${clientIp(req)}`,
-        dailyLimit: aiUser ? Number(process.env.AI_DAILY_LIMIT) || 10 : 0,
-        perMinute: aiUser ? Number(process.env.AI_PER_MINUTE) || 3 : 0,
-        windowSeconds: 60,
-        estimatedUsd: estimateCostUsd(),
-        limitUsd,
-        suspendUsd,
-        month: currentMonth(),
-      });
+      let reservation;
+      try {
+        reservation = await reserve({
+          actor: aiUser ? `user:${aiUser.id}` : `ip:${clientIp(req)}`,
+          dailyLimit: aiUser ? Number(process.env.AI_DAILY_LIMIT) || 10 : 0,
+          perMinute: aiUser ? Number(process.env.AI_PER_MINUTE) || 3 : 0,
+          windowSeconds: 60,
+          estimatedUsd: estimateCostUsd(),
+          limitUsd,
+          suspendUsd,
+          month: currentMonth(),
+        });
+      } catch {
+        // Échec de la réservation (migration absente, Supabase indisponible) :
+        // on refuse l'appel de clé serveur plutôt que de risquer un
+        // dépassement de budget non contrôlé. Les exercices restent accessibles.
+        return sendJson(res, 503, {
+          error:
+            "Service d'explications IA temporairement indisponible ; les exercices restent accessibles.",
+          code: "unavailable",
+        });
+      }
       if (!reservation.ok) {
         const reasons = {
           quota:
