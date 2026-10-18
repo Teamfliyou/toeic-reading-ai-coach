@@ -1,6 +1,8 @@
 import "dotenv/config";
 import {authConfigured, setupStatus, setupFirstAdmin, currentUser, login, listUsers, addUser, modifyUser, cookie, publicUser} from "./admin-users.mjs";
-export const MODEL = "deepseek-flash";
+import { DEEPSEEK_MODEL } from "./deepseek-config.mjs";
+// Modèle partagé avec /api/explain (source unique : server/deepseek-config.mjs).
+export const MODEL = DEEPSEEK_MODEL;
 const PRICES = { miss: 0.15, hit: 0.003, output: 0.60 };
 const loginAttempts = new Map();
 const buckets = new Map();
