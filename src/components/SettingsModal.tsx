@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSettings } from "@/lib/SettingsContext";
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -30,25 +30,53 @@ function EyeIcon({ open }: { open: boolean }) {
 }
 
 export default function SettingsModal() {
-  const { apiKey, hasPersonalKey, isOpen, close, saveKey, clearKey } =
+  const { apiKey, hasPersonalKey, keyRemembered, isOpen, close, saveKey, clearKey } =
     useSettings();
   const [draft, setDraft] = useState("");
+  const [remember, setRemember] = useState(false);
   const [show, setShow] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setDraft(apiKey ?? "");
+      setRemember(keyRemembered);
       setShow(false);
     }
-  }, [isOpen, apiKey]);
+  }, [isOpen, apiKey, keyRemembered]);
 
+  // Focus : placé dans la boîte à l'ouverture, retenu à l'intérieur (Tab), rendu à la fermeture.
   useEffect(() => {
     if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector<HTMLElement>("input")?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const items = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          "button:not([disabled]), input:not([disabled])"
+        )
+      );
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      previous?.focus?.();
+    };
   }, [isOpen, close]);
 
   if (!isOpen) return null;
@@ -64,6 +92,7 @@ export default function SettingsModal() {
       aria-label="Paramètres"
     >
       <div
+        ref={dialogRef}
         className="glass-strong w-full max-w-md animate-fade-up p-6"
         onClick={(e) => e.stopPropagation()}
       >
@@ -98,11 +127,12 @@ export default function SettingsModal() {
           </span>
         </div>
 
-        <label className="mb-2 block text-sm font-medium text-white/80">
+        <label htmlFor="deepseek-key" className="mb-2 block text-sm font-medium text-white/80">
           Clé API DeepSeek
         </label>
         <div className="relative">
           <input
+            id="deepseek-key"
             type={show ? "text" : "password"}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -120,17 +150,29 @@ export default function SettingsModal() {
             <EyeIcon open={show} />
           </button>
         </div>
-        <p className="mt-2 text-xs text-white/45">
-          La clé est stockée uniquement dans votre navigateur (localStorage) et
-          transmise à chaque requête d'explication.
-        </p>
+        <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-white/80">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-violet-500"
+          />
+          <span>
+            Mémoriser sur cet appareil
+            <span className="block text-xs text-white/55">
+              Désactivé : la clé reste en mémoire et disparaît au rechargement de la page.
+              Activé : elle est conservée dans le stockage du navigateur (lisible par tout
+              script de la page, à éviter sur un ordinateur partagé).
+            </span>
+          </span>
+        </label>
 
         <div className="mt-5 flex flex-col gap-3">
           <button
             type="button"
             disabled={!canSave}
             onClick={() => {
-              saveKey(draft);
+              saveKey(draft, remember);
               close();
             }}
             className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"

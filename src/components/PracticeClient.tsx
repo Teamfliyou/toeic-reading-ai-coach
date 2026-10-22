@@ -40,6 +40,8 @@ export default function PracticeClient({
   const [correctCount, setCorrectCount] = useState(0);
 
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Requête d'explication en cours : annulée si l'élève change de question ou quitte la page.
+  const explainAbort = useRef<AbortController | null>(null);
   const { apiKey } = useSettings();
 
   const question = questions[index];
@@ -49,6 +51,7 @@ export default function PracticeClient({
   const total = questions.length;
 
   const resetForNext = useCallback(() => {
+    explainAbort.current?.abort();
     setSelectedKey(null);
     setStatus("idle");
     setExplanation(null);
@@ -70,12 +73,16 @@ export default function PracticeClient({
   useEffect(() => {
     return () => {
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
+      explainAbort.current?.abort();
     };
   }, []);
 
   const fetchExplanation = useCallback(
     async (questionId: string, key: OptionKey) => {
       const lessonId = question ? startLesson(question, key) : null;
+      explainAbort.current?.abort();
+      const controller = new AbortController();
+      explainAbort.current = controller;
       setAiLoading(true);
       setAiError(null);
       const started = performance.now();
@@ -90,6 +97,7 @@ export default function PracticeClient({
           method: "POST",
           headers,
           body: JSON.stringify({ questionId, selectedKey: key }),
+          signal: controller.signal,
         });
         const data = (await res.json()) as {
           explanation?: AiExplanationData;
@@ -97,6 +105,10 @@ export default function PracticeClient({
           error?: string;
           lesson?: GeneratedLesson | null;
         };
+        if (controller.signal.aborted) {
+          if (lessonId) failLesson(lessonId);
+          return;
+        }
         if (!res.ok || data.error) {
           if (lessonId) failLesson(lessonId);
           setAiError(
@@ -113,13 +125,17 @@ export default function PracticeClient({
         }
       } catch {
         if (lessonId) failLesson(lessonId);
-        setAiError(
-          "Connexion impossible au coach IA. Vérifiez votre connexion et la clé DEEPSEEK_API_KEY."
-        );
+        if (!controller.signal.aborted) {
+          setAiError(
+            "Connexion impossible au coach IA. Vérifiez votre connexion internet et réessayez ; les exercices restent accessibles."
+          );
+        }
       } finally {
-        const elapsed = Math.round(performance.now() - started);
-        setLatencyMs((prev) => prev ?? elapsed);
-        setAiLoading(false);
+        if (!controller.signal.aborted) {
+          const elapsed = Math.round(performance.now() - started);
+          setLatencyMs((prev) => prev ?? elapsed);
+          setAiLoading(false);
+        }
       }
     },
     [apiKey, question]
@@ -214,7 +230,7 @@ export default function PracticeClient({
               {question.prompt}
             </p>
 
-            <div className="mt-5 space-y-2.5">
+            <div className="mt-5 space-y-2.5" role="group" aria-label="Choix de réponse">
               {options.map((opt) => {
                 const isSelected = selectedKey === opt.key;
                 const isCorrectOption = question.correctKey === opt.key;
@@ -236,6 +252,7 @@ export default function PracticeClient({
                   <button
                     key={opt.key}
                     disabled={status !== "idle"}
+                    aria-pressed={isSelected}
                     onClick={() => setSelectedKey(opt.key)}
                     className={`${style} flex items-center gap-3 transition-all duration-150 ${
                       status === "idle" ? "hover:bg-white/[0.12]" : "cursor-default"
@@ -285,7 +302,7 @@ export default function PracticeClient({
                 Valider ma réponse
               </button>
             ) : (
-              <div className="mt-5">
+              <div className="mt-5" role="status" aria-live="polite">
                 {status === "correct" && (
                   <div className="animate-fade-up flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-200">
                     <svg
@@ -307,7 +324,7 @@ export default function PracticeClient({
           </div>
 
           {status === "incorrect" && (
-            <div className="space-y-4">
+            <div className="space-y-4" role="status" aria-live="polite">
               <a href="#/lessons" className="lexora-secondary">Voir mes leçons →</a>
               <AiExplanation
                 explanation={explanation}

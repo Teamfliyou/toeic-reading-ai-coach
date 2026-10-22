@@ -110,9 +110,25 @@ export default function Part6Inline({
     }));
   }, [currentGroup, passageIndex]);
 
+  // Requêtes d'explication en cours : annulées au démontage ou au changement de passage.
+  const explainAborts = useRef<Set<AbortController>>(new Set());
+  useEffect(() => {
+    const aborts = explainAborts.current;
+    return () => {
+      aborts.forEach((c) => c.abort());
+      aborts.clear();
+    };
+  }, []);
+  useEffect(() => {
+    explainAborts.current.forEach((c) => c.abort());
+    explainAborts.current.clear();
+  }, [passageIndex]);
+
   const fetchExplanation = useCallback(
     async (q: Question, key: OptionKey, label: string) => {
       const lessonId = startLesson(q, key);
+      const controller = new AbortController();
+      explainAborts.current.add(controller);
       setExpl({
         questionId: q.id,
         label,
@@ -132,6 +148,7 @@ export default function Part6Inline({
           method: "POST",
           headers,
           body: JSON.stringify({ questionId: q.id, selectedKey: key }),
+          signal: controller.signal,
         });
         const data = (await res.json()) as {
           explanation?: AiExplanationData;
@@ -139,6 +156,10 @@ export default function Part6Inline({
           error?: string;
           lesson?: GeneratedLesson | null;
         };
+        if (controller.signal.aborted) {
+          failLesson(lessonId);
+          return;
+        }
         if (!res.ok || data.error || !data.lesson) failLesson(lessonId);
         else completeLesson(lessonId, data.lesson);
         setExpl((prev) => {
@@ -161,22 +182,30 @@ export default function Part6Inline({
         });
       } catch {
         failLesson(lessonId);
+        if (controller.signal.aborted) return;
         setExpl((prev) => {
           if (!prev || prev.questionId !== q.id) return prev;
           return {
             ...prev,
             loading: false,
             error:
-              "Connexion impossible au coach IA. Vérifiez votre connexion et la clé DEEPSEEK_API_KEY.",
+              "Connexion impossible au coach IA. Vérifiez votre connexion internet et réessayez ; les exercices restent accessibles.",
           };
         });
+      } finally {
+        explainAborts.current.delete(controller);
       }
     },
     [apiKey]
   );
 
+  // Évite un double traitement (double-clic) : une seule réponse par blanc.
+  const answeredIds = useRef<Set<string>>(new Set());
+
   const handleSelect = useCallback(
     (q: Question, key: OptionKey, label: string) => {
+      if (answeredIds.current.has(q.id)) return;
+      answeredIds.current.add(q.id);
       setAnswers((prev) => {
         if (prev[q.id] && prev[q.id].status !== "idle") return prev;
         return {
@@ -211,6 +240,7 @@ export default function Part6Inline({
   }, [isLast]);
 
   const handleRestart = useCallback(() => {
+    answeredIds.current.clear();
     setAnswers({});
     setPassageIndex(0);
     setFinished(false);

@@ -67,6 +67,48 @@ export default function InlineSelect({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuId = `blank-menu-${question.id}`;
+
+  const focusOption = (delta: number | "first" | "last") => {
+    const items = Array.from(
+      ref.current?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? []
+    );
+    if (!items.length) return;
+    const current = items.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      delta === "first" ? 0
+      : delta === "last" ? items.length - 1
+      : (current + delta + items.length) % items.length;
+    items[next].focus();
+  };
+
+  // Ouverture : le focus passe sur la première proposition.
+  useEffect(() => {
+    if (open) focusOption("first");
+  }, [open]);
+
+  const onMenuKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      focusOption(1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      focusOption(-1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      focusOption("first");
+    } else if (e.key === "End") {
+      e.preventDefault();
+      focusOption("last");
+    } else if (e.key === "Tab") {
+      setOpen(false);
+    }
+  };
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -99,9 +141,24 @@ export default function InlineSelect({
   return (
     <span ref={ref} className="relative inline-flex align-middle">
       <button
+        ref={triggerRef}
         type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-label={
+          answered && selectedOption
+            ? `Blanc ${number} : ${selectedOption.text}, ${state?.status === "correct" ? "bonne réponse" : "réponse incorrecte"}`
+            : `Blanc ${number} : choisir une réponse`
+        }
         onClick={() => {
           if (!answered) setOpen((o) => !o);
+        }}
+        onKeyDown={(e) => {
+          if (!answered && !open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+            e.preventDefault();
+            setOpen(true);
+          }
         }}
         disabled={answered}
         data-status={state?.status ?? "idle"}
@@ -120,11 +177,18 @@ export default function InlineSelect({
       </button>
 
       {open && !answered && (
-        <div className="lexora-inline-menu absolute left-0 top-full z-30 mt-2 w-72 max-w-[80vw] overflow-hidden rounded-xl border border-white/20 bg-slate-900 p-1.5 shadow-2xl shadow-black/60">
+        <div
+          id={menuId}
+          role="listbox"
+          aria-label={`Choix pour le blanc ${number}`}
+          onKeyDown={onMenuKeyDown}
+          className="lexora-inline-menu absolute left-0 top-full z-30 mt-2 w-72 max-w-[80vw] overflow-hidden rounded-xl border border-white/20 bg-slate-900 p-1.5 shadow-2xl shadow-black/60">
           {question.options.map((opt) => (
             <button
               key={opt.key}
               type="button"
+              role="option"
+              aria-selected={state?.selected === opt.key}
               onClick={() => {
                 onSelect(opt.key);
                 setOpen(false);

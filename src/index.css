@@ -157,4 +157,13 @@ code,
 
 /* Interface plus calme et lisible */
 :focus-visible { outline: 2px solid #67e8f9; outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Fond aurore figé (aucun mouvement). */
+  .aurora, .aurora::before, .aurora::after { animation: none !important; }
+}
