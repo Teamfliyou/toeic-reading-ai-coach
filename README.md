@@ -98,7 +98,7 @@ Supabase est prévue (voir [Base de données](#base-de-données-optionnel--supab
 
 ## Prérequis
 
-- **Node.js** ≥ 18
+- **Node.js** ≥ 22.18 (les tests importent directement des modules TypeScript)
 - **npm** ≥ 9
 
 ## Installation
