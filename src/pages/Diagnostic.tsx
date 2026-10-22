@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Question, OptionKey } from "@/lib/types";
 import { loadPart } from "@/lib/data";
+import { recordAnswer } from "@/lib/tracker";
 import "./lexora.css";
 
 export const DIAGNOSTIC_KEY = "lexora_diagnostic_v1";
@@ -23,6 +24,7 @@ export default function Diagnostic() {
   const [selected, setSelected] = useState<OptionKey | null>(null);
   const [answers, setAnswers] = useState<{ id: string; answer: OptionKey; correct: boolean }[]>([]);
   const [finished, setFinished] = useState(false);
+  const shownAt = useRef(performance.now());
   useEffect(() => {
     let active = true;
     loadPart(5).then(({ questions: all }) => {
@@ -34,6 +36,8 @@ export default function Diagnostic() {
   const correct = useMemo(() => answers.filter(a => a.correct).length, [answers]);
   function submit() {
     if (!selected || !question) return;
+    recordAnswer({ question, selectedKey: selected, correct: selected === question.correctKey, timeMs: performance.now() - shownAt.current, mode: "diagnostic" });
+    shownAt.current = performance.now();
     const next = [...answers, { id: question.id, answer: selected, correct: selected === question.correctKey }];
     setAnswers(next);
     setSelected(null);

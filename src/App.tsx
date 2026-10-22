@@ -9,6 +9,16 @@ import Practice from "@/pages/Practice";
 import Diagnostic from "@/pages/Diagnostic";
 import Admin from "@/pages/Admin";
 import Lessons from "@/pages/Lessons";
+import { initSync } from "@/lib/sync";
+import { migrateLegacyMistakes } from "@/lib/tracker";
+
+let started = false;
+function startTracking() {
+  if (started) return;
+  started = true;
+  migrateLegacyMistakes();
+  initSync();
+}
 
 function useHashRoute() {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -22,6 +32,7 @@ function useHashRoute() {
 
 export default function App() {
   const hash = useHashRoute();
+  useEffect(startTracking, []);
   const match = hash.match(/^#\/practice\/(part[567])$/);
   const reviewMatch = hash.match(/^#\/review\/(part[567])$/);
   const content = hash === "#/lessons" ? (

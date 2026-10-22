@@ -20,6 +20,8 @@ export function saveSession(part: Part, correct: number, total: number) {
   } catch { /* Le suivi reste optionnel si le stockage est bloqué. */ }
 }
 
+// Ancien carnet d'erreurs : conservé en lecture seule, repris en cartes de révision
+// par tracker.migrateLegacyMistakes().
 const ERRORS_KEY = "toeic_mistakes_v1";
 export type Mistake = { id: string; part: Part; updatedAt: string };
 export function readMistakes(): Mistake[] {
@@ -28,14 +30,4 @@ export function readMistakes(): Mistake[] {
     if (!Array.isArray(rows)) return [];
     return rows.filter((r): r is Mistake => typeof r === "object" && r !== null && typeof r.id === "string" && [5,6,7].includes(r.part) && typeof r.updatedAt === "string");
   } catch { return []; }
-}
-export function recordMistake(id: string, part: Part) {
-  try {
-    const items = readMistakes().filter(item => item.id !== id);
-    localStorage.setItem(ERRORS_KEY, JSON.stringify([{id, part, updatedAt: new Date().toISOString()},...items].slice(0,300)));
-  } catch { /* Historique local indisponible */ }
-}
-export function resolveMistake(id: string) {
-  try { localStorage.setItem(ERRORS_KEY, JSON.stringify(readMistakes().filter(item => item.id !== id))); }
-  catch { /* Historique local indisponible */ }
 }

@@ -6,12 +6,13 @@ import PracticeClient from "@/components/PracticeClient";
 import Part6Inline from "@/components/Part6Inline";
 import SettingsButton from "@/components/SettingsButton";
 import AuthButton from "@/components/AuthButton";
-import { readMistakes } from "@/lib/progress";
+import { readCards } from "@/lib/tracker";
 import "./lexora.css";
 
 export default function Practice({ part, reviewMode = false }: { part: Part; reviewMode?: boolean }) {
   const info = getPartInfo(part);
-  const mistakeIds = reviewMode ? new Set(readMistakes().filter(m => m.part === part).map(m => m.id)) : null;
+  // Révision d'une partie : toutes les cartes non maîtrisées (dues ou non).
+  const mistakeIds = reviewMode ? new Set(readCards().filter(c => c.part === part && !c.mastered).map(c => c.questionId)) : null;
   const [dataset, setDataset] = useState<{ questions: Question[]; passages: Passage[] } | null>(null);
   useEffect(() => {
     let active = true;

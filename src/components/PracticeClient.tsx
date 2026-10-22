@@ -10,7 +10,7 @@ import type {
 import { useSettings } from "@/lib/SettingsContext";
 import { getAccessToken } from "@/lib/supabaseAuth";
 import ProgressBar from "./ProgressBar";
-import { recordMistake, resolveMistake } from "@/lib/progress";
+import { recordAnswer } from "@/lib/tracker";
 import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@/lib/lessons";
 import PassageView from "./PassageView";
 import AiExplanation from "./AiExplanation";
@@ -42,6 +42,8 @@ export default function PracticeClient({
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Requête d'explication en cours : annulée si l'élève change de question ou quitte la page.
   const explainAbort = useRef<AbortController | null>(null);
+  // Début de la question affichée, pour mesurer le temps de réponse.
+  const shownAt = useRef(performance.now());
   const { apiKey } = useSettings();
 
   const question = questions[index];
@@ -52,6 +54,7 @@ export default function PracticeClient({
 
   const resetForNext = useCallback(() => {
     explainAbort.current?.abort();
+    shownAt.current = performance.now();
     setSelectedKey(null);
     setStatus("idle");
     setExplanation(null);
@@ -146,15 +149,20 @@ export default function PracticeClient({
 
     const isCorrect = selectedKey === question.correctKey;
     setStatus(isCorrect ? "correct" : "incorrect");
+    recordAnswer({
+      question,
+      selectedKey,
+      correct: isCorrect,
+      timeMs: performance.now() - shownAt.current,
+      mode: reviewMode ? "review" : "practice",
+    });
     if (isCorrect) {
-      if (reviewMode) resolveMistake(question.id);
       setCorrectCount((c) => c + 1);
       advanceTimer.current = setTimeout(goNext, 1200);
     } else {
-      recordMistake(question.id, part);
       fetchExplanation(question.id, selectedKey);
     }
-  }, [selectedKey, status, question, goNext, fetchExplanation, part, reviewMode]);
+  }, [selectedKey, status, question, goNext, fetchExplanation, reviewMode]);
 
   const handleVote = useCallback((_value: 1 | -1) => {
     // MVP : le vote 👍/👎 est déjà mémorisé par le composant AiExplanation.

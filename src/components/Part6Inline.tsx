@@ -8,7 +8,7 @@ import type {
 import InlineSelect, { type BlankState } from "./InlineSelect";
 import AiExplanation from "./AiExplanation";
 import ScoreBoard from "./ScoreBoard";
-import { recordMistake } from "@/lib/progress";
+import { recordAnswer } from "@/lib/tracker";
 import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@/lib/lessons";
 import { useSettings } from "@/lib/SettingsContext";
 import { getAccessToken } from "@/lib/supabaseAuth";
@@ -201,6 +201,8 @@ export default function Part6Inline({
 
   // Évite un double traitement (double-clic) : une seule réponse par blanc.
   const answeredIds = useRef<Set<string>>(new Set());
+  // Horodatage de la dernière réponse (ou du début du passage) : temps par blanc.
+  const lastEventAt = useRef(performance.now());
 
   const handleSelect = useCallback(
     (q: Question, key: OptionKey, label: string) => {
@@ -216,8 +218,16 @@ export default function Part6Inline({
           },
         };
       });
+      const now = performance.now();
+      recordAnswer({
+        question: q,
+        selectedKey: key,
+        correct: key === q.correctKey,
+        timeMs: now - lastEventAt.current,
+        mode: "practice",
+      });
+      lastEventAt.current = now;
       if (key !== q.correctKey) {
-        recordMistake(q.id, 6);
         fetchExplanation(q, key, label);
       }
     },
@@ -236,11 +246,13 @@ export default function Part6Inline({
     } else {
       setPassageIndex((i) => i + 1);
       setExpl(null);
+      lastEventAt.current = performance.now();
     }
   }, [isLast]);
 
   const handleRestart = useCallback(() => {
     answeredIds.current.clear();
+    lastEventAt.current = performance.now();
     setAnswers({});
     setPassageIndex(0);
     setFinished(false);
