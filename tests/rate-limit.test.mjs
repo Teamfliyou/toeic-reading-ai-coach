@@ -30,13 +30,28 @@ test("isole les compteurs par clé", () => {
   assert.equal(checkRateLimit("b", { limit: 1, windowMs: 1000, now: 0 }).ok, true);
 });
 
-test("clientIp lit x-forwarded-for puis remoteAddress", () => {
+test("clientIp ignore x-forwarded-for si le proxy n'est pas de confiance", () => {
+  delete process.env.TRUST_PROXY;
+  delete process.env.VERCEL;
   assert.equal(
-    clientIp({ headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" }, socket: {} }),
-    "1.2.3.4"
-  );
-  assert.equal(
-    clientIp({ headers: {}, socket: { remoteAddress: "9.9.9.9" } }),
+    clientIp({ headers: { "x-forwarded-for": "1.2.3.4" }, socket: { remoteAddress: "9.9.9.9" } }),
     "9.9.9.9"
   );
+  assert.equal(clientIp({ headers: {}, socket: {} }), "unknown");
+});
+
+test("clientIp : TRUST_PROXY lit la dernière valeur de x-forwarded-for (ajoutée par le proxy)", () => {
+  process.env.TRUST_PROXY = "true";
+  try {
+    assert.equal(
+      clientIp({ headers: { "x-forwarded-for": "6.6.6.6, 1.2.3.4" }, socket: {} }),
+      "1.2.3.4"
+    );
+    assert.equal(
+      clientIp({ headers: { "x-vercel-forwarded-for": "7.7.7.7", "x-forwarded-for": "6.6.6.6" }, socket: {} }),
+      "7.7.7.7"
+    );
+  } finally {
+    delete process.env.TRUST_PROXY;
+  }
 });

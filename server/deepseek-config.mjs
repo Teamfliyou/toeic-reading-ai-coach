@@ -58,5 +58,18 @@ export function computeCost(usage, { now = new Date(), model = DEEPSEEK_MODEL } 
  */
 export function estimateCostUsd() {
   const value = Number(process.env.AI_ESTIMATED_CALL_USD);
-  return Number.isFinite(value) && value > 0 ? value : 0.002;
+  return Number.isFinite(value) && value > 0 ? value : 0.004;
+}
+
+/** Additionne deux relevés de coût (tentatives successives d'un même appel). */
+export function addUsage(a, b) {
+  if (!a) return b ?? null;
+  if (!b) return a;
+  return {
+    ...a,
+    inputTokens: a.inputTokens + b.inputTokens,
+    outputTokens: a.outputTokens + b.outputTokens,
+    cacheHitTokens: a.cacheHitTokens + b.cacheHitTokens,
+    estimatedUsd: Number((a.estimatedUsd + b.estimatedUsd).toFixed(6)),
+  };
 }

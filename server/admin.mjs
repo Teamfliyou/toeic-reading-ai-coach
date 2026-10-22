@@ -1,11 +1,11 @@
 import "dotenv/config";
 import {authConfigured, setupStatus, setupFirstAdmin, currentUser, login, listUsers, addUser, modifyUser, cookie, publicUser} from "./admin-users.mjs";
-import { DEEPSEEK_MODEL } from "./deepseek-config.mjs";
+import { DEEPSEEK_MODEL, computeCost } from "./deepseek-config.mjs";
+import { quotaConfigured, reserve, finalize, release, currentMonth, budgetLimits } from "./quota.mjs";
+import { clientIp } from "./rate-limit.mjs";
+import { registerAttempt, clearAttempt } from "./login-limiter.mjs";
 // Modèle partagé avec /api/explain (source unique : server/deepseek-config.mjs).
 export const MODEL = DEEPSEEK_MODEL;
-const PRICES = { miss: 0.15, hit: 0.003, output: 0.60 };
-const loginAttempts = new Map();
-const buckets = new Map();
 function json(res, code, data) { res.statusCode=code;res.setHeader("Content-Type","application/json; charset=utf-8");res.setHeader("Cache-Control","no-store");res.end(JSON.stringify(data)); }
 async function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
@@ -16,7 +16,6 @@ function sameOrigin(req) {
  const origin=req.headers.origin;if(!origin)return false;
  try{const u=new URL(origin),host=req.headers["x-forwarded-host"]||req.headers.host;return u.host===host&&["https:","http:"].includes(u.protocol);}catch{return false;}
 }
-function rate(map,key,max,windowMs){const now=Date.now(),list=(map.get(key)||[]).filter(t=>now-t<windowMs);if(list.length>=max){map.set(key,list);return false;}list.push(now);map.set(key,list);if(map.size>2000)map.clear();return true;}
 function validateItem(x,part){
   if(!x||typeof x!=="object"||typeof x.prompt!=="string"||x.prompt.length<15||x.prompt.length>1500)return false;
   if(!Array.isArray(x.options)||x.options.length!==4)return false;
@@ -37,16 +36,6 @@ export function isEnglishContent(questions,passage){
   if(passage){texts.push(passage.title);for(const d of passage.documents||[]){texts.push(d.title);texts.push(...(Array.isArray(d.body)?d.body:[d.body]));}}
   return !texts.some(looksFrench);
 }
-function peakUTC(now=new Date()){
-  const day=now.getUTCDay(),h=now.getUTCHours();
-  return day>=1&&day<=5&&((h>=1&&h<4)||(h>=6&&h<10));
-}
-function cost(usage){
-  const input=usage?.prompt_tokens||0, output=usage?.completion_tokens||0;
-  const hit=Math.min(input,usage?.prompt_cache_hit_tokens||0),miss=Math.max(0,input-hit);
-  const rate=peakUTC()?2:1;
-  return {inputTokens:input,outputTokens:output,cacheHitTokens:hit,estimatedUsd:Number(((miss*PRICES.miss+hit*PRICES.hit+output*PRICES.output)/1e6*rate).toFixed(6)),ratePeriod:rate===2?"peak":"off-peak",model:MODEL,priceReference:"https://api-docs.deepseek.com/quick_start/pricing/"};
-}
 export async function generate(body, emit = () => {}) {
   const part=Number(body.part),quantity=Number(body.quantity),topic=String(body.topic||"").slice(0,120),difficulty=Number(body.difficulty),kind=String(body.kind||"");
   if(![5,6,7].includes(part)||!Number.isInteger(quantity)||quantity<1||quantity>20||![1,2,3].includes(difficulty)||!["grammar","vocabulary","email","memo","article","schedule","notice"].includes(kind))throw new Error("Paramètres de génération invalides");
@@ -57,14 +46,36 @@ export async function generate(body, emit = () => {}) {
   const response=await fetch("https://api.deepseek.com/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${process.env.DEEPSEEK_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:MODEL,messages:[{role:"system",content:"You are an expert professional English test-item writer. Produce valid original exam-style practice content as JSON. Never copy branded test questions. Ensure exactly one correct choice and a coherent passage. All exam content (question prompts, options, passage titles and bodies) must be in fluent English only; only the explanation field is in French."},{role:"user",content:prompt}],response_format:{type:"json_object"},stream:false,temperature:0.6,max_tokens:8000}),signal:AbortSignal.timeout(90000)});
   if(!response.ok)throw new Error(`DeepSeek HTTP ${response.status}`);
   emit("response_received", "Réponse reçue : vérification des questions");
-  const payload=await response.json();let result;
-  try{result=JSON.parse(payload?.choices?.[0]?.message?.content||"{}");}catch{throw new Error("DeepSeek n'a pas renvoyé un JSON valide");}
+  const payload=await response.json();const usage=computeCost(payload.usage);let result;
+  // Dès ici DeepSeek a facturé l'appel : toute erreur porte le coût réel pour le budget.
+  const bad=(message)=>Object.assign(new Error(message),{usage});
+  try{result=JSON.parse(payload?.choices?.[0]?.message?.content||"{}");}catch{throw bad("DeepSeek n'a pas renvoyé un JSON valide");}
   const questions=Array.isArray(result.questions)?result.questions:[];
-  if(questions.length!==quantity||!questions.every(x=>validateItem(x,part)))throw new Error("Lot incomplet ou invalide. Réessayez avec moins de questions.");
-  if(part!==5&&(!result.passage||!Array.isArray(result.passage.documents)||!result.passage.documents.length))throw new Error("Document absent du lot.");
-  if(!isEnglishContent(questions,part===5?null:result.passage))throw new Error("Le lot contient du français : le contenu TOEIC doit être entièrement en anglais. Relancez la génération.");
+  if(questions.length!==quantity||!questions.every(x=>validateItem(x,part)))throw bad("Lot incomplet ou invalide. Réessayez avec moins de questions.");
+  if(part!==5&&(!result.passage||!Array.isArray(result.passage.documents)||!result.passage.documents.length))throw bad("Document absent du lot.");
+  if(!isEnglishContent(questions,part===5?null:result.passage))throw bad("Le lot contient du français : le contenu TOEIC doit être entièrement en anglais. Relancez la génération.");
   emit("validated", `${questions.length} questions vérifiées dans le format attendu`);
-  return {questions,passage:part===5?null:result.passage,cost:cost(payload.usage),notice:"Brouillon non publié : vérifiez les réponses avant export."};
+  return {questions,passage:part===5?null:result.passage,cost:usage,notice:"Brouillon non publié : vérifiez les réponses avant export."};
+}
+
+// Réservation sur le budget mensuel partagé avec les explications (même plafond),
+// et limite horaire par administrateur appliquée en base (valable sur toutes les instances).
+export async function withBudget(user,run){
+  let eventId=null;
+  if(quotaConfigured()){
+    const {limitUsd,suspendUsd}=budgetLimits();
+    const r=await reserve({actor:"admin:"+user.id,dailyLimit:0,perMinute:Number(process.env.ADMIN_GENERATE_PER_HOUR)||10,windowSeconds:3600,estimatedUsd:Number(process.env.AI_ESTIMATED_GENERATION_USD)||0.012,limitUsd,suspendUsd,month:currentMonth()});
+    if(!r.ok)throw new Error({rate:"Limite de génération atteinte",budget:"Budget mensuel d'IA atteint",in_flight:"Une génération est déjà en cours"}[r.reason]||"Génération indisponible pour le moment");
+    eventId=r.eventId;
+  }
+  try{
+    const out=await run();
+    if(eventId)await finalize(eventId,out.cost?.estimatedUsd??0).catch(()=>{});
+    return out;
+  }catch(e){
+    if(eventId){const billed=e?.usage?.estimatedUsd;if(billed>0)await finalize(eventId,billed).catch(()=>{});else await release(eventId).catch(()=>{});}
+    throw e;
+  }
 }
 
 async function publish(body){
@@ -106,19 +117,21 @@ export async function handleAdmin(req,res) {
   if(!sameOrigin(req)||!String(req.headers["content-type"]||"").startsWith("application/json"))return json(res,403,{error:"Origine non autorisée"});
   if(!authConfigured())return json(res,503,{error:"Configurez les variables de connexion et Supabase côté serveur."});
   if(action==="setup"){
-   const ip=String(req.headers["x-forwarded-for"]||req.socket?.remoteAddress||"unknown").split(",")[0];
-   if(!rate(loginAttempts,ip,5,900000))return json(res,429,{error:"Trop de tentatives. Réessayez plus tard."});
+   const gate=await registerAttempt(clientIp(req),"__setup__");
+   if(!gate.ok){res.setHeader("Retry-After",String(gate.retryAfterSec));return json(res,429,{error:"Trop de tentatives. Réessayez plus tard."});}
    const user=await setupFirstAdmin(await readBody(req));
+   await clearAttempt(gate.attemptId);
    return json(res,201,{created:true,user});
   }
   if(action==="logout"){res.setHeader("Set-Cookie",cookie(req,""));return json(res,200,{ok:true});}
   if(action==="login"){
-   const ip=String(req.headers["x-forwarded-for"]||req.socket?.remoteAddress||"unknown").split(",")[0];
-   if(!rate(loginAttempts,ip,5,900000))return json(res,429,{error:"Trop de tentatives. Réessayez plus tard."});
    const body=await readBody(req),username=typeof body.username==="string"?body.username:"",password=typeof body.password==="string"?body.password:"";
+   const gate=await registerAttempt(clientIp(req),username);
+   if(!gate.ok){res.setHeader("Retry-After",String(gate.retryAfterSec));return json(res,429,{error:"Trop de tentatives. Réessayez plus tard."});}
    if(username.length>32||password.length>256)return json(res,401,{error:"Identifiants incorrects"});
    const session=await login(req,username,password);
    if(!session)return json(res,401,{error:"Identifiants incorrects"});
+   await clearAttempt(gate.attemptId);
    res.setHeader("Set-Cookie",cookie(req,session.token));
    return json(res,200,{ok:true,user:session.user});
   }
@@ -138,7 +151,6 @@ export async function handleAdmin(req,res) {
   }
   if(action==="publish"){try{return json(res,200,await publish(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Publication échouée"});}}
   if(action==="generate-stream"){
-   if(!rate(buckets,user.id,10,3600000))return json(res,429,{error:"Limite de génération atteinte"});
    res.statusCode=200;
    res.setHeader("Content-Type","application/x-ndjson; charset=utf-8");
    res.setHeader("Cache-Control","no-cache, no-transform");
@@ -149,7 +161,7 @@ export async function handleAdmin(req,res) {
      emit("preparing","Préparation du lot de questions");
      const body=await readBody(req);
      emit("checking","Contrôle des paramètres");
-     const data=await generate(body,emit);
+     const data=await withBudget(user,()=>generate(body,emit));
      res.write(JSON.stringify({type:"result",data})+"\n");
    }catch(e){
      res.write(JSON.stringify({type:"error",message:e instanceof Error?e.message:"Erreur de génération"})+"\n");
@@ -157,8 +169,7 @@ export async function handleAdmin(req,res) {
    return;
   }
   if(action==="generate"){
-   if(!rate(buckets,user.id,10,3600000))return json(res,429,{error:"Limite de génération atteinte"});
-   try{return json(res,200,await generate(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Génération échouée"});}
+   try{const body=await readBody(req);return json(res,200,await withBudget(user,()=>generate(body)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Génération échouée"});}
   }
   return json(res,404,{error:"Action inconnue"});
  }catch(e){return json(res,400,{error:e instanceof Error?e.message:"Erreur du serveur"});}

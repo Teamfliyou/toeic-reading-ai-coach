@@ -11,11 +11,32 @@
 const buckets = new Map();
 const MAX_BUCKETS = 5000;
 
-/** Adresse IP du client, en tenant compte des proxys (Vercel, reverse proxy). */
+/** Vrai si les en-têtes de proxy (x-forwarded-for…) sont fiables ici. */
+function trustsProxy() {
+  return process.env.TRUST_PROXY === "true" || Boolean(process.env.VERCEL);
+}
+
+/**
+ * Adresse IP du client. Les en-têtes de proxy ne sont lus que s'ils sont
+ * fiables (Vercel, ou `TRUST_PROXY=true` derrière un reverse proxy) : sinon un
+ * client pourrait les falsifier pour changer d'IP à chaque requête. Dans
+ * `x-forwarded-for`, on prend la dernière valeur, ajoutée par le proxy de
+ * confiance, et non la première, qui est fournie par le client.
+ */
 export function clientIp(req) {
-  const forwarded = req?.headers?.["x-forwarded-for"];
-  const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  if (typeof raw === "string" && raw.trim()) return raw.split(",")[0].trim();
+  const first = (value) => (Array.isArray(value) ? value[0] : value);
+  if (trustsProxy()) {
+    const headers = req?.headers ?? {};
+    for (const name of ["x-vercel-forwarded-for", "x-real-ip"]) {
+      const value = first(headers[name]);
+      if (typeof value === "string" && value.trim()) return value.split(",")[0].trim();
+    }
+    const forwarded = first(headers["x-forwarded-for"]);
+    if (typeof forwarded === "string" && forwarded.trim()) {
+      const parts = forwarded.split(",").map((p) => p.trim()).filter(Boolean);
+      if (parts.length) return parts[parts.length - 1];
+    }
+  }
   return req?.socket?.remoteAddress || req?.connection?.remoteAddress || "unknown";
 }
 

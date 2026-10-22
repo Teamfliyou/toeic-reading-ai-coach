@@ -8,8 +8,10 @@ import {
   DEEPSEEK_MODEL,
   PROMPT_VERSION,
   computeCost,
+  addUsage,
   estimateCostUsd,
 } from "./deepseek-config.mjs";
+import { parseExplanation } from "./explanation-schema.mjs";
 import { storeConfigured, getCachedExplanation, saveExplanation, touchExplanation } from "./store.mjs";
 import { quotaConfigured, reserve, finalize, release, currentMonth, budgetLimits } from "./quota.mjs";
 import { authConfigured, currentAiUser } from "./auth.mjs";
@@ -97,31 +99,12 @@ function buildUserPrompt(question, selectedKey) {
   ].join("\n");
 }
 
-function parseExplanation(raw) {
-  const cleaned = raw
-    .trim()
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/i, "")
-    .trim();
-
-  try {
-    const parsed = JSON.parse(cleaned);
-    const lesson = parsed.lesson && typeof parsed.lesson === "object" ? parsed.lesson : {};
-    const safe = (s) => typeof s === "string" ? s.trim() : "";
-    return {
-      lesson: {
-        topic: safe(lesson.topic), title: safe(lesson.title),
-        rule: safe(lesson.rule), example: safe(lesson.example),
-        exercise: safe(lesson.exercise), answer: safe(lesson.answer),
-        tip: safe(lesson.tip),
-      },
-      diagnostic: String(parsed.diagnostic ?? "").trim(),
-      resolution: String(parsed.resolution ?? "").trim(),
-      tip: String(parsed.tip ?? "").trim(),
-    };
-  } catch {
-    return { diagnostic: "", resolution: "", tip: "", lesson: null };
-  }
+/** Met en forme les documents d'un passage (un document par bloc, un paragraphe par ligne). */
+export function renderDocuments(docs) {
+  if (!Array.isArray(docs)) return "";
+  return docs
+    .map((d) => `${d?.title ?? ""}\n${Array.isArray(d?.body) ? d.body.join("\n") : ""}`)
+    .join("\n\n");
 }
 
 export async function findQuestion(questionId) {
@@ -129,7 +112,7 @@ export async function findQuestion(questionId) {
   const local = dataset.questions.find((q) => q.id === questionId);
   if (local) {
     const passage = dataset.passages.find(p => p.id === local.passageId);
-    return { ...local, context: passage?.documents?.map(d => `${d.title}\\n${d.body.join("\\n")}`).join("\\n\\n") ?? "" };
+    return { ...local, context: renderDocuments(passage?.documents) };
   }
 
   const baseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -162,10 +145,7 @@ export async function findQuestion(questionId) {
       });
       if (passageResponse.ok) {
         const passages = await passageResponse.json();
-        const docs = passages[0]?.documents ?? [];
-        context = Array.isArray(docs) ? docs.map(d =>
-          `${d.title ?? ""}\\n${Array.isArray(d.body) ? d.body.join("\\n") : ""}`
-        ).join("\\n\\n") : "";
+        context = renderDocuments(passages[0]?.documents);
       }
     } catch { /* Un passage indisponible ne bloque pas la correction. */ }
   }
@@ -191,70 +171,92 @@ export async function explainMistake(questionId, selectedKey, userApiKey, option
   }
 
   const startedAt = Date.now();
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    Number(process.env.DEEPSEEK_TIMEOUT_MS) || 22000
-  );
-
   // Le mode « thinking » est désactivé par défaut : il facture des tokens de
   // raisonnement sans bénéfice pour une explication courte. Mettre
   // DEEPSEEK_THINKING_ENABLED=true pour le réactiver.
   const thinkingEnabled = envFlag("DEEPSEEK_THINKING_ENABLED", false);
+  const userPrompt = buildUserPrompt(question, selectedKey);
+  const RETRY_NOTE =
+    'Ta réponse précédente était invalide ou tronquée. Réponds de nouveau par un objet JSON COMPLET et COMPACT : "diagnostic", "resolution" et "tip" (30 mots maximum chacun) et "lesson": null.';
 
-  const payload = {
-    model: DEEPSEEK_MODEL,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: buildUserPrompt(question, selectedKey) },
-    ],
-    response_format: { type: "json_object" },
-    max_tokens: Number(process.env.DEEPSEEK_MAX_TOKENS) || 1024,
-    stream: false,
+  let usage = null; // coût cumulé : toute tentative ayant reçu une réponse est facturée
+  const fail = (message, extra) => {
+    const error = new Error(message);
+    Object.assign(error, extra, { usage });
+    return error;
   };
-  if (!thinkingEnabled) payload.thinking = { type: "disabled" };
-  // `user_id` aide DeepSeek à isoler l'ordonnancement et le cache par défaut.
-  if (options.userId) payload.user_id = String(options.userId).slice(0, 512);
 
   try {
-    const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      const raw = await res.text().catch(() => "");
-      const safe = maskSecret(raw);
-      const error = new Error(
-        `DeepSeek a répondu ${res.status}${safe ? ` : ${safe}` : ""}`
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(
+        () => controller.abort(),
+        Number(process.env.DEEPSEEK_TIMEOUT_MS) || 22000
       );
-      // Conservé pour que l'appelant distingue budget (402) et saturation (429).
-      error.statusCode = res.status;
-      throw error;
+      const messages = [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ];
+      if (attempt === 2) messages.push({ role: "user", content: RETRY_NOTE });
+      const payload = {
+        model: DEEPSEEK_MODEL,
+        messages,
+        response_format: { type: "json_object" },
+        max_tokens: Number(process.env.DEEPSEEK_MAX_TOKENS) || 1024,
+        stream: false,
+      };
+      if (!thinkingEnabled) payload.thinking = { type: "disabled" };
+      // `user_id` aide DeepSeek à isoler l'ordonnancement et le cache par défaut.
+      if (options.userId) payload.user_id = String(options.userId).slice(0, 512);
+
+      let data;
+      try {
+        const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const raw = await res.text().catch(() => "");
+          const safe = maskSecret(raw);
+          // Conservé pour que l'appelant distingue budget (402), saturation (429)
+          // et clé refusée (401).
+          throw fail(`DeepSeek a répondu ${res.status}${safe ? ` : ${safe}` : ""}`, {
+            statusCode: res.status,
+          });
+        }
+        data = await res.json();
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      usage = addUsage(usage, computeCost(data?.usage));
+      const content = data?.choices?.[0]?.message?.content ?? "";
+      const parsed = parseExplanation(content);
+      if (parsed.ok) {
+        return {
+          explanation: parsed.explanation,
+          lesson: attempt === 1 ? parsed.lesson : null,
+          latencyMs: Date.now() - startedAt,
+          usage,
+        };
+      }
     }
 
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content ?? "";
-    const explanation = parseExplanation(content);
-
-    if (!explanation.diagnostic || !explanation.resolution || !explanation.tip) {
-      throw new Error("Réponse DeepSeek non parsable en JSON.");
-    }
-
-    const { lesson, ...feedback } = explanation;
-    return {
-      explanation: feedback,
-      lesson: lesson?.title && lesson?.rule && lesson?.exercise && lesson?.answer ? lesson : null,
-      latencyMs: Date.now() - startedAt,
-      usage: computeCost(data?.usage),
-    };
-  } finally {
-    clearTimeout(timeout);
+    throw fail(
+      "Le coach n'a pas pu formuler une explication lisible cette fois. Réessayez dans un instant ; la bonne réponse reste affichée.",
+      { statusCode: 502, code: "unparsable" }
+    );
+  } catch (error) {
+    // Une erreur réseau/timeout en 2e tentative ne doit pas faire oublier le
+    // coût de la 1re : l'appelant en a besoin pour la réconciliation du budget.
+    if (error && typeof error === "object" && !("usage" in error)) error.usage = usage;
+    throw error;
   }
 }
 
@@ -427,8 +429,12 @@ export async function handleExplain(req, res) {
       try {
         reservation = await reserve({
           actor: aiUser ? `user:${aiUser.id}` : `ip:${clientIp(req)}`,
-          dailyLimit: aiUser ? Number(process.env.AI_DAILY_LIMIT) || 10 : 0,
-          perMinute: aiUser ? Number(process.env.AI_PER_MINUTE) || 3 : 0,
+          dailyLimit: aiUser
+            ? Number(process.env.AI_DAILY_LIMIT) || 10
+            : Number(process.env.AI_ANON_DAILY_LIMIT) || 5,
+          perMinute: aiUser
+            ? Number(process.env.AI_PER_MINUTE) || 3
+            : Number(process.env.AI_ANON_PER_MINUTE) || 2,
           windowSeconds: 60,
           estimatedUsd: estimateCostUsd(),
           limitUsd,
@@ -495,8 +501,24 @@ export async function handleExplain(req, res) {
     });
   } catch (error) {
     if (eventId) {
-      await release(eventId).catch(() => {});
+      // Si DeepSeek a répondu (donc facturé) mais que le résultat est inutilisable,
+      // le coût réel reste imputé au budget ; sinon la réservation est rendue.
+      const billed = error?.usage?.estimatedUsd;
+      if (billed > 0) await finalize(eventId, billed).catch(() => {});
+      else await release(eventId).catch(() => {});
       eventId = null;
+    }
+
+    // 502 : réponse du modèle illisible après nouvelle tentative.
+    if (error && error.code === "unparsable") {
+      return sendJson(res, 502, { error: error.message, code: "unparsable" });
+    }
+    // 401 : clé DeepSeek personnelle refusée.
+    if (error && error.statusCode === 401) {
+      return sendJson(res, 401, {
+        error: "Clé API DeepSeek refusée. Vérifiez-la dans les Paramètres.",
+        code: "key_invalid",
+      });
     }
 
     // 402 = solde DeepSeek insuffisant ; traité comme budget épuisé.
