@@ -3,18 +3,18 @@
     {
       "id": "p6-1",
       "part": 6,
-      "title": "Note interne — Formation santé et sécurité",
+      "title": "Internal Memo — Health and Safety Training",
       "documents": [
         {
           "id": "p6-1-d1",
           "kind": "memo",
-          "title": "À : Tout le personnel",
+          "title": "To: All Staff",
           "body": [
-            "De : Service des Ressources Humaines",
-            "Objet : Formation annuelle santé et sécurité",
-            "Nous vous informons que la formation annuelle sur la santé et la sécurité au travail se déroulera le mois prochain. Tous les employés doivent assister à l'une des deux sessions (1)______ dans l'auditorium principal.",
-            "La formation (2)______ une présentation sur la sécurité incendie, suivie d'une démonstration pratique. Les participants sont encouragés à (3)______ des questions à la fin de chaque session.",
-            "Veuillez noter que les sessions sont limitées à quarante personnes. Nous vous recommandons donc de vous (4)______ dès que possible afin de garantir votre place."
+            "From: Human Resources Department",
+            "Subject: Annual Health and Safety Training",
+            "We would like to inform you that the annual health and safety training will take place next month. All employees must attend one of the two sessions (1)______ in the main auditorium.",
+            "The training (2)______ a presentation on fire safety, followed by a hands-on demonstration. Participants are encouraged to (3)______ questions at the end of each session.",
+            "Please note that sessions are limited to forty people. We therefore recommend that you (4)______ as soon as possible to secure your place."
           ]
         }
       ]
@@ -22,16 +22,16 @@
     {
       "id": "p6-2",
       "part": 6,
-      "title": "Article — Ouverture d'un centre de distribution",
+      "title": "Article — Opening of a Distribution Center",
       "documents": [
         {
           "id": "p6-2-d1",
           "kind": "article",
-          "title": "Global Foods annonce une expansion majeure",
+          "title": "Global Foods Announces Major Expansion",
           "body": [
-            "Global Foods Inc. a annoncé hier qu'elle (1)______ un nouveau centre de distribution dans le sud de la France. Cette installation, qui devrait créer plus de 200 emplois, sera la plus grande du groupe en Europe.",
-            "Selon la directrice générale, cette décision a été prise (2)______ à la demande croissante dans la région. « Nos ventes en France ont doublé au cours des trois dernières années, a-t-elle déclaré, et cet investissement nous permettra de servir nos clients de manière plus (3)______. »",
-            "La construction doit commencer en avril et (4)______ d'ici la fin de l'année prochaine."
+            "Global Foods Inc. announced yesterday that it (1)______ a new distribution center in southern France next spring. The facility, which is expected to create more than 200 jobs, will be the largest in the company's European network.",
+            "According to the chief executive officer, the decision was made (2)______ growing demand in the region. \"Our sales in France have doubled over the past three years,\" she said, \"and this investment will allow us to serve our customers more (3)______.\"",
+            "Construction is due to begin in April and (4)______ by the end of next year."
           ]
         }
       ]
@@ -39,22 +39,22 @@
     {
       "id": "p7-1",
       "part": 7,
-      "title": "E-mail — Modification d'horaires de vol",
+      "title": "Email — Flight Schedule Change",
       "documents": [
         {
           "id": "p7-1-d1",
           "kind": "email",
-          "title": "À : Marie Dubois",
+          "title": "To: Marie Dubois",
           "body": [
-            "De : Horizon Travel",
-            "Objet : Modification de votre horaire de vol",
-            "Madame Dubois,",
-            "Nous vous informons d'un changement concernant votre prochain vol à destination de Londres. En raison d'un ajustement d'horaires de la compagnie aérienne, votre départ du 12 mars est reporté de 9 h 15 à 11 h 40.",
-            "En conséquence, vous arriverez à l'aéroport d'Heathrow à 13 h 05 (heure locale), soit environ deux heures plus tard que prévu initialement. Nous vous prions de bien vouloir nous excuser pour ce désagrément.",
-            "Si ce nouvel horaire ne vous convient pas, veuillez contacter notre agence sous 24 heures et nous organiserons un vol de remplacement sans frais supplémentaires. Dans le cas contraire, aucune action n'est requise et votre réservation sera mise à jour automatiquement.",
-            "Nous vous remercions de votre compréhension.",
-            "Cordialement,",
-            "Service client Horizon Travel"
+            "From: Horizon Travel",
+            "Subject: Change to Your Flight Schedule",
+            "Dear Ms. Dubois,",
+            "We are writing to inform you of a change to your upcoming flight to London. Due to a schedule adjustment by the airline, your March 12 departure has been moved from 9:15 a.m. to 11:40 a.m.",
+            "As a result, you will arrive at Heathrow Airport at 1:05 p.m. (local time), approximately two hours later than originally planned. We apologize for any inconvenience this may cause.",
+            "If the new schedule does not suit you, please contact our office within 24 hours and we will arrange a replacement flight at no additional cost. Otherwise, no action is required and your booking will be updated automatically.",
+            "Thank you for your understanding.",
+            "Sincerely,",
+            "Horizon Travel Customer Service"
           ]
         }
       ]
@@ -62,29 +62,29 @@
     {
       "id": "p7-2",
       "part": 7,
-      "title": "E-mail + Programme — Conférence annuelle",
+      "title": "Email + Schedule — Annual Conference",
       "documents": [
         {
           "id": "p7-2-d1",
           "kind": "email",
-          "title": "À : Tous les employés",
+          "title": "To: All Employees",
           "body": [
-            "De : James Carter, Responsable des événements",
-            "Objet : Conférence annuelle",
-            "J'ai le plaisir de vous annoncer que la conférence annuelle se tiendra au City Convention Center du 10 au 12 juin. Tous les employés sont invités à assister au discours d'ouverture le premier jour. Veuillez consulter le programme ci-joint et vous inscrire aux ateliers de votre choix avant le 25 mai."
+            "From: James Carter, Events Manager",
+            "Subject: Annual Conference",
+            "I am pleased to announce that the annual conference will be held at the City Convention Center from June 10 to 12. All employees are invited to attend the keynote speech on the first day. Please review the attached schedule and register for the workshops of your choice by May 25."
           ]
         },
         {
           "id": "p7-2-d2",
           "kind": "schedule",
-          "title": "Programme — Jour 1 (10 juin)",
+          "title": "Schedule — Day 1 (June 10)",
           "body": [
-            "09 h 00 – 10 h 00 : Accueil et café",
-            "10 h 00 – 11 h 30 : Discours d'ouverture : « L'avenir du travail »",
-            "11 h 30 – 13 h 00 : Déjeuner (offert par TechNova)",
-            "13 h 00 – 15 h 00 : Atelier A : Compétences de leadership",
-            "15 h 00 – 17 h 00 : Atelier B : Marketing digital",
-            "17 h 00 – 18 h 00 : Cocktail de réseautage"
+            "9:00 – 10:00: Registration and coffee",
+            "10:00 – 11:30: Keynote speech: \"The Future of Work\"",
+            "11:30 – 1:00: Lunch (sponsored by TechNova)",
+            "1:00 – 3:00: Workshop A: Leadership Skills",
+            "3:00 – 5:00: Workshop B: Digital Marketing",
+            "5:00 – 6:00: Networking reception"
           ]
         }
       ]
@@ -92,39 +92,39 @@
     {
       "id": "p7-3",
       "part": 7,
-      "title": "Réclamation + Politique de retour + Réponse",
+      "title": "Complaint + Return Policy + Reply",
       "documents": [
         {
           "id": "p7-3-d1",
           "kind": "email",
-          "title": "À : Service client",
+          "title": "To: Customer Service",
           "body": [
-            "De : Luc Moreau",
-            "Objet : Demande de remboursement — Commande n° 4821",
-            "Bonjour,",
-            "J'ai commandé un support pour ordinateur portable sur votre site le 3 mars et il est arrivé endommagé. J'ai essayé de vous joindre par téléphone, mais sans réponse. Je souhaite obtenir un remboursement intégral ou un remplacement dans les plus brefs délais. Merci de m'indiquer la marche à suivre.",
-            "Cordialement,",
+            "From: Luc Moreau",
+            "Subject: Refund Request — Order No. 4821",
+            "Hello,",
+            "I ordered a laptop stand from your website on March 3, and it arrived damaged. I tried to reach you by phone, but nobody answered. I would like a full refund or a replacement as soon as possible. Please let me know what steps to follow.",
+            "Sincerely,",
             "Luc Moreau"
           ]
         },
         {
           "id": "p7-3-d2",
           "kind": "notice",
-          "title": "Politique de retour",
+          "title": "Return Policy",
           "body": [
-            "Nos clients peuvent retourner tout article dans les 30 jours suivant la livraison. Les articles arrivés endommagés peuvent être retournés pour un remboursement intégral ou remplacés gratuitement. Pour lancer un retour, le client doit remplir le formulaire en ligne sur notre site et joindre une photo de l'article endommagé. Les remboursements sont effectués dans un délai de 5 jours ouvrés après réception de l'article retourné."
+            "Customers may return any item within 30 days of delivery. Items that arrive damaged may be returned for a full refund or replaced free of charge. To start a return, the customer must complete the online form on our website and attach a photo of the damaged item. Refunds are processed within 5 business days of receiving the returned item."
           ]
         },
         {
           "id": "p7-3-d3",
           "kind": "email",
-          "title": "À : Luc Moreau",
+          "title": "To: Luc Moreau",
           "body": [
-            "De : Amélie Bernard, Service client",
-            "Objet : Re : Demande de remboursement — Commande n° 4821",
-            "Monsieur Moreau,",
-            "Merci de nous avoir contactés. Nous vous présentons toutes nos excuses pour l'article endommagé et le retard de notre réponse. Veuillez remplir le formulaire de retour en ligne et joindre une photo du support. Dès réception de l'article, nous procéderons au remboursement intégral sous 5 jours ouvrés. À titre d'excuse, nous avons également ajouté une remise de 10 % sur votre compte pour votre prochain achat.",
-            "Cordialement,",
+            "From: Amélie Bernard, Customer Service",
+            "Subject: Re: Refund Request — Order No. 4821",
+            "Dear Mr. Moreau,",
+            "Thank you for contacting us. We sincerely apologize for the damaged item and for our delayed response. Please complete the online return form and attach a photo of the stand. Once we receive the item, we will issue a full refund within 5 business days. As a gesture of apology, we have also added a 10% discount to your account for your next purchase.",
+            "Sincerely,",
             "Amélie Bernard"
           ]
         }
@@ -362,7 +362,7 @@
       "part": 6,
       "passageId": "p6-1",
       "orderIndex": 1,
-      "prompt": "Tous les employés doivent assister à l'une des deux sessions (1)______ dans l'auditorium principal.",
+      "prompt": "All employees must attend one of the two sessions (1)______ in the main auditorium.",
       "options": [
         { "key": "A", "text": "scheduled" },
         { "key": "B", "text": "scheduling" },
@@ -377,14 +377,14 @@
       "part": 6,
       "passageId": "p6-1",
       "orderIndex": 2,
-      "prompt": "La formation (2)______ une présentation sur la sécurité incendie, suivie d'une démonstration pratique.",
+      "prompt": "The training (2)______ a presentation on fire safety, followed by a hands-on demonstration.",
       "options": [
         { "key": "A", "text": "include" },
         { "key": "B", "text": "includes" },
         { "key": "C", "text": "including" },
         { "key": "D", "text": "included" }
       ],
-      "correctKey": "A",
+      "correctKey": "B",
       "difficulty": 2
     },
     {
@@ -392,7 +392,7 @@
       "part": 6,
       "passageId": "p6-1",
       "orderIndex": 3,
-      "prompt": "Les participants sont encouragés à (3)______ des questions à la fin de chaque session.",
+      "prompt": "Participants are encouraged to (3)______ questions at the end of each session.",
       "options": [
         { "key": "A", "text": "ask" },
         { "key": "B", "text": "put" },
@@ -407,7 +407,7 @@
       "part": 6,
       "passageId": "p6-1",
       "orderIndex": 4,
-      "prompt": "Nous vous recommandons donc de vous (4)______ dès que possible afin de garantir votre place.",
+      "prompt": "We therefore recommend that you (4)______ as soon as possible to secure your place.",
       "options": [
         { "key": "A", "text": "register" },
         { "key": "B", "text": "registration" },
@@ -422,9 +422,9 @@
       "part": 6,
       "passageId": "p6-2",
       "orderIndex": 5,
-      "prompt": "Global Foods Inc. a annoncé hier qu'elle (1)______ un nouveau centre de distribution dans le sud de la France.",
+      "prompt": "Global Foods Inc. announced yesterday that it (1)______ a new distribution center in southern France next spring.",
       "options": [
-        { "key": "A", "text": "would open" },
+        { "key": "A", "text": "opened" },
         { "key": "B", "text": "will open" },
         { "key": "C", "text": "opening" },
         { "key": "D", "text": "opens" }
@@ -437,12 +437,12 @@
       "part": 6,
       "passageId": "p6-2",
       "orderIndex": 6,
-      "prompt": "Cette décision a été prise (2)______ à la demande croissante dans la région.",
+      "prompt": "The decision was made (2)______ growing demand in the region.",
       "options": [
-        { "key": "A", "text": "due" },
+        { "key": "A", "text": "because of" },
         { "key": "B", "text": "because" },
-        { "key": "C", "text": "thanks" },
-        { "key": "D", "text": "owing" }
+        { "key": "C", "text": "although" },
+        { "key": "D", "text": "despite" }
       ],
       "correctKey": "A",
       "difficulty": 1
@@ -452,7 +452,7 @@
       "part": 6,
       "passageId": "p6-2",
       "orderIndex": 7,
-      "prompt": "Cet investissement nous permettra de servir nos clients de manière plus (3)______.",
+      "prompt": "This investment will allow us to serve our customers more (3)______.",
       "options": [
         { "key": "A", "text": "efficient" },
         { "key": "B", "text": "efficiently" },
@@ -467,7 +467,7 @@
       "part": 6,
       "passageId": "p6-2",
       "orderIndex": 8,
-      "prompt": "La construction doit commencer en avril et (4)______ d'ici la fin de l'année prochaine.",
+      "prompt": "Construction is due to begin in April and (4)______ by the end of next year.",
       "options": [
         { "key": "A", "text": "completed" },
         { "key": "B", "text": "complete" },

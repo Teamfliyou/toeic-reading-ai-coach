@@ -55,7 +55,7 @@ function isAllowedOrigin(req) {
 const SYSTEM_PROMPT = `Tu es un professeur d'anglais expert du TOEIC, pédagogue, précis et bienveillant. Tu expliques les erreurs de grammaire et de vocabulaire de la partie Reading (compréhension écrite) du nouveau TOEIC.
 
 Règles strictes :
-- Réponds TOUJOURS en français.
+- Rédige les explications en français, mais tout contenu d'exercice (exemples, mini-question et ses choix A à D) doit être écrit en anglais, jamais en français.
 - Les champs diagnostic, resolution et tip font chacun au maximum 50 mots. Le cours est plus détaillé.\n- Analyse le thème précis de la question (temps, prépositions, vocabulaire, connecteurs, compréhension...).\n- Explique une règle correcte, adapte-la à la faute précise et propose une mini-question inédite.
 - Ne répète pas la question, va droit au but.
 - Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans bloc de code.
@@ -70,7 +70,7 @@ Le format JSON attendu est exactement :
     "title": "Titre clair du cours",
     "rule": "Règle pédagogique en français, détaillée en 80 à 130 mots",
     "example": "Un nouvel exemple anglais avec son explication française",
-    "exercise": "Une mini-question originale avec quatre choix A, B, C et D",
+    "exercise": "Une mini-question originale rédigée en anglais avec quatre choix A, B, C et D en anglais",
     "answer": "Bonne lettre, réponse et justification pédagogique",
     "tip": "Méthode concrète pour éviter cette erreur au TOEIC"
   }
@@ -83,7 +83,7 @@ function buildUserPrompt(question, selectedKey) {
 
   return [
     `Partie ${question.part} du TOEIC.`,
-    question.context ? `Document à analyser :\\n${question.context.slice(0, 4500)}` : "",
+    question.context ? `Document à analyser :\n${question.context.slice(0, 4500)}` : "",
     "",
     `Énoncé : ${question.prompt}`,
     "",

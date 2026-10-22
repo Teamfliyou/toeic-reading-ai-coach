@@ -23,6 +23,20 @@ function validateItem(x,part){
   if(x.options.some((o,i)=>o?.key!=="ABCD"[i]||typeof o.text!=="string"||!o.text.trim()))return false;
   return "ABCD".includes(x.correctKey)&&x.part===part&&typeof x.explanation==="string";
 }
+// Mots-outils français absents de l'anglais : détecte un contenu d'examen rédigé en français.
+const FRENCH_WORDS=/\b(le|les|des|est|sont|vous|nous|pour|dans|une|avec|votre|qui|que|cette|ces|sur|mais|doit|être|sans|plus|très|aux|du)\b/gi;
+export function looksFrench(text){
+  const s=String(text||"");
+  const words=(s.match(/[A-Za-zÀ-ÿ']+/g)||[]).length;
+  if(words<4)return false;
+  return (s.match(FRENCH_WORDS)||[]).length/words>0.12||/[«»]/.test(s);
+}
+export function isEnglishContent(questions,passage){
+  const texts=[];
+  for(const q of questions||[]){texts.push(q.prompt);for(const o of q.options||[])texts.push(o.text);}
+  if(passage){texts.push(passage.title);for(const d of passage.documents||[]){texts.push(d.title);texts.push(...(Array.isArray(d.body)?d.body:[d.body]));}}
+  return !texts.some(looksFrench);
+}
 function peakUTC(now=new Date()){
   const day=now.getUTCDay(),h=now.getUTCHours();
   return day>=1&&day<=5&&((h>=1&&h<4)||(h>=6&&h<10));
@@ -37,10 +51,10 @@ export async function generate(body, emit = () => {}) {
   const part=Number(body.part),quantity=Number(body.quantity),topic=String(body.topic||"").slice(0,120),difficulty=Number(body.difficulty),kind=String(body.kind||"");
   if(![5,6,7].includes(part)||!Number.isInteger(quantity)||quantity<1||quantity>20||![1,2,3].includes(difficulty)||!["grammar","vocabulary","email","memo","article","schedule","notice"].includes(kind))throw new Error("Paramètres de génération invalides");
   if(!process.env.DEEPSEEK_API_KEY)throw new Error("Clé DEEPSEEK_API_KEY absente du serveur");
-  const directive=part===5?"Génère des phrases à trou indépendantes; passage doit être null.": "Génère un document professionnel anglais original et des questions liées; passage doit inclure title et documents avec un document kind parmi email,memo,article,notice,schedule,letter,message, et body tableau de paragraphes. Pour la partie 6, place les trous numérotés (1)______ etc. dans le document; pour la partie 7, questions de compréhension associées au document.";
-  const prompt=`Génère EXACTEMENT ${quantity} questions originales en anglais de niveau difficulté ${difficulty}/3 pour anglais professionnel, partie ${part}, type ${kind}, thème ${topic||"varié"}. ${directive} Aucun texte protégé ou question officielle recopiée. Répartis équitablement les réponses A/B/C/D. Une seule bonne réponse clairement justifiable par question. Chaque question est {part: ${part}, prompt: string, options:[{key:"A",text:string},{key:"B",text:string},{key:"C",text:string},{key:"D",text:string}],correctKey:"A"|"B"|"C"|"D",explanation:string en français}. Pour les parties 6/7 ajoute un objet passage={title:string,documents:[{kind:string,title:string,body:string[]}]}. Réponds seulement avec {questions:Question[],passage:Passage|null}. Si partie 6, chaque question fait référence à un trou distinct numéroté dans l'ordre.`;
+  const directive=part===5?"Write independent sentence-completion items with a single blank (______); passage must be null.":"Write one original professional English document and related questions; passage must include title and documents, each document having a kind among email,memo,article,notice,schedule,letter,message and a body that is an array of paragraphs. For part 6, put numbered blanks (1)______, (2)______ etc. inside the document; for part 7, write reading-comprehension questions about the document.";
+  const prompt=`Write EXACTLY ${quantity} original TOEIC Reading practice questions, difficulty ${difficulty}/3, part ${part}, type ${kind}, topic ${topic||"varied business topics"}. ${directive} LANGUAGE RULE: every question prompt, every answer option, and every passage title, document title and body paragraph MUST be written entirely in English, never in French, even if the topic above is written in French. Only the "explanation" field is written in French. Do not copy protected text or official test questions. Distribute the correct answers evenly across A/B/C/D. Each question has exactly one clearly defensible correct answer. Each question is {part: ${part}, prompt: string, options:[{key:"A",text:string},{key:"B",text:string},{key:"C",text:string},{key:"D",text:string}],correctKey:"A"|"B"|"C"|"D",explanation:string (in French)}. For parts 6/7 also add passage={title:string,documents:[{kind:string,title:string,body:string[]}]}. Reply only with {questions:Question[],passage:Passage|null}. For part 6, each question refers to a distinct numbered blank, in order.`;
   emit("request_sent", "Demande envoyée à DeepSeek");
-  const response=await fetch("https://api.deepseek.com/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${process.env.DEEPSEEK_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:MODEL,messages:[{role:"system",content:"You are an expert professional English test-item writer. Produce valid original exam-style practice content as JSON. Never copy branded test questions. Ensure exactly one correct choice, fluent English, coherent passage and accurate French explanations."},{role:"user",content:prompt}],response_format:{type:"json_object"},stream:false,temperature:0.6,max_tokens:8000}),signal:AbortSignal.timeout(90000)});
+  const response=await fetch("https://api.deepseek.com/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${process.env.DEEPSEEK_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:MODEL,messages:[{role:"system",content:"You are an expert professional English test-item writer. Produce valid original exam-style practice content as JSON. Never copy branded test questions. Ensure exactly one correct choice and a coherent passage. All exam content (question prompts, options, passage titles and bodies) must be in fluent English only; only the explanation field is in French."},{role:"user",content:prompt}],response_format:{type:"json_object"},stream:false,temperature:0.6,max_tokens:8000}),signal:AbortSignal.timeout(90000)});
   if(!response.ok)throw new Error(`DeepSeek HTTP ${response.status}`);
   emit("response_received", "Réponse reçue : vérification des questions");
   const payload=await response.json();let result;
@@ -48,6 +62,7 @@ export async function generate(body, emit = () => {}) {
   const questions=Array.isArray(result.questions)?result.questions:[];
   if(questions.length!==quantity||!questions.every(x=>validateItem(x,part)))throw new Error("Lot incomplet ou invalide. Réessayez avec moins de questions.");
   if(part!==5&&(!result.passage||!Array.isArray(result.passage.documents)||!result.passage.documents.length))throw new Error("Document absent du lot.");
+  if(!isEnglishContent(questions,part===5?null:result.passage))throw new Error("Le lot contient du français : le contenu TOEIC doit être entièrement en anglais. Relancez la génération.");
   emit("validated", `${questions.length} questions vérifiées dans le format attendu`);
   return {questions,passage:part===5?null:result.passage,cost:cost(payload.usage),notice:"Brouillon non publié : vérifiez les réponses avant export."};
 }
