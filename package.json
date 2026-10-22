@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "start": "node server.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "check:data": "node scripts/check-data.mjs",
+    "seed:generate": "node scripts/generate-seed-sql.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

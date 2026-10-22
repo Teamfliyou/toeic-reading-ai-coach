@@ -37,7 +37,7 @@ export async function loadPart(part: Part): Promise<Dataset> {
     if (!questions.length) throw new Error("Aucune question disponible dans Supabase");
     return {
       questions: questions.map((q) => ({
-        id: q.id as string, part: q.part as Part, passageId: q.passage_id as string | null,
+        id: (q.slug as string | null) ?? (q.id as string), part: q.part as Part, passageId: q.passage_id as string | null,
         orderIndex: q.order_index as number, prompt: q.prompt as string,
         options: q.options as Question["options"], correctKey: q.correct_key as Question["correctKey"],
         difficulty: q.difficulty as Question["difficulty"],

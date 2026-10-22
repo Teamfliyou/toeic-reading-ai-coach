@@ -12,8 +12,9 @@ export const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 export const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-flash";
 
 // Version du prompt. À incrémenter dès qu'un prompt change : les explications
-// mises en cache sous une ancienne version ne sont alors plus servies.
-export const PROMPT_VERSION = "2026-10-18.1";
+// mises en cache sous une ancienne version ne sont alors plus servies. À
+// incrémenter aussi quand le texte ou l'ordre des choix d'une question change.
+export const PROMPT_VERSION = "2026-10-22.1";
 
 // Prix « deepseek-flash » hors heures de pointe, en USD par million de tokens.
 const PRICES = { cacheMiss: 0.15, cacheHit: 0.003, output: 0.6 };

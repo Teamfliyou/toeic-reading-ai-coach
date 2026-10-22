@@ -14,6 +14,7 @@ create table if not exists passages (
 
 create table if not exists questions (
   id uuid primary key default gen_random_uuid(),
+  slug text unique,
   part int not null check (part in (5, 6, 7)),
   passage_id uuid references passages(id) on delete cascade,
   order_index int not null default 0,
