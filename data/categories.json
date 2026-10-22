@@ -1,0 +1,20 @@
+[
+  { "id": "verb-tenses", "label": "Temps verbaux et conditionnel", "parts": [5, 6] },
+  { "id": "passive-modals", "label": "Voix passive et modaux", "parts": [5, 6] },
+  { "id": "subject-verb-agreement", "label": "Accord sujet-verbe", "parts": [5, 6] },
+  { "id": "verb-patterns", "label": "Constructions verbales (gérondif, infinitif, subjonctif)", "parts": [5, 6] },
+  { "id": "word-forms", "label": "Formation des mots (adjectif, adverbe, participe)", "parts": [5, 6] },
+  { "id": "prepositions", "label": "Prépositions", "parts": [5, 6] },
+  { "id": "connectors", "label": "Connecteurs et conjonctions", "parts": [5, 6] },
+  { "id": "clauses", "label": "Propositions et pronoms relatifs", "parts": [5, 6] },
+  { "id": "vocabulary", "label": "Vocabulaire et collocations", "parts": [5, 6] },
+  { "id": "reading-purpose", "label": "Objectif du document", "parts": [7] },
+  { "id": "reading-detail", "label": "Information précise", "parts": [7] },
+  { "id": "reading-inference", "label": "Inférence", "parts": [7] },
+  { "id": "reading-cross", "label": "Documents croisés", "parts": [7] },
+  { "id": "listening-wh", "label": "Question en wh- (qui, quand, où…)", "parts": [2] },
+  { "id": "listening-yes-no", "label": "Question fermée (oui/non)", "parts": [2] },
+  { "id": "listening-choice", "label": "Question à choix (A or B)", "parts": [2] },
+  { "id": "listening-request", "label": "Demande, suggestion, proposition", "parts": [2] },
+  { "id": "listening-statement", "label": "Affirmation ou question indirecte", "parts": [2] }
+]

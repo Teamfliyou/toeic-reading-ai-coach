@@ -55,3 +55,18 @@ test("les bonnes réponses du jeu réel sont équilibrées (aucune lettre > 40 %
   for (const q of d.questions) counts[q.correctKey] = (counts[q.correctKey] ?? 0) + 1;
   for (const [key, n] of Object.entries(counts)) assert.ok(n / d.questions.length <= 0.4, key);
 });
+
+test("détecte une catégorie inconnue, incompatible ou des tags absents", () => {
+  const d = load();
+  d.questions[0].category = "inconnue";
+  d.questions[1].category = "reading-detail"; // catégorie de partie 7 sur une question de partie 5
+  delete d.questions[2].tags;
+  const errors = validateDataset(d);
+  assert.ok(has(errors, "catégorie « inconnue » inconnue"));
+  assert.ok(has(errors, "incompatible avec la partie 5"));
+  assert.ok(has(errors, "tags (tableau de textes) requis"));
+});
+
+test("toutes les questions du jeu réel ont une catégorie", () => {
+  assert.ok(load().questions.every((q) => typeof q.category === "string" && q.tags.length > 0));
+});

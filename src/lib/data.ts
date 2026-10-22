@@ -41,6 +41,8 @@ export async function loadPart(part: Part): Promise<Dataset> {
         orderIndex: q.order_index as number, prompt: q.prompt as string,
         options: q.options as Question["options"], correctKey: q.correct_key as Question["correctKey"],
         difficulty: q.difficulty as Question["difficulty"],
+        category: (q.category as string | null) ?? undefined,
+        tags: Array.isArray(q.tags) ? (q.tags as string[]) : undefined,
       })),
       passages: passages.map((p) => ({
         id: p.id as string, part: p.part as Part, title: p.title as string,

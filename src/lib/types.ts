@@ -39,6 +39,9 @@ export interface Question {
   options: Option[];
   correctKey: OptionKey;
   difficulty: 1 | 2 | 3;
+  /** Type de piège (voir data/categories.json). */
+  category?: string;
+  tags?: string[];
 }
 
 export interface AiExplanation {

@@ -5,6 +5,10 @@ import { fileURLToPath } from "node:url";
 import { buildSeedSql } from "./generate-seed-sql.mjs";
 import { looksFrench } from "../server/admin.mjs";
 
+const CATEGORIES = JSON.parse(
+  readFileSync(new URL("../data/categories.json", import.meta.url), "utf8")
+);
+
 const KEYS = ["A", "B", "C", "D"];
 const KINDS = ["email", "memo", "article", "notice", "schedule", "letter", "message"];
 
@@ -47,6 +51,10 @@ export function validateDataset(data, { seedSql } = {}) {
     ids.add(q.id);
     if (![5, 6, 7].includes(q.part)) err(`${label} : partie ${q.part} invalide.`);
     if (!q.prompt?.trim()) err(`${label} : énoncé vide.`);
+    const category = CATEGORIES.find((c) => c.id === q.category);
+    if (!category) err(`${label} : catégorie « ${q.category} » inconnue (data/categories.json).`);
+    else if (!category.parts.includes(q.part)) err(`${label} : catégorie ${q.category} incompatible avec la partie ${q.part}.`);
+    if (!Array.isArray(q.tags) || q.tags.some((t) => typeof t !== "string" || !t.trim())) err(`${label} : tags (tableau de textes) requis.`);
     if (!Number.isInteger(q.orderIndex)) err(`${label} : orderIndex entier requis.`);
     if (![1, 2, 3].includes(q.difficulty)) err(`${label} : difficulté 1 à 3 requise.`);
 

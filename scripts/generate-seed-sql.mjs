@@ -10,12 +10,14 @@ export function stableUuid(str) {
 }
 
 const esc = (s) => String(s).replace(/'/g, "''");
+const sqlTextArray = (items) =>
+  items?.length ? `array[${items.map((t) => `'${esc(t)}'`).join(", ")}]::text[]` : "'{}'::text[]";
 
 /** Construit le contenu de supabase/seed.sql à partir du jeu de données. */
 export function buildSeedSql(data) {
   const lines = [
     "-- Seed Supabase généré automatiquement depuis data/questions.json (npm run seed:generate)",
-    "-- Exécutez-le après supabase/schema.sql (et supabase/questions_slug.sql sur une base existante).",
+    "-- Exécutez-le après supabase/schema.sql (et supabase/questions_slug.sql puis supabase/questions_category.sql sur une base existante).",
     "-- Idempotent : peut être relancé ; les IDs sont stables (hash), `slug` garde l'identifiant lisible.",
     "",
   ];
@@ -34,8 +36,8 @@ export function buildSeedSql(data) {
     const passageId = q.passageId ? `'${stableUuid(q.passageId)}'` : "null";
     const options = JSON.stringify(q.options).replace(/'/g, "''");
     lines.push(
-      `insert into questions (id, slug, part, passage_id, order_index, prompt, options, correct_key, difficulty) values ('${id}', '${esc(q.id)}', ${q.part}, ${passageId}, ${q.orderIndex}, '${esc(q.prompt)}', '${options}', '${q.correctKey}', ${q.difficulty}) ` +
-        "on conflict (id) do update set slug = excluded.slug, part = excluded.part, passage_id = excluded.passage_id, order_index = excluded.order_index, prompt = excluded.prompt, options = excluded.options, correct_key = excluded.correct_key, difficulty = excluded.difficulty;"
+      `insert into questions (id, slug, category, tags, part, passage_id, order_index, prompt, options, correct_key, difficulty) values ('${id}', '${esc(q.id)}', ${q.category ? `'${esc(q.category)}'` : "null"}, ${sqlTextArray(q.tags)}, ${q.part}, ${passageId}, ${q.orderIndex}, '${esc(q.prompt)}', '${options}', '${q.correctKey}', ${q.difficulty}) ` +
+        "on conflict (id) do update set slug = excluded.slug, category = excluded.category, tags = excluded.tags, part = excluded.part, passage_id = excluded.passage_id, order_index = excluded.order_index, prompt = excluded.prompt, options = excluded.options, correct_key = excluded.correct_key, difficulty = excluded.difficulty;"
     );
   }
 
