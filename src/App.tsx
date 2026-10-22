@@ -9,6 +9,9 @@ import Practice from "@/pages/Practice";
 import Diagnostic from "@/pages/Diagnostic";
 import Admin from "@/pages/Admin";
 import Lessons from "@/pages/Lessons";
+import Exam from "@/pages/Exam";
+import Stats from "@/pages/Stats";
+import Review from "@/pages/Review";
 import { initSync } from "@/lib/sync";
 import { migrateLegacyMistakes } from "@/lib/tracker";
 
@@ -37,6 +40,12 @@ export default function App() {
   const reviewMatch = hash.match(/^#\/review\/(part[567])$/);
   const content = hash === "#/lessons" ? (
     <Lessons />
+  ) : hash === "#/exam" ? (
+    <Exam />
+  ) : hash === "#/stats" ? (
+    <Stats />
+  ) : hash === "#/review" ? (
+    <Review />
   ) : hash === "#/admin" ? (
     <Admin />
   ) : hash === "#/diagnostic" ? (

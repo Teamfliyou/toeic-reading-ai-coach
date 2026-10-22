@@ -4,6 +4,7 @@ import { supabaseUrl, supabasePublishableKey } from "./supabaseConfig";
 
 type Dataset = { passages: Passage[]; questions: Question[] };
 const fallback = rawData as Dataset;
+const localByPrompt = new Map(fallback.questions.map((q) => [q.prompt, q]));
 
 export function getQuestions(part: Part): Question[] {
   return fallback.questions.filter((q) => q.part === part).sort((a,b) => a.orderIndex - b.orderIndex);
@@ -27,6 +28,15 @@ async function fetchRows(table: "questions" | "passages", part: Part): Promise<R
   return rows as Record<string, unknown>[];
 }
 
+/** Toutes les questions de lecture (parties 5 à 7), chaque partie avec son repli local. */
+export async function loadAll(): Promise<Dataset> {
+  const parts = await Promise.all(([5, 6, 7] as Part[]).map((part) => loadPart(part)));
+  return {
+    questions: parts.flatMap((p) => p.questions),
+    passages: parts.flatMap((p) => p.passages),
+  };
+}
+
 /** Charge Supabase en priorité et conserve le JSON local en secours. */
 export async function loadPart(part: Part): Promise<Dataset> {
   try {
@@ -41,8 +51,9 @@ export async function loadPart(part: Part): Promise<Dataset> {
         orderIndex: q.order_index as number, prompt: q.prompt as string,
         options: q.options as Question["options"], correctKey: q.correct_key as Question["correctKey"],
         difficulty: q.difficulty as Question["difficulty"],
-        category: (q.category as string | null) ?? undefined,
-        tags: Array.isArray(q.tags) ? (q.tags as string[]) : undefined,
+        // Avant la migration SQL, la catégorie est reprise du jeu local (même énoncé).
+        category: (q.category as string | null) ?? localByPrompt.get(q.prompt as string)?.category,
+        tags: Array.isArray(q.tags) && q.tags.length ? (q.tags as string[]) : localByPrompt.get(q.prompt as string)?.tags,
       })),
       passages: passages.map((p) => ({
         id: p.id as string, part: p.part as Part, title: p.title as string,
