@@ -21,6 +21,10 @@ const distDir = join(__dirname, "dist");
 app.use(express.static(distDir));
 app.get("*", (_req, res) => res.sendFile(join(distDir, "index.html")));
 
+if (!process.env.AI_USD_EUR_RATE) {
+  console.warn("AI_USD_EUR_RATE non défini : taux USD→EUR fixe de 0,93 utilisé pour le budget. Pensez à le mettre à jour.");
+}
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`TOEIC Reading AI Coach : http://localhost:${port}`);

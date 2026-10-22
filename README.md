@@ -117,9 +117,15 @@ Deux façons de fournir une clé API DeepSeek :
 
 Cliquez sur l'icône **Paramètres** (engrenage) dans le tableau de bord ou
 l'en-tête d'une session. Saisissez votre clé (`sk-...`) et cliquez sur
-**Enregistrer**. La clé est stockée dans le `localStorage` de votre navigateur
-(`deepseek_user_api_key`) et transmise au serveur via l'en-tête
-`X-DeepSeek-Api-Key` à chaque requête d'explication.
+**Enregistrer**. Par défaut la clé reste **en mémoire** et disparaît au
+rechargement de la page. Cochez **Mémoriser sur cet appareil** pour la conserver
+dans le `localStorage` (`deepseek_user_api_key`) : pratique, mais lisible par tout
+script exécuté dans la page (à éviter sur un poste partagé). Elle est transmise
+au serveur via l'en-tête `X-DeepSeek-Api-Key`, jamais journalisée ni renvoyée.
+
+Le serveur applique une **CSP stricte** et des en-têtes de sécurité (`vercel.json`
+sur Vercel, `server/security-headers.mjs` avec `npm start`), ce qui limite l'impact
+d'une éventuelle faille XSS.
 
 Un indicateur vous indique l'état :
 
@@ -171,11 +177,19 @@ atomiques.
    défaut, `max_tokens` borné, délai d'expiration, `user_id` d'isolation.
 5. **Enregistrement + finalisation** : la réponse IA est **enregistrée en base**
    (historique + cache) puis la réservation est remplacée par le coût réel. En
-   cas d'échec, la réservation est **libérée** (budget remboursé).
+   cas d'échec avant toute réponse de DeepSeek, la réservation est **libérée**
+   (budget et quota remboursés) ; si DeepSeek a répondu mais que le résultat est
+   illisible, le **coût réel reste imputé** au budget. Une réservation orpheline
+   (fonction serverless interrompue) expire d'elle-même après 2 minutes.
+5. Les réponses de DeepSeek sont validées (schéma `zod`), nettoyées des balises
+   markdown, et relancées **une fois** si elles sont tronquées ou invalides ; sinon
+   un message lisible est affiché.
 
 ### Migration Supabase
 
-Exécutez `supabase/ai_explanations.sql` dans l'éditeur SQL du projet. Les tables
+Exécutez, dans cet ordre, `supabase/ai_explanations.sql` puis
+**`supabase/ai_hardening.sql`** (expiration des réservations bloquées, quota
+remboursé sur échec, limitation de connexion admin ; idempotent). Les tables
 sont accessibles uniquement au serveur (`service_role`), comme
 `public.lexora_admin_users`.
 
@@ -188,12 +202,20 @@ sont accessibles uniquement au serveur (`service_role`), comme
 | `DEEPSEEK_MAX_TOKENS` | `1024` | Plafond de tokens en sortie. |
 | `DEEPSEEK_TIMEOUT_MS` | `22000` | Délai maximal d'un appel DeepSeek. |
 | `AI_DAILY_LIMIT` | `10` | Quota quotidien par utilisateur connecté. |
+| `AI_ANON_DAILY_LIMIT` | `5` | Quota quotidien par IP pour les visiteurs non connectés. |
+| `AI_ANON_PER_MINUTE` | `2` | Débit par minute et par IP pour les visiteurs non connectés. |
+| `TRUST_PROXY` | — | `true` derrière un reverse proxy de confiance : l'IP client est lue dans `x-forwarded-for`. Détecté automatiquement sur Vercel. Sinon l'IP est celle de la socket (non falsifiable). |
 | `AI_PER_MINUTE` | `3` | Débit par minute et par utilisateur connecté. |
 | `AI_MONTHLY_LIMIT_EUR` | `10` | Budget mensuel (limite dure). |
 | `AI_MONTHLY_SUSPEND_EUR` | `8` | Seuil de suspension des nouvelles générations. |
-| `AI_USD_EUR_RATE` | `0.93` | Taux USD→EUR (DeepSeek facture en dollars). |
-| `AI_ESTIMATED_CALL_USD` | `0.002` | Réservation a priori par appel (majorée). |
-| `AI_FREE_REQUIRES_AUTH` | `false` | `true` exige un compte pour l'explication gratuite. |
+| `AI_USD_EUR_RATE` | `0.93` | Taux USD→EUR (DeepSeek facture en dollars). **Valeur fixe : à mettre à jour** quand le change évolue ; un avertissement s'affiche au démarrage tant qu'elle n'est pas définie. |
+| `AI_ESTIMATED_CALL_USD` | `0.004` | Réservation a priori par appel (majorée ; couvre une nouvelle tentative). |
+| `AI_ESTIMATED_GENERATION_USD` | `0.012` | Réservation a priori d'une génération de questions (admin). |
+| `ADMIN_GENERATE_PER_HOUR` | `10` | Générations de questions par administrateur et par heure (comptées en base). |
+| `AI_FREE_REQUIRES_AUTH` | `false` | `true` exige un compte pour l'explication gratuite. **Recommandé en production** : sans compte, seule l'IP limite l'usage. |
+| `ADMIN_LOGIN_MAX_PER_IP` | `20` | Tentatives de connexion admin par IP et par fenêtre. |
+| `ADMIN_LOGIN_MAX_PER_USER` | `8` | Tentatives par identifiant et par fenêtre (quelle que soit l'IP). |
+| `ADMIN_LOGIN_WINDOW_SECONDS` | `900` | Fenêtre glissante de la limitation de connexion. |
 | `SUPABASE_ANON_KEY` | — | Vérification des jetons Supabase Auth (serveur). |
 | `SUPABASE_SERVICE_ROLE_KEY` | — | Persistance, quotas et budget (serveur uniquement). |
 
@@ -212,6 +234,9 @@ navigateur.
 | `npm run build`   | Typecheck (`tsc`) puis build de production dans `dist/`.          |
 | `npm run preview` | Prévisualise le build de production.                              |
 | `npm start`       | Sert le build + l'API (Express) sur `http://localhost:3000`.      |
+| `npm test`        | Lance les tests (`node --test`).                                  |
+| `npm run check:data` | Valide `data/questions.json` et la synchronisation de `seed.sql`. |
+| `npm run seed:generate` | Régénère `supabase/seed.sql` depuis `data/questions.json`.  |
 
 ## Structure du projet
 
@@ -243,10 +268,14 @@ Supabase :
 3. Générez puis exécutez le seed :
 
    ```bash
-   node scripts/generate-seed-sql.mjs
+   npm run seed:generate
    ```
 
-   puis exécutez `supabase/seed.sql`.
+   puis exécutez `supabase/seed.sql` (idempotent). Sur une base **déjà créée**,
+   exécutez d'abord `supabase/questions_slug.sql` (ajoute la colonne `slug`, qui
+   garde l'identifiant lisible `q5-01` pour que le carnet d'erreurs reste valable
+   que les questions viennent de Supabase ou du JSON local). Après toute
+   modification des questions, lancez `npm run check:data`.
 4. Branchez l'API REST PostgREST dans `src/lib/data.ts`.
 
 ## Licence
@@ -275,4 +304,6 @@ Un éditeur peut générer et publier des questions, mais ne peut pas gérer les
 - La création du premier compte exige le code privé. Dès qu'un compte existe, l'inscription publique est fermée. Les comptes supplémentaires sont créés exclusivement par un administrateur authentifié dans l'onglet Utilisateurs.
 - Les comptes existants dans `lexora_admin_users` sont conservés : le nouveau processus ne les réinitialise pas, et n'affiche pas l'assistant si la base contient déjà un compte.
 
-**Important :** n'ajoutez jamais `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_INITIAL_PASSWORD` ou `ADMIN_SESSION_SECRET` à des variables `VITE_*` ni au code client. Les sessions sont signées, en cookies HttpOnly/SameSite, valables 8 h. La protection anti-bruteforce en mémoire est indicative sur Vercel Serverless : pour un site public exposé, ajouter une limitation distribuée (WAF/KV) et, à terme, la MFA.
+**Important :** n'ajoutez jamais `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_INITIAL_PASSWORD` ou `ADMIN_SESSION_SECRET` à des variables `VITE_*` ni au code client. Les sessions sont signées, en cookies HttpOnly/SameSite, valables 8 h. La limitation des tentatives de connexion est **distribuée** (table `admin_login_attempts`, par IP et par identifiant, fenêtre glissante) : exécutez `supabase/ai_hardening.sql`. Sans cette migration, un repli en mémoire (moins fiable sur Vercel Serverless) est utilisé. À terme, ajouter la MFA.
+
+**Nommage.** Le produit s'appelle *Lernoviq*, mais la table `public.lexora_admin_users`, le cookie `lexora_admin` et les classes CSS `lexora-*` conservent l'ancien nom *Lexora* : les renommer invaliderait les comptes et sessions existants. Si un renommage est un jour souhaité : créer une vue `lernoviq_admin_users` sur la table, basculer le code sur la vue, puis retirer l'ancien nom dans une version ultérieure. `ADMIN_INITIAL_PASSWORD` est un **code de configuration privé** (pas le mot de passe du compte) ; `ADMIN_INITIAL_USERNAME` n'est pas utilisé par le serveur.
