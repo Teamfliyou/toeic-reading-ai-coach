@@ -1,0 +1,124 @@
+{
+  "part2": [
+    {
+      "id": "l2-01", "part": 2, "category": "listening-wh",
+      "prompt": "When does the new accountant start working here?",
+      "options": [
+        { "key": "A", "text": "On the second floor." },
+        { "key": "B", "text": "Next Monday, I think." },
+        { "key": "C", "text": "She has ten years of experience." }
+      ],
+      "correctKey": "B"
+    },
+    {
+      "id": "l2-02", "part": 2, "category": "listening-wh",
+      "prompt": "Where should I put these shipping boxes?",
+      "options": [
+        { "key": "A", "text": "I'd like to order two of them." },
+        { "key": "B", "text": "They shipped them yesterday." },
+        { "key": "C", "text": "Just leave them by the loading dock." }
+      ],
+      "correctKey": "C"
+    },
+    {
+      "id": "l2-03", "part": 2, "category": "listening-wh",
+      "prompt": "Who is organizing the staff retreat this year?",
+      "options": [
+        { "key": "A", "text": "Ms. Alvarez from Human Resources." },
+        { "key": "B", "text": "In late September, I believe." },
+        { "key": "C", "text": "It's at a lakeside resort." }
+      ],
+      "correctKey": "A"
+    },
+    {
+      "id": "l2-04", "part": 2, "category": "listening-wh",
+      "prompt": "Why was the client meeting postponed?",
+      "options": [
+        { "key": "A", "text": "At two o'clock in the afternoon." },
+        { "key": "B", "text": "The presenter is stuck at the airport." },
+        { "key": "C", "text": "I've already sent the invitation." }
+      ],
+      "correctKey": "B"
+    },
+    {
+      "id": "l2-05", "part": 2, "category": "listening-wh",
+      "prompt": "How can I reserve a conference room?",
+      "options": [
+        { "key": "A", "text": "Use the online booking system." },
+        { "key": "B", "text": "It holds about twenty people." },
+        { "key": "C", "text": "Yes, the projector works well." }
+      ],
+      "correctKey": "A"
+    },
+    {
+      "id": "l2-06", "part": 2, "category": "listening-yes-no",
+      "prompt": "Have you finished the sales presentation yet?",
+      "options": [
+        { "key": "A", "text": "Almost, I only need to add the charts." },
+        { "key": "B", "text": "No, the presentation room is full." },
+        { "key": "C", "text": "She presented it last year." }
+      ],
+      "correctKey": "A"
+    },
+    {
+      "id": "l2-07", "part": 2, "category": "listening-yes-no",
+      "prompt": "Is the printer on the third floor working?",
+      "options": [
+        { "key": "A", "text": "I'll print three copies." },
+        { "key": "B", "text": "Yes, the third quarter was strong." },
+        { "key": "C", "text": "The technician fixed it this morning." }
+      ],
+      "correctKey": "C"
+    },
+    {
+      "id": "l2-08", "part": 2, "category": "listening-choice",
+      "prompt": "Would you like to meet on Tuesday or Wednesday?",
+      "options": [
+        { "key": "A", "text": "Wednesday works better for me." },
+        { "key": "B", "text": "Yes, I would like some tea." },
+        { "key": "C", "text": "At the downtown office." }
+      ],
+      "correctKey": "A"
+    },
+    {
+      "id": "l2-09", "part": 2, "category": "listening-choice",
+      "prompt": "Should we send the contract by e-mail or by courier?",
+      "options": [
+        { "key": "A", "text": "The contract is thirty pages long." },
+        { "key": "B", "text": "It needs an original signature, so by courier." },
+        { "key": "C", "text": "No, I don't have the e-mail address." }
+      ],
+      "correctKey": "B"
+    },
+    {
+      "id": "l2-10", "part": 2, "category": "listening-request",
+      "prompt": "Could you help me carry these files to the archive room?",
+      "options": [
+        { "key": "A", "text": "The files are in alphabetical order." },
+        { "key": "B", "text": "Yes, he carries a briefcase." },
+        { "key": "C", "text": "Sure, I'll take half of them." }
+      ],
+      "correctKey": "C"
+    },
+    {
+      "id": "l2-11", "part": 2, "category": "listening-request",
+      "prompt": "Why don't we order lunch for the training session?",
+      "options": [
+        { "key": "A", "text": "The training starts at nine." },
+        { "key": "B", "text": "Good idea. I'll check the menu options." },
+        { "key": "C", "text": "He ordered it last week." }
+      ],
+      "correctKey": "B"
+    },
+    {
+      "id": "l2-12", "part": 2, "category": "listening-statement",
+      "prompt": "I think the projector in Room B needs a new bulb.",
+      "options": [
+        { "key": "A", "text": "Room B is on the left." },
+        { "key": "B", "text": "The meeting starts in an hour." },
+        { "key": "C", "text": "I'll tell maintenance right away." }
+      ],
+      "correctKey": "C"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ export const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
+  "media-src 'self' https://*.supabase.co",
   "connect-src 'self' https://*.supabase.co",
   "object-src 'none'",
   "base-uri 'self'",

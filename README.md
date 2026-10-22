@@ -226,6 +226,31 @@ Les exercices TOEIC **restent accessibles** même si le quota ou le budget IA es
 locales continuent de fonctionner). Aucune clé DeepSeek n'est exposée au
 navigateur.
 
+## Entraînement avancé (phase 2)
+
+| Page | Route | Description |
+| --- | --- | --- |
+| Examen blanc | `#/exam` | Parties 5, 6, 7 à la suite, minuteur de **75 minutes** (calculé depuis l'échéance : survit à un rechargement), navigation libre, marquage « à revoir », correction et **score Reading estimé sur 495**. La conversion est une table **approximative** (le barème officiel n'est pas publié) ; si le jeu de questions compte moins de 100 questions, le score est extrapolé et signalé comme tel. |
+| Statistiques | `#/stats` | Réussite par partie et par type de piège (catégorie), temps moyen par question, courbe de progression, série de jours, répartition des boîtes de révision. |
+| À réviser aujourd'hui | `#/review` | Répétition espacée **Leitner** : boîtes 1 à 5 (rappels après 1, 2, 4, 8 puis 16 jours). Une erreur renvoie en boîte 1 ; une bonne réponse sur une carte *due* la fait monter ; réussir en boîte 5 la marque « maîtrisée ». Une bonne réponse hors échéance ne fait pas monter la carte. Les anciennes erreurs (`toeic_mistakes_v1`) sont reprises automatiquement. |
+| Listening · Partie 2 | `#/listening/part2` | Question-réponse : **une seule écoute**, réponses A–C affichées après validation, transcription ensuite. Voir `docs/listening-design.md`. |
+
+**Historique.** Chaque réponse (question, réponse, juste/faux, temps, date, mode) est enregistrée dans le `localStorage` pour les visiteurs anonymes. Pour un utilisateur connecté, l'historique et les cartes de révision sont synchronisés avec Supabase (tables `user_attempts` et `user_review_cards`, **RLS par utilisateur**, lues et écrites directement par le navigateur avec son jeton). Les données anonymes locales sont rattachées au premier compte qui se connecte sur l'appareil. Hors ligne, tout reste en local et se synchronise plus tard.
+
+**Catégories.** Chaque question porte une `category` (liste dans `data/categories.json`) et des `tags`. Pour de nouvelles questions, ajoutez-les dans `scripts/tag-questions.mjs` (ou renseignez-les directement dans le JSON) puis lancez `npm run check:data`. Les questions déjà publiées dans Supabase sans catégorie reçoivent celle du jeu local lorsque l'énoncé est identique.
+
+**Listening.** Sans fichier audio, la Part 2 utilise la synthèse vocale du navigateur (qualité variable) ; un mode lecture est proposé si aucun son n'est disponible. Pour de vrais enregistrements, renseignez le champ `audio` d'un item de `data/listening.json` (chemin ou URL https `.mp3`).
+
+### Migrations Supabase de la phase 2
+
+Dans l'éditeur SQL, dans cet ordre (toutes idempotentes) :
+
+1. `supabase/questions_category.sql` : colonnes `category` et `tags` des questions.
+2. `supabase/seed.sql` (régénéré) : renseigne catégories et tags du jeu de départ.
+3. `supabase/user_data.sql` : tables `user_attempts` et `user_review_cards` + politiques RLS.
+
+Sans ces migrations l'application fonctionne : le suivi reste local et la synchronisation est simplement ignorée.
+
 ## Scripts disponibles
 
 | Commande          | Description                                                       |
@@ -236,6 +261,7 @@ navigateur.
 | `npm start`       | Sert le build + l'API (Express) sur `http://localhost:3000`.      |
 | `npm test`        | Lance les tests (`node --test`).                                  |
 | `npm run check:data` | Valide `data/questions.json` et la synchronisation de `seed.sql`. |
+| `node scripts/tag-questions.mjs` | Ajoute/rafraîchit `category` et `tags` dans `data/questions.json` (puis `npm run seed:generate`). |
 | `npm run seed:generate` | Régénère `supabase/seed.sql` depuis `data/questions.json`.  |
 
 ## Structure du projet

@@ -12,6 +12,42 @@ const CATEGORIES = JSON.parse(
 const KEYS = ["A", "B", "C", "D"];
 const KINDS = ["email", "memo", "article", "notice", "schedule", "letter", "message"];
 
+/** Valide data/listening.json (Part 2 : trois réponses A, B, C). */
+export function validateListening(data) {
+  const errors = [];
+  const err = (message) => errors.push(message);
+  const items = data?.part2;
+  if (!Array.isArray(items) || !items.length) return ["listening.json doit contenir un tableau « part2 »."];
+  const ids = new Set();
+  const counts = { A: 0, B: 0, C: 0 };
+  for (const item of items) {
+    const label = `Listening ${item?.id ?? "?"}`;
+    if (!item?.id) { err("Listening sans id."); continue; }
+    if (ids.has(item.id)) err(`${label} : id en double.`);
+    ids.add(item.id);
+    if (item.part !== 2) err(`${label} : partie 2 attendue.`);
+    if (!item.prompt?.trim()) err(`${label} : énoncé vide.`);
+    const opts = item.options;
+    if (!Array.isArray(opts) || opts.length !== 3) err(`${label} : exactement 3 réponses requises.`);
+    else {
+      if (opts.some((o, i) => o?.key !== "ABC"[i])) err(`${label} : clés attendues A, B, C dans l'ordre.`);
+      if (opts.some((o) => typeof o?.text !== "string" || !o.text.trim())) err(`${label} : réponse vide.`);
+    }
+    if (!["A", "B", "C"].includes(item.correctKey)) err(`${label} : correctKey « ${item.correctKey} » invalide.`);
+    else counts[item.correctKey] += 1;
+    const category = CATEGORIES.find((c) => c.id === item.category);
+    if (!category || !category.parts.includes(2)) err(`${label} : catégorie « ${item.category} » invalide pour la partie 2.`);
+    if (item.audio !== undefined && !/^(\/|https:\/\/)\S+\.(mp3|m4a|ogg|wav)$/i.test(item.audio)) err(`${label} : audio doit être un chemin ou une URL https vers un fichier audio.`);
+    if ([item.prompt, ...(opts ?? []).map((o) => o?.text)].some(looksFrench)) err(`${label} : contenu apparemment en français.`);
+  }
+  if (items.length >= 9) {
+    for (const [key, n] of Object.entries(counts)) {
+      if (n / items.length > 0.5) err(`Listening : réponses déséquilibrées (${key} = ${n}/${items.length}).`);
+    }
+  }
+  return errors;
+}
+
 /** Renvoie la liste des erreurs de validation (vide si le jeu est valide). */
 export function validateDataset(data, { seedSql } = {}) {
   const errors = [];
@@ -123,11 +159,12 @@ export function validateDataset(data, { seedSql } = {}) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const data = JSON.parse(readFileSync(new URL("../data/questions.json", import.meta.url), "utf8"));
   const seedSql = readFileSync(new URL("../supabase/seed.sql", import.meta.url), "utf8");
-  const errors = validateDataset(data, { seedSql });
+  const listening = JSON.parse(readFileSync(new URL("../data/listening.json", import.meta.url), "utf8"));
+  const errors = [...validateDataset(data, { seedSql }), ...validateListening(listening)];
   if (errors.length) {
     console.error(`check:data — ${errors.length} problème(s) :`);
     for (const e of errors) console.error(`  - ${e}`);
     process.exit(1);
   }
-  console.log(`check:data — OK (${data.questions.length} questions, ${data.passages.length} passages, seed synchronisé).`);
+  console.log(`check:data — OK (${data.questions.length} questions, ${data.passages.length} passages, ${listening.part2.length} items Listening, seed synchronisé).`);
 }

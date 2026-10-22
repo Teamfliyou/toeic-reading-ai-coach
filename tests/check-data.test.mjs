@@ -70,3 +70,39 @@ test("détecte une catégorie inconnue, incompatible ou des tags absents", () =>
 test("toutes les questions du jeu réel ont une catégorie", () => {
   assert.ok(load().questions.every((q) => typeof q.category === "string" && q.tags.length > 0));
 });
+
+// --- Listening ---------------------------------------------------------------
+import { validateListening } from "../scripts/check-data.mjs";
+const listening = () => JSON.parse(readFileSync(new URL("../data/listening.json", import.meta.url), "utf8"));
+
+test("listening.json réel : valide", () => {
+  assert.deepEqual(validateListening(listening()), []);
+});
+
+test("listening : détecte 2 réponses, clé invalide, id en double, catégorie de lecture, audio invalide", () => {
+  const d = listening();
+  d.part2[0].options.pop();
+  d.part2[1].correctKey = "D";
+  d.part2[2].id = d.part2[3].id;
+  d.part2[4].category = "reading-detail";
+  d.part2[5].audio = "javascript:alert(1)";
+  const errors = validateListening(d);
+  assert.ok(has(errors, "exactement 3 réponses"));
+  assert.ok(has(errors, "correctKey « D » invalide"));
+  assert.ok(has(errors, "id en double"));
+  assert.ok(has(errors, "catégorie « reading-detail » invalide"));
+  assert.ok(has(errors, "audio doit être"));
+});
+
+test("listening : accepte un chemin ou une URL https vers un mp3", () => {
+  const d = listening();
+  d.part2[0].audio = "/audio/part2/l2-01.mp3";
+  d.part2[1].audio = "https://cdn.example.com/l2-02.mp3";
+  assert.deepEqual(validateListening(d), []);
+});
+
+test("listening : réponses déséquilibrées détectées", () => {
+  const d = listening();
+  for (const item of d.part2) item.correctKey = "A";
+  assert.ok(has(validateListening(d), "déséquilibrées"));
+});
