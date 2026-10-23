@@ -15,6 +15,7 @@ import {
   type ExamState,
 } from "@/lib/exam";
 import QuestionView from "@/components/QuestionView";
+import ReportButton from "@/components/ReportButton";
 import SettingsButton from "@/components/SettingsButton";
 import AuthButton from "@/components/AuthButton";
 import { getPartInfo } from "@/lib/parts";
@@ -240,6 +241,7 @@ export default function Exam() {
                       <p style={{ margin: "8px 0" }}>{q.prompt}</p>
                       <p style={{ margin: 0, color: "#9a3232" }}>Votre réponse : {mine ? `${mine.key}. ${mine.text}` : "aucune"}</p>
                       <p style={{ margin: 0, color: "#176443" }}>Bonne réponse : {good?.key}. {good?.text}</p>
+                      <ReportButton questionId={q.id} part={q.part} />
                     </article>
                   );
                 })}

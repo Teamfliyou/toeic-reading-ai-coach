@@ -16,6 +16,7 @@ import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@
 import PassageView from "./PassageView";
 import AiExplanation from "./AiExplanation";
 import ScoreBoard from "./ScoreBoard";
+import ReportButton from "./ReportButton";
 
 type Status = "idle" | "correct" | "incorrect";
 
@@ -318,6 +319,7 @@ export default function PracticeClient({
               </button>
             ) : (
               <div className="mt-5" role="status" aria-live="polite">
+                <ReportButton key={question.id} questionId={question.id} part={question.part} />
                 {status === "correct" && (
                   <div className="animate-fade-up flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-200">
                     <svg

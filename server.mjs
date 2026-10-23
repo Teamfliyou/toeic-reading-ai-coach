@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { handleExplain, handleHealth } from "./server/explain.mjs";
 import { handleAdmin } from "./server/admin.mjs";
 import { handleCoach } from "./server/coach.mjs";
+import { handleReport } from "./server/report.mjs";
 import { securityHeaders } from "./server/security-headers.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -18,6 +19,7 @@ app.get("/api/health", handleHealth);
 app.all("/api/admin", handleAdmin);
 app.post("/api/explain", handleExplain);
 app.post("/api/coach", handleCoach);
+app.post("/api/report", handleReport);
 
 const distDir = join(__dirname, "dist");
 app.use(express.static(distDir));

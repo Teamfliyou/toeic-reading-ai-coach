@@ -4,6 +4,7 @@ import { loadAll } from "@/lib/data";
 import { dueNow, readCards, recordAnswer } from "@/lib/tracker";
 import { INTERVAL_DAYS } from "@/lib/srs";
 import QuestionView from "@/components/QuestionView";
+import ReportButton from "@/components/ReportButton";
 import SettingsButton from "@/components/SettingsButton";
 import AuthButton from "@/components/AuthButton";
 import "./lexora.css";
@@ -100,6 +101,7 @@ export default function Review() {
               reveal={checked}
               disabled={checked}
             />
+            {checked && <ReportButton key={question.id} questionId={question.id} part={question.part} />}
             <div className="lexora-actions" style={{ marginTop: 16 }} role="status" aria-live="polite">
               <a className="lexora-secondary" href="#/">Quitter</a>
               {checked ? (

@@ -3,6 +3,7 @@ import {authConfigured, setupStatus, setupFirstAdmin, currentUser, login, listUs
 import { DEEPSEEK_MODEL, computeCost } from "./deepseek-config.mjs";
 import { quotaConfigured, reserve, finalize, release, currentMonth, budgetLimits } from "./quota.mjs";
 import { clientIp } from "./rate-limit.mjs";
+import { listReports, setReportStatus } from "./report.mjs";
 import { registerAttempt, clearAttempt } from "./login-limiter.mjs";
 // Modèle partagé avec /api/explain (source unique : server/deepseek-config.mjs).
 export const MODEL = DEEPSEEK_MODEL;
@@ -149,6 +150,8 @@ export async function handleAdmin(req,res) {
    if(user.role!=="admin")return json(res,403,{error:"Réservé aux administrateurs"});
    const changed=await modifyUser(user,await readBody(req));return json(res,200,{user:changed});
   }
+  if(action==="reports"){const body=await readBody(req);return json(res,200,{reports:await listReports(typeof body.status==="string"?body.status:"open")});}
+  if(action==="report-status"){const body=await readBody(req);return json(res,200,{report:await setReportStatus(body.id,body.status,user.username)});}
   if(action==="publish"){try{return json(res,200,await publish(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Publication échouée"});}}
   if(action==="generate-stream"){
    res.statusCode=200;

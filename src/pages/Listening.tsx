@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { getPart2Items, type ListeningItem } from "@/lib/listening";
 import { recordAnswer } from "@/lib/tracker";
 import AudioPlayer from "@/components/AudioPlayer";
+import ReportButton from "@/components/ReportButton";
 import SettingsButton from "@/components/SettingsButton";
 import AuthButton from "@/components/AuthButton";
 import categories from "../../data/categories.json";
@@ -111,6 +112,7 @@ export default function Listening() {
               {answered && (
                 <div className="lexora-transcript" role="status" aria-live="polite">
                   <strong>{selected === item.correctKey ? "Bonne réponse !" : `Bonne réponse : ${item.correctKey}.`}</strong>
+                  <ReportButton key={item.id} questionId={item.id} part={2} audio />
                   <p style={{ margin: "8px 0 4px" }}><span className="lexora-pill">{CATEGORY_LABELS.get(item.category) ?? item.category}</span></p>
                   <p style={{ margin: "8px 0 0" }}><strong>Transcription</strong><br />
                     « {item.prompt} »<br />

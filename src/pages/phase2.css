@@ -40,3 +40,6 @@
 .lexora-transcript{border-top:1px solid #e5e9ef;margin-top:16px;padding-top:12px;font-size:14px;line-height:1.7;color:#40516a}
 @media(max-width:700px){.lexora-row{grid-template-columns:1fr}.lexora-boxes{grid-template-columns:repeat(3,minmax(0,1fr))}.lexora-scorebig{font-size:54px}}
 @media(prefers-reduced-motion:reduce){.lexora-progressline div{transition:none}}
+.lexora-linkbutton{background:none;border:0;padding:4px 0;color:#587291;font-size:13px;font-weight:650;cursor:pointer;text-decoration:underline}
+.lexora-linkbutton:hover{color:#27456c}
+.lexora-report{margin-top:12px}
