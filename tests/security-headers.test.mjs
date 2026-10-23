@@ -6,7 +6,7 @@ import { makeRes } from "./helpers.mjs";
 
 test("vercel.json applique exactement les mêmes en-têtes que Express", () => {
   const config = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
-  const fromVercel = Object.fromEntries(config.headers[0].headers.map((h) => [h.key, h.value]));
+  const fromVercel = Object.fromEntries(config.headers.find((h) => h.source === "/(.*)").headers.map((h) => [h.key, h.value]));
   assert.deepEqual(fromVercel, SECURITY_HEADERS);
 });
 
