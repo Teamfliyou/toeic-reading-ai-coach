@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Passage, Question } from "@/lib/types";
 import { loadAll } from "@/lib/data";
 import { recordAnswer } from "@/lib/tracker";
+import { addExamRecord } from "@/lib/goalsStore";
 import {
   EXAM_DURATION_MS,
   addTime,
@@ -105,6 +106,8 @@ export default function Exam() {
         });
       }
       next = { ...next, recorded: true };
+      const graded = gradeExam(next, data.questions);
+      addExamRecord({ at: new Date().toISOString(), score: graded.score, correct: graded.correct, total: graded.total });
     }
     stateRef.current = next;
     setState(next);

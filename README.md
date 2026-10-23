@@ -211,6 +211,7 @@ sont accessibles uniquement au serveur (`service_role`), comme
 | `AI_USD_EUR_RATE` | `0.93` | Taux USD→EUR (DeepSeek facture en dollars). **Valeur fixe : à mettre à jour** quand le change évolue ; un avertissement s'affiche au démarrage tant qu'elle n'est pas définie. |
 | `AI_ESTIMATED_CALL_USD` | `0.004` | Réservation a priori par appel (majorée ; couvre une nouvelle tentative). |
 | `AI_ESTIMATED_GENERATION_USD` | `0.012` | Réservation a priori d'une génération de questions (admin). |
+| `AI_ESTIMATED_FOLLOWUP_USD` | `0.002` | Réservation a priori d'une question de relance au coach. |
 | `ADMIN_GENERATE_PER_HOUR` | `10` | Générations de questions par administrateur et par heure (comptées en base). |
 | `AI_FREE_REQUIRES_AUTH` | `false` | `true` exige un compte pour l'explication gratuite. **Recommandé en production** : sans compte, seule l'IP limite l'usage. |
 | `ADMIN_LOGIN_MAX_PER_IP` | `20` | Tentatives de connexion admin par IP et par fenêtre. |
@@ -250,6 +251,26 @@ Dans l'éditeur SQL, dans cet ordre (toutes idempotentes) :
 3. `supabase/user_data.sql` : tables `user_attempts` et `user_review_cards` + politiques RLS.
 
 Sans ces migrations l'application fonctionne : le suivi reste local et la synchronisation est simplement ignorée.
+
+## Fonctionnalités complémentaires (phase 3)
+
+| Fonctionnalité | Où | Description |
+| --- | --- | --- |
+| Carnet de vocabulaire | `#/vocab` | « Ajouter à mes mots » sous chaque explication (mot, sens, exemple pré-rempli). Révision en **flashcards** avec les mêmes boîtes Leitner que les erreurs. Synchronisé pour un utilisateur connecté. |
+| Signalement d'une question | bouton « Signaler une erreur » après une réponse | Formulaire court (motif + commentaire), stocké dans `question_reports`. L'IP n'est jamais conservée (empreinte salée pour limiter les abus : 10 signalements par heure). Liste et traitement dans **Administration → Signalements**. |
+| Génération de questions (admin) | Administration → Génération | Générer → **relire et modifier** (énoncé, choix, bonne réponse, catégorie, explication, document) → cocher la relecture → publier. Jamais de publication automatique ; mêmes quotas et même budget mensuel que les explications. |
+| Objectif et plan d'étude | `#/goals` + carte sur le tableau de bord | Date d'examen, score visé, objectif quotidien, série de jours, plan indicatif (rythme quotidien selon l'écart au score visé, un examen blanc par semaine, pièges prioritaires). |
+| Question de relance | sous l'explication du coach | Jusqu'à 3 questions complémentaires par question, historique limité à la question en cours, mêmes quotas/budget (`/api/coach`, réservation `AI_ESTIMATED_FOLLOWUP_USD`, 0,002 $ par défaut). |
+
+### Migrations Supabase de la phase 3
+
+À exécuter dans l'éditeur SQL (idempotentes) :
+
+1. `supabase/user_vocab.sql` : carnet de vocabulaire (RLS par utilisateur).
+2. `supabase/user_goals.sql` : objectifs (RLS par utilisateur).
+3. `supabase/question_reports.sql` : signalements (service_role uniquement).
+
+Sans elles, le vocabulaire et les objectifs restent en local et le signalement répond « indisponible » sans bloquer les exercices.
 
 ## Scripts disponibles
 

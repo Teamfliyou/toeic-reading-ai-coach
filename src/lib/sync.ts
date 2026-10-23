@@ -17,6 +17,8 @@ import {
 import { mergeCards, type ReviewCard } from "./srs";
 import { claimAnonymousWords, readAllWords, writeWords } from "./vocabStore";
 import { mergeWords, type VocabWord } from "./vocab";
+import { claimAnonymousGoals, readGoals, writeGoals } from "./goalsStore";
+import { DEFAULT_GOALS } from "./goals";
 import {
   claimAnonymousCards,
   readAllAttempts,
@@ -145,6 +147,7 @@ export async function syncNow(): Promise<void> {
 
     claimAnonymousCards(userId);
     claimAnonymousWords(userId);
+    claimAnonymousGoals(userId);
 
     // 1) Envoi des tentatives en attente (doublons ignorés grâce à l'id).
     const pending = pendingSync(readAllAttempts(), userId);
@@ -198,6 +201,25 @@ export async function syncNow(): Promise<void> {
     const remoteWords = (await rest(token, "user_vocab?select=*&limit=2000")) as VocabRow[] | null;
     if (Array.isArray(remoteWords)) {
       writeWords(mergeWords(readAllWords(userId), remoteWords.map(wordFromRow)), userId);
+    }
+
+    // 5) Objectifs : une seule ligne, la plus récente gagne.
+    const local = readGoals(userId);
+    const remoteGoals = (await rest(token, "user_goals?select=*&limit=1")) as
+      | { exam_date: string | null; target_score: number | null; daily_goal: number; updated_at: string }[]
+      | null;
+    const remoteRow = remoteGoals?.[0];
+    if (remoteRow && Date.parse(remoteRow.updated_at) > Date.parse(local.updatedAt)) {
+      writeGoals(
+        { examDate: remoteRow.exam_date, targetScore: remoteRow.target_score, dailyGoal: remoteRow.daily_goal, updatedAt: remoteRow.updated_at },
+        userId
+      );
+    } else if (local.updatedAt !== DEFAULT_GOALS.updatedAt) {
+      await rest(token, "user_goals?on_conflict=user_id", {
+        method: "POST",
+        prefer: "resolution=merge-duplicates,return=minimal",
+        body: [{ user_id: userId, exam_date: local.examDate, target_score: local.targetScore, daily_goal: local.dailyGoal, updated_at: local.updatedAt }],
+      });
     }
   } catch {
     /* Hors ligne ou migration absente : nouvel essai à la prochaine réponse. */
