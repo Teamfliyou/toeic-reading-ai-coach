@@ -272,6 +272,26 @@ Sans ces migrations l'application fonctionne : le suivi reste local et la synchr
 
 Sans elles, le vocabulaire et les objectifs restent en local et le signalement répond « indisponible » sans bloquer les exercices.
 
+## Qualité, hors ligne et administration (phase 4)
+
+### Application installable et hors ligne (PWA)
+`public/manifest.webmanifest`, icônes générées par `node scripts/generate-icons.mjs` et service worker `public/sw.js` (enregistré en production uniquement). Après une première visite en ligne, l'application, ses assets et les questions locales fonctionnent hors connexion ; les questions Supabase lues sont mises en cache (réseau d'abord). Un bandeau « Hors connexion » s'affiche, et les explications / questions de relance du coach IA sont désactivées avec un message clair. **Jamais mis en cache** : `/api/*`, l'authentification et les données personnelles (`user_*`). En cas de mise à jour, la version du cache (`VERSION` dans `sw.js`) est à incrémenter si la stratégie change.
+
+### Accessibilité
+Navigation clavier complète, lien « Aller au contenu », titre de page et focus déplacés à chaque changement de page, boîtes de dialogue modales avec piège de focus (`useDialog`), menus déroulants de la partie 6 en `listbox` (flèches, Échap, Début/Fin), régions nommées pour le split-screen de la partie 7, résultats annoncés (`aria-live`), `prefers-reduced-motion` respecté (fond aurore figé). Les contrastes des textes secondaires sont vérifiés (AA, 4,5:1) par `tests/contrast.test.mjs` ; les autres contrôles restent manuels (lecteur d'écran, zoom 200 %).
+
+### CI
+`.github/workflows/ci.yml` : à chaque push et pull request, `npm ci`, `tsc`, `npm run lint` (ESLint), `npm test`, `npm run check:data`, `npm run build` (Node 24).
+
+### Journal d'audit et MFA
+Les actions sensibles (connexion, création de compte, rôle, activation/désactivation, réinitialisation de mot de passe, génération et publication de questions, traitement d'un signalement) sont tracées dans `admin_audit_log` (ajout seul, aucun mot de passe ni jeton, IP sous forme d'empreinte salée) et consultables dans **Administration → Journal** (administrateurs). La **MFA TOTP** est préparée (module `server/totp.mjs`, colonnes SQL) mais **non imposée** : voir `docs/admin-mfa.md` pour l'activer.
+
+### Mesure d'audience (facultative)
+Désactivée par défaut. Renseignez `VITE_PLAUSIBLE_DOMAIN` (variable publique, incluse au build) pour activer [Plausible](https://plausible.io) : sans cookie, sans donnée personnelle, « Do Not Track » respecté. La CSP autorise déjà `https://plausible.io` ; pour un Plausible auto-hébergé, définissez aussi `VITE_PLAUSIBLE_SRC` et ajoutez son domaine à la CSP (`server/security-headers.mjs` et `vercel.json`). Reconstruire l'application après modification.
+
+### Migration Supabase de la phase 4
+`supabase/admin_audit.sql` (journal d'audit + colonnes MFA, idempotent). Sans elle, le journal reste vide (un avertissement apparaît dans les logs serveur) et les actions d'administration continuent de fonctionner.
+
 ## Scripts disponibles
 
 | Commande          | Description                                                       |
@@ -281,6 +301,7 @@ Sans elles, le vocabulaire et les objectifs restent en local et le signalement r
 | `npm run preview` | Prévisualise le build de production.                              |
 | `npm start`       | Sert le build + l'API (Express) sur `http://localhost:3000`.      |
 | `npm test`        | Lance les tests (`node --test`).                                  |
+| `npm run lint`    | ESLint (TypeScript, React hooks).                                 |
 | `npm run check:data` | Valide `data/questions.json` et la synchronisation de `seed.sql`. |
 | `node scripts/tag-questions.mjs` | Ajoute/rafraîchit `category` et `tags` dans `data/questions.json` (puis `npm run seed:generate`). |
 | `npm run seed:generate` | Régénère `supabase/seed.sql` depuis `data/questions.json`.  |

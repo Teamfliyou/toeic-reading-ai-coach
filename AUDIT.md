@@ -161,3 +161,26 @@ Non traité en phase 1 (reporté ou volontairement laissé) :
 - Vote 👍/👎 sans effet, tables `attempts` / `feedback_votes` inutilisées (reprises en phase 2/3 avec l'historique et le signalement).
 - Lint et CI (phase 4), contrastes AA et `AuthModal` (phase 4).
 - Les tests ne couvrent pas les fonctions SQL elles-mêmes (pas de Postgres local) : à valider une fois dans Supabase.
+
+---
+
+## Suivi phases 2 à 4
+
+Phase 2 (suivi, examen blanc, révision espacée, Listening Part 2), phase 3 (vocabulaire, signalements, relecture/édition des lots générés, objectifs, question de relance) et phase 4 (PWA, accessibilité, CI, audit admin, MFA préparée, mesure d'audience) sont livrées ; 175 tests, lint, `check:data` et build verts.
+
+Mise à jour des points de l'audit :
+
+| # | Sujet | État |
+| --- | --- | --- |
+| 14 | Accessibilité | ✅ menus P6, modales (piège de focus), split-screen P7 nommé, titre/focus par page, lien d'évitement, aurore figée, contrastes AA testés. Reste manuel : test lecteur d'écran, zoom 200 %. |
+| 16 | Lint, CI | ✅ ESLint + GitHub Actions. |
+| 16 | Vote 👍/👎 sans effet | ⏳ non corrigé (le signalement d'une question couvre le besoin le plus utile). |
+| 16 | Tables `attempts` / `feedback_votes` (schema.sql) | ⏳ restent inutilisées ; remplacées en pratique par `user_attempts` (RLS par utilisateur). Suppression à décider. |
+| 7 | Génération admin | ✅ en plus : relecture/édition, catégories, journal d'audit ; ⏳ `order_index`, messages d'erreur bruts, course du `setup` initial. |
+| 4 | Jetons Supabase en `localStorage` | ⏳ inchangé (client REST léger) ; CSP + option de ne pas mémoriser la clé DeepSeek. |
+| 11 | Clé personnelle sans limite de débit | ⏳ inchangé (coût à la charge de son titulaire) ; la question de relance ne passe pas non plus par ce cas. |
+
+Limites connues :
+- Le service worker n'a pas pu être enregistré dans le navigateur intégré de l'outil de développement ; sa logique est vérifiée par simulation (`tests/pwa.test.mjs`) mais **doit être essayée une fois dans Chrome / Safari** (installation, mode avion).
+- Les fonctions SQL et la synchronisation Supabase (historique, vocabulaire, objectifs, signalements, journal d'audit, limitation de connexion) ne sont pas testées contre une vraie base : à valider après exécution des migrations.
+- La Part 2 du Listening utilise la synthèse vocale du navigateur tant qu'aucun enregistrement n'est fourni.
