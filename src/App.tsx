@@ -16,6 +16,7 @@ import Listening from "@/pages/Listening";
 import Vocab from "@/pages/Vocab";
 import Goals from "@/pages/Goals";
 import { initSync } from "@/lib/sync";
+import OfflineBanner from "@/components/OfflineBanner";
 import { migrateLegacyMistakes } from "@/lib/tracker";
 
 let started = false;
@@ -70,6 +71,7 @@ export default function App() {
     <SettingsProvider>
       <AuthProvider>
         {content}
+        <OfflineBanner />
         <SettingsModal />
         <AuthModal />
       </AuthProvider>

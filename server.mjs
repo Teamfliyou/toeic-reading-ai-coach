@@ -22,7 +22,14 @@ app.post("/api/coach", handleCoach);
 app.post("/api/report", handleReport);
 
 const distDir = join(__dirname, "dist");
-app.use(express.static(distDir));
+app.use(
+  express.static(distDir, {
+    // Le service worker doit toujours être revalidé pour que les mises à jour arrivent.
+    setHeaders(res, filePath) {
+      if (filePath.endsWith("sw.js")) res.setHeader("Cache-Control", "no-cache");
+    },
+  })
+);
 app.get("*", (_req, res) => res.sendFile(join(distDir, "index.html")));
 
 if (!process.env.AI_USD_EUR_RATE) {
