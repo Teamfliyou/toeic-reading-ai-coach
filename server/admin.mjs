@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { readFileSync } from "node:fs";
 import {authConfigured, setupStatus, setupFirstAdmin, currentUser, login, listUsers, addUser, modifyUser, cookie, publicUser} from "./admin-users.mjs";
 import { DEEPSEEK_MODEL, computeCost } from "./deepseek-config.mjs";
 import { quotaConfigured, reserve, finalize, release, currentMonth, budgetLimits } from "./quota.mjs";
@@ -7,6 +8,9 @@ import { listReports, setReportStatus } from "./report.mjs";
 import { registerAttempt, clearAttempt } from "./login-limiter.mjs";
 // Modèle partagé avec /api/explain (source unique : server/deepseek-config.mjs).
 export const MODEL = DEEPSEEK_MODEL;
+const CATEGORIES=JSON.parse(readFileSync(new URL("../data/categories.json",import.meta.url),"utf8"));
+/** Catégories (types de piège) autorisées pour une partie. */
+export const categoriesForPart=(part)=>CATEGORIES.filter(c=>c.parts.includes(part)).map(c=>c.id);
 function json(res, code, data) { res.statusCode=code;res.setHeader("Content-Type","application/json; charset=utf-8");res.setHeader("Cache-Control","no-store");res.end(JSON.stringify(data)); }
 async function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
@@ -42,7 +46,7 @@ export async function generate(body, emit = () => {}) {
   if(![5,6,7].includes(part)||!Number.isInteger(quantity)||quantity<1||quantity>20||![1,2,3].includes(difficulty)||!["grammar","vocabulary","email","memo","article","schedule","notice"].includes(kind))throw new Error("Paramètres de génération invalides");
   if(!process.env.DEEPSEEK_API_KEY)throw new Error("Clé DEEPSEEK_API_KEY absente du serveur");
   const directive=part===5?"Write independent sentence-completion items with a single blank (______); passage must be null.":"Write one original professional English document and related questions; passage must include title and documents, each document having a kind among email,memo,article,notice,schedule,letter,message and a body that is an array of paragraphs. For part 6, put numbered blanks (1)______, (2)______ etc. inside the document; for part 7, write reading-comprehension questions about the document.";
-  const prompt=`Write EXACTLY ${quantity} original TOEIC Reading practice questions, difficulty ${difficulty}/3, part ${part}, type ${kind}, topic ${topic||"varied business topics"}. ${directive} LANGUAGE RULE: every question prompt, every answer option, and every passage title, document title and body paragraph MUST be written entirely in English, never in French, even if the topic above is written in French. Only the "explanation" field is written in French. Do not copy protected text or official test questions. Distribute the correct answers evenly across A/B/C/D. Each question has exactly one clearly defensible correct answer. Each question is {part: ${part}, prompt: string, options:[{key:"A",text:string},{key:"B",text:string},{key:"C",text:string},{key:"D",text:string}],correctKey:"A"|"B"|"C"|"D",explanation:string (in French)}. For parts 6/7 also add passage={title:string,documents:[{kind:string,title:string,body:string[]}]}. Reply only with {questions:Question[],passage:Passage|null}. For part 6, each question refers to a distinct numbered blank, in order.`;
+  const prompt=`Write EXACTLY ${quantity} original TOEIC Reading practice questions, difficulty ${difficulty}/3, part ${part}, type ${kind}, topic ${topic||"varied business topics"}. ${directive} LANGUAGE RULE: every question prompt, every answer option, and every passage title, document title and body paragraph MUST be written entirely in English, never in French, even if the topic above is written in French. Only the "explanation" field is written in French. Do not copy protected text or official test questions. Distribute the correct answers evenly across A/B/C/D. Each question has exactly one clearly defensible correct answer. Each question is {part: ${part}, prompt: string, options:[{key:"A",text:string},{key:"B",text:string},{key:"C",text:string},{key:"D",text:string}],correctKey:"A"|"B"|"C"|"D",explanation:string (in French),category:string (exactly one of: ${categoriesForPart(part).join(", ")})}. For parts 6/7 also add passage={title:string,documents:[{kind:string,title:string,body:string[]}]}. Reply only with {questions:Question[],passage:Passage|null}. For part 6, each question refers to a distinct numbered blank, in order.`;
   emit("request_sent", "Demande envoyée à DeepSeek");
   const response=await fetch("https://api.deepseek.com/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${process.env.DEEPSEEK_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:MODEL,messages:[{role:"system",content:"You are an expert professional English test-item writer. Produce valid original exam-style practice content as JSON. Never copy branded test questions. Ensure exactly one correct choice and a coherent passage. All exam content (question prompts, options, passage titles and bodies) must be in fluent English only; only the explanation field is in French."},{role:"user",content:prompt}],response_format:{type:"json_object"},stream:false,temperature:0.6,max_tokens:8000}),signal:AbortSignal.timeout(90000)});
   if(!response.ok)throw new Error(`DeepSeek HTTP ${response.status}`);
@@ -52,6 +56,7 @@ export async function generate(body, emit = () => {}) {
   const bad=(message)=>Object.assign(new Error(message),{usage});
   try{result=JSON.parse(payload?.choices?.[0]?.message?.content||"{}");}catch{throw bad("DeepSeek n'a pas renvoyé un JSON valide");}
   const questions=Array.isArray(result.questions)?result.questions:[];
+  for(const q of questions)if(q&&typeof q==="object")q.category=categoriesForPart(part).includes(q.category)?q.category:null;
   if(questions.length!==quantity||!questions.every(x=>validateItem(x,part)))throw bad("Lot incomplet ou invalide. Réessayez avec moins de questions.");
   if(part!==5&&(!result.passage||!Array.isArray(result.passage.documents)||!result.passage.documents.length))throw bad("Document absent du lot.");
   if(!isEnglishContent(questions,part===5?null:result.passage))throw bad("Le lot contient du français : le contenu TOEIC doit être entièrement en anglais. Relancez la génération.");
@@ -79,12 +84,18 @@ export async function withBudget(user,run){
   }
 }
 
-async function publish(body){
+/**
+ * Enregistre un lot RELU ET VALIDÉ par un humain (jamais appelé automatiquement).
+ * Les contrôles de format et de langue sont refaits ici : le contenu a pu être modifié
+ * dans l'interface après la génération.
+ */
+export async function publishBatch(body){
   const base=process.env.SUPABASE_URL, key=process.env.SUPABASE_SERVICE_ROLE_KEY;
   if(!base||!key)throw new Error("Publication indisponible : renseignez SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY côté serveur.");
   const part=Number(body.part),questions=body.questions,passage=body.passage;
   if(![5,6,7].includes(part)||!Array.isArray(questions)||questions.length<1||questions.length>20||!questions.every(x=>validateItem(x,part)))throw new Error("Lot à publier invalide");
   if(part!==5&&(!passage||typeof passage.title!=="string"||!Array.isArray(passage.documents)||!passage.documents.length||passage.documents.length>3))throw new Error("Document invalide");
+  if(!isEnglishContent(questions,part===5?null:passage))throw new Error("Le lot contient du français : le contenu TOEIC doit être entièrement en anglais.");
   const url=new URL(base);
   if(url.protocol!=="https:")throw new Error("SUPABASE_URL doit utiliser HTTPS");
   const headers={apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json",Prefer:"return=representation"};
@@ -96,8 +107,12 @@ async function publish(body){
     const created=await r.json();passageId=created[0]?.id;
     if(!passageId)throw new Error("Identifiant de document manquant");
   }
-  const rows=questions.map((q,i)=>({part,passage_id:passageId,order_index:Date.now()%100000000+i,prompt:q.prompt,options:q.options,correct_key:q.correctKey,difficulty:[1,2,3].includes(Number(q.difficulty))?Number(q.difficulty):Number(body.difficulty)||2}));
-  const response=await fetch(endpoint("questions"),{method:"POST",headers,body:JSON.stringify(rows),signal:AbortSignal.timeout(20000)});
+  const allowed=categoriesForPart(part);
+  const rows=questions.map((q,i)=>({part,passage_id:passageId,order_index:Date.now()%100000000+i,prompt:q.prompt,options:q.options,correct_key:q.correctKey,difficulty:[1,2,3].includes(Number(q.difficulty))?Number(q.difficulty):Number(body.difficulty)||2,category:allowed.includes(q.category)?q.category:null,tags:[]}));
+  const insert=(payload)=>fetch(endpoint("questions"),{method:"POST",headers,body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
+  let response=await insert(rows);
+  // Base non migrée (colonnes category/tags absentes) : on publie sans catégorie plutôt que d'échouer.
+  if(response.status===400)response=await insert(rows.map(({category:_c,tags:_t,...rest})=>rest));
   if(!response.ok) {
     if(passageId)await fetch(endpoint("passages")+"?id=eq."+encodeURIComponent(passageId),{method:"DELETE",headers}).catch(()=>{});
     throw new Error("Enregistrement des questions échoué");
@@ -152,7 +167,7 @@ export async function handleAdmin(req,res) {
   }
   if(action==="reports"){const body=await readBody(req);return json(res,200,{reports:await listReports(typeof body.status==="string"?body.status:"open")});}
   if(action==="report-status"){const body=await readBody(req);return json(res,200,{report:await setReportStatus(body.id,body.status,user.username)});}
-  if(action==="publish"){try{return json(res,200,await publish(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Publication échouée"});}}
+  if(action==="publish"){try{return json(res,200,await publishBatch(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Publication échouée"});}}
   if(action==="generate-stream"){
    res.statusCode=200;
    res.setHeader("Content-Type","application/x-ndjson; charset=utf-8");
