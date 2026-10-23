@@ -40,13 +40,13 @@ function ProgressChart({ points }: { points: { day: string; rate: number | null;
         {[0, 50, 100].map((g) => (
           <g key={g}>
             <line x1={PAD} x2={W - PAD} y1={y(g)} y2={y(g)} stroke="#e5eaf1" />
-            <text x={PAD - 6} y={y(g) + 4} textAnchor="end" fontSize="11" fill="#69768a">{g} %</text>
+            <text x={PAD - 6} y={y(g) + 4} textAnchor="end" fontSize="11" fill="#566377">{g} %</text>
           </g>
         ))}
         <path d={path} fill="none" stroke="#27456c" strokeWidth="2.5" strokeLinejoin="round" />
         {points.map((p, i) => <circle key={p.day} cx={x(i)} cy={y(p.rate ?? 0)} r="4" fill="#27456c"><title>{`${p.day} : ${p.rate} % (${p.total} réponses)`}</title></circle>)}
-        <text x={PAD} y={H - 8} fontSize="11" fill="#69768a">{points[0].day}</text>
-        <text x={W - PAD} y={H - 8} textAnchor="end" fontSize="11" fill="#69768a">{points[points.length - 1].day}</text>
+        <text x={PAD} y={H - 8} fontSize="11" fill="#566377">{points[0].day}</text>
+        <text x={W - PAD} y={H - 8} textAnchor="end" fontSize="11" fill="#566377">{points[points.length - 1].day}</text>
       </svg>
     </>
   );

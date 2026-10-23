@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import "@/pages/phase2.css";
+import { useEffect, useRef, useState } from "react";
 import type { Part } from "@/lib/types";
 import { SettingsProvider } from "@/lib/SettingsContext";
 import { AuthProvider } from "@/lib/AuthContext";
@@ -27,6 +28,51 @@ function startTracking() {
   initSync();
 }
 
+const TITLES: [RegExp, string][] = [
+  [/^#\/practice\//, "Entraînement"],
+  [/^#\/review/, "Révision"],
+  [/^#\/exam/, "Examen blanc"],
+  [/^#\/stats/, "Statistiques"],
+  [/^#\/vocab/, "Mes mots"],
+  [/^#\/goals/, "Mon objectif"],
+  [/^#\/lessons/, "Mes leçons"],
+  [/^#\/diagnostic/, "Diagnostic"],
+  [/^#\/listening/, "Listening · Partie 2"],
+  [/^#\/admin/, "Administration"],
+];
+
+/** Titre de page et focus du contenu à chaque changement de page (lecteurs d'écran, clavier). */
+function useRouteAnnouncements(hash: string, firstRender: { current: boolean }) {
+  useEffect(() => {
+    const title = TITLES.find(([pattern]) => pattern.test(hash))?.[1];
+    document.title = title ? `${title} — Lernoviq` : "Lernoviq — Coach TOEIC";
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    const main = document.querySelector<HTMLElement>("main");
+    main?.setAttribute("tabindex", "-1");
+    main?.focus({ preventScroll: false });
+  }, [hash, firstRender]);
+}
+
+function SkipLink() {
+  return (
+    <a
+      href="#contenu"
+      className="lexora-skip"
+      onClick={(event) => {
+        event.preventDefault();
+        const main = document.querySelector<HTMLElement>("main");
+        main?.setAttribute("tabindex", "-1");
+        main?.focus();
+      }}
+    >
+      Aller au contenu
+    </a>
+  );
+}
+
 function useHashRoute() {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
@@ -39,7 +85,9 @@ function useHashRoute() {
 
 export default function App() {
   const hash = useHashRoute();
+  const firstRender = useRef(true);
   useEffect(startTracking, []);
+  useRouteAnnouncements(hash, firstRender);
   const match = hash.match(/^#\/practice\/(part[567])$/);
   const reviewMatch = hash.match(/^#\/review\/(part[567])$/);
   const content = hash === "#/lessons" ? (
@@ -70,6 +118,7 @@ export default function App() {
   return (
     <SettingsProvider>
       <AuthProvider>
+        <SkipLink />
         {content}
         <OfflineBanner />
         <SettingsModal />

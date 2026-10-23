@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useDialog } from "@/lib/useDialog";
 import { useAuth } from "@/lib/AuthContext";
 
 type Mode = "signin" | "signup";
@@ -23,14 +24,7 @@ export default function AuthModal() {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") close();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [isOpen, close]);
+  const dialogRef = useDialog<HTMLDivElement>(Boolean(enabled && isOpen), close);
 
   if (!enabled || !isOpen) return null;
 
@@ -79,6 +73,7 @@ export default function AuthModal() {
       aria-label="Connexion"
     >
       <div
+        ref={dialogRef}
         className="glass-strong w-full max-w-md animate-fade-up p-6"
         onClick={(event) => event.stopPropagation()}
       >

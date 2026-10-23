@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useDialog } from "@/lib/useDialog";
 import { useSettings } from "@/lib/SettingsContext";
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -35,7 +36,6 @@ export default function SettingsModal() {
   const [draft, setDraft] = useState("");
   const [remember, setRemember] = useState(false);
   const [show, setShow] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -45,39 +45,7 @@ export default function SettingsModal() {
     }
   }, [isOpen, apiKey, keyRemembered]);
 
-  // Focus : placé dans la boîte à l'ouverture, retenu à l'intérieur (Tab), rendu à la fermeture.
-  useEffect(() => {
-    if (!isOpen) return;
-    const previous = document.activeElement as HTMLElement | null;
-    dialogRef.current?.querySelector<HTMLElement>("input")?.focus();
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        close();
-        return;
-      }
-      if (e.key !== "Tab" || !dialogRef.current) return;
-      const items = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          "button:not([disabled]), input:not([disabled])"
-        )
-      );
-      if (!items.length) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      previous?.focus?.();
-    };
-  }, [isOpen, close]);
+  const dialogRef = useDialog<HTMLDivElement>(isOpen, close);
 
   if (!isOpen) return null;
 

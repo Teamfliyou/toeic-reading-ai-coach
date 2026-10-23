@@ -221,6 +221,9 @@ export default function PracticeClient({
       >
         {passage && (
           <div
+            role="region"
+            aria-label="Document à lire"
+            tabIndex={isPart7 ? 0 : undefined}
             className={
               isPart7 ? "lg:max-h-[calc(100vh-10rem)] lg:overflow-y-auto scrollbar-thin lg:pr-1" : ""
             }
@@ -229,7 +232,7 @@ export default function PracticeClient({
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4" role="region" aria-label="Question et réponses">
           <div className="glass-strong animate-fade-up p-5 sm:p-6" key={question.id}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <span className="chip">

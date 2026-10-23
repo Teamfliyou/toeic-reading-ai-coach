@@ -10,10 +10,10 @@
 .lexora-content{padding-top:54px;padding-bottom:90px}
 .lexora-eyebrow{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:750;color:#446180;margin:0 0 13px}
 .lexora-heading{font-size:clamp(32px,4vw,46px);letter-spacing:-1.8px;line-height:1.13;margin:0 0 14px;font-weight:780}
-.lexora-muted{color:#69768a;line-height:1.6}
+.lexora-muted{color:#566377;line-height:1.6}
 .lexora-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:32px 0}
 .lexora-card{background:white;border:1px solid #e5e9ef;border-radius:15px;padding:25px;box-shadow:0 3px 12px rgba(19,43,75,.025)}
-.lexora-statlabel{font-size:13px;color:#718096;margin-bottom:9px}
+.lexora-statlabel{font-size:13px;color:#5f6b7c;margin-bottom:9px}
 .lexora-statvalue{font-size:31px;font-weight:750;letter-spacing:-1px;margin:0}
 .lexora-primary{background:#27456c;color:white;border:1px solid #27456c;border-radius:9px;padding:13px 19px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:12px;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s}
 .lexora-primary:hover{background:#173251}.lexora-primary:disabled{opacity:.45;cursor:not-allowed}
@@ -44,7 +44,7 @@
 .lexora-option[aria-pressed=true] .lexora-optionkey{background:#27456c;color:white}
 .lexora-actions{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .lexora-resultmark{display:block;font-size:51px;letter-spacing:-2px;font-weight:800;color:#27456c}
-.lexora-subtle{font-size:13px;color:#7b8799}
+.lexora-subtle{font-size:13px;color:#5f6b7c}
 @media(max-width:700px){.lexora-shell{padding:0 18px}.lexora-content{padding-top:35px}.lexora-stats,.lexora-grid{grid-template-columns:1fr}.lexora-stats{gap:10px}.lexora-hero{display:block;padding:24px}.lexora-hero .lexora-primary{margin-top:19px}.lexora-navright{gap:10px}.lexora-smalllink{display:none}.lexora-heading{font-size:34px}.lexora-card{padding:21px}}
 
 /* Accessible settings in the light dashboard */
@@ -55,7 +55,7 @@
 .lexora-admin-input{display:block;width:100%;border:1px solid #d8e0ea;border-radius:9px;background:#fff;padding:12px;color:#172239;font-size:14px;margin-top:8px;outline-offset:2px}
 .lexora-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:19px}.lexora-admin-grid label,.lexora-card>label{font-size:13px;font-weight:650;color:#3a4b64}.lexora-admin-question{padding:20px 0;border-top:1px solid #e6ebf0;font-size:14px;line-height:1.65}.lexora-admin-question p{margin:10px 0;color:#4e607a}.lexora-admin-document{border:1px solid #e5eaf1;border-radius:10px;padding:20px;background:#fafcfe;margin:14px 0;line-height:1.7;font-size:14px}@media(max-width:640px){.lexora-admin-grid{grid-template-columns:1fr}}
 
-.lexora-generation-status{border:1px solid #cbd8e7;background:#f6f9fd;border-radius:12px;padding:20px}.lexora-generation-status ol{padding:0;margin:18px 0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.lexora-generation-status li{display:flex;align-items:center;gap:9px;font-size:12px;color:#8d99a8}.lexora-generation-status li span{width:25px;height:25px;border-radius:100%;background:#e9edf2;color:#7a8898;display:grid;place-items:center;flex:none;font-weight:700}.lexora-generation-status li.active{color:#25476d;font-weight:700}.lexora-generation-status li.active span{background:#27456c;color:white}.lexora-generation-status li.done{color:#287761}.lexora-generation-status li.done span{background:#e3f4ec;color:#287761}@media(max-width:680px){.lexora-generation-status ol{grid-template-columns:1fr 1fr}}
+.lexora-generation-status{border:1px solid #cbd8e7;background:#f6f9fd;border-radius:12px;padding:20px}.lexora-generation-status ol{padding:0;margin:18px 0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.lexora-generation-status li{display:flex;align-items:center;gap:9px;font-size:12px;color:#5f6b7c}.lexora-generation-status li span{width:25px;height:25px;border-radius:100%;background:#e9edf2;color:#566377;display:grid;place-items:center;flex:none;font-weight:700}.lexora-generation-status li.active{color:#25476d;font-weight:700}.lexora-generation-status li.active span{background:#27456c;color:white}.lexora-generation-status li.done{color:#287761}.lexora-generation-status li.done span{background:#e3f4ec;color:#287761}@media(max-width:680px){.lexora-generation-status ol{grid-template-columns:1fr 1fr}}
 
 
 /* Shared Lexora visual language for every reading exercise, including Part 6,
