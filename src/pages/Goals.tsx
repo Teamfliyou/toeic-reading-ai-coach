@@ -23,6 +23,7 @@ export default function Goals() {
 
   const weak = useMemo(
     () => computeStats(myAttempts()).byCategory.filter((c) => c.total >= 3 && (c.rate ?? 100) < 80).map((c) => c.category),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` et l'utilisateur déclenchent la relecture du stockage local
     [saved]
   );
   const plan = useMemo(

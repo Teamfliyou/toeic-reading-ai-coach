@@ -61,9 +61,11 @@ export default function Stats() {
     return () => window.removeEventListener(DATA_EVENT, refresh);
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` et l'utilisateur déclenchent la relecture du stockage local
   const attempts = useMemo(() => myAttempts(), [version, user?.id]);
   const stats = useMemo(() => computeStats(attempts), [attempts]);
   const streak = useMemo(() => currentStreak(attempts), [attempts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` et l'utilisateur déclenchent la relecture du stockage local
   const counts = useMemo(() => boxCounts(readCards()), [version, user?.id]);
   const seconds = stats.avgTimeMs === null ? null : Math.round(stats.avgTimeMs / 1000);
 

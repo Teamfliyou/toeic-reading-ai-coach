@@ -24,6 +24,7 @@ export default function Vocab() {
     return () => window.removeEventListener(DATA_EVENT, refresh);
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` et l'utilisateur déclenchent la relecture du stockage local
   const words = useMemo(() => readWords(), [version, user?.id]);
   const byId = useMemo(() => new Map(words.map((w) => [w.id, w])), [words]);
   const dueCount = useMemo(() => dueWords(words).length, [words]);

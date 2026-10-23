@@ -27,6 +27,7 @@ export default function GoalSummary() {
       daysLeft: daysUntil(goals.examDate),
       last: latestExamScore(readExamHistory()),
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` et l'utilisateur déclenchent la relecture du stockage local
   }, [version, user?.id]);
 
   const { goals, today, streak, daysLeft, last } = data;
