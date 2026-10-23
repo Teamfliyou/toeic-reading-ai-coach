@@ -102,7 +102,7 @@ export function claimAnonymousCards(userId: string) {
   writeJson(cardsKey(null), []);
 }
 
-function newId(): string {
+export function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   // Repli (anciens navigateurs) : UUID v4 approximatif, suffisant comme clé de fusion.
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -126,6 +126,11 @@ let requestSync: SyncRequest | null = null;
 /** Enregistre la fonction appelée après chaque réponse (évite une dépendance circulaire). */
 export function setSyncRequester(fn: SyncRequest) {
   requestSync = fn;
+}
+
+/** Demande une synchronisation prochaine (utilisé par le carnet de vocabulaire). */
+export function requestSyncSoon() {
+  requestSync?.();
 }
 
 /** Enregistre une réponse : historique + carte de révision. */

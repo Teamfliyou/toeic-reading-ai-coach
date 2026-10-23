@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { AiExplanation, Question } from "@/lib/types";
 import FollowUp from "./FollowUp";
+import AddWordForm from "./AddWordForm";
 
 function PointCard({
   index,
@@ -109,6 +110,8 @@ export default function AiExplanation({
             body={explanation.tip}
             tone="bg-cyan-500/20 text-cyan-300"
           />
+
+          {question && <AddWordForm key={`word-${question.id}`} question={question} />}
 
           {question && selectedKey && (
             <FollowUp key={`${question.id}:${selectedKey}`} question={question} selectedKey={selectedKey} />

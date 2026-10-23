@@ -15,6 +15,8 @@ import {
   type AttemptRow,
 } from "./attempts";
 import { mergeCards, type ReviewCard } from "./srs";
+import { claimAnonymousWords, readAllWords, writeWords } from "./vocabStore";
+import { mergeWords, type VocabWord } from "./vocab";
 import {
   claimAnonymousCards,
   readAllAttempts,
@@ -34,6 +36,53 @@ interface CardRow {
   lapses: number;
   updated_at: string;
 }
+
+interface VocabRow {
+  user_id?: string;
+  id: string;
+  term: string;
+  meaning: string;
+  example: string;
+  source_question_id: string | null;
+  box: number;
+  due: string;
+  mastered: boolean;
+  lapses: number;
+  deleted: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+const wordToRow = (w: VocabWord, userId: string): VocabRow => ({
+  user_id: userId,
+  id: w.id,
+  term: w.term,
+  meaning: w.meaning,
+  example: w.example,
+  source_question_id: w.sourceQuestionId ?? null,
+  box: w.box,
+  due: w.due,
+  mastered: w.mastered,
+  lapses: w.lapses,
+  deleted: Boolean(w.deleted),
+  created_at: w.createdAt,
+  updated_at: w.updatedAt,
+});
+
+const wordFromRow = (r: VocabRow): VocabWord => ({
+  id: r.id,
+  term: r.term,
+  meaning: r.meaning,
+  example: r.example,
+  sourceQuestionId: r.source_question_id ?? undefined,
+  box: r.box,
+  due: r.due,
+  mastered: r.mastered,
+  lapses: r.lapses,
+  deleted: r.deleted || undefined,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+});
 
 const cardToRow = (c: ReviewCard, userId: string): CardRow => ({
   user_id: userId,
@@ -95,6 +144,7 @@ export async function syncNow(): Promise<void> {
     const userId = session.user.id;
 
     claimAnonymousCards(userId);
+    claimAnonymousWords(userId);
 
     // 1) Envoi des tentatives en attente (doublons ignorés grâce à l'id).
     const pending = pendingSync(readAllAttempts(), userId);
@@ -134,6 +184,20 @@ export async function syncNow(): Promise<void> {
       | null;
     if (Array.isArray(remoteCards)) {
       writeCards(mergeCards(readCards(userId), remoteCards.map(cardFromRow)), userId);
+    }
+
+    // 4) Carnet de vocabulaire : même principe (la version la plus récente gagne).
+    const words = readAllWords(userId);
+    if (words.length) {
+      await rest(token, "user_vocab?on_conflict=id", {
+        method: "POST",
+        prefer: "resolution=merge-duplicates,return=minimal",
+        body: words.map((w) => wordToRow(w, userId)),
+      });
+    }
+    const remoteWords = (await rest(token, "user_vocab?select=*&limit=2000")) as VocabRow[] | null;
+    if (Array.isArray(remoteWords)) {
+      writeWords(mergeWords(readAllWords(userId), remoteWords.map(wordFromRow)), userId);
     }
   } catch {
     /* Hors ligne ou migration absente : nouvel essai à la prochaine réponse. */

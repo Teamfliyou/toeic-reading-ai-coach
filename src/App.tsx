@@ -13,6 +13,7 @@ import Exam from "@/pages/Exam";
 import Stats from "@/pages/Stats";
 import Review from "@/pages/Review";
 import Listening from "@/pages/Listening";
+import Vocab from "@/pages/Vocab";
 import { initSync } from "@/lib/sync";
 import { migrateLegacyMistakes } from "@/lib/tracker";
 
@@ -47,6 +48,8 @@ export default function App() {
     <Stats />
   ) : hash === "#/listening/part2" ? (
     <Listening />
+  ) : hash === "#/vocab" ? (
+    <Vocab />
   ) : hash === "#/review" ? (
     <Review />
   ) : hash === "#/admin" ? (

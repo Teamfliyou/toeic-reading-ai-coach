@@ -30,7 +30,7 @@ export default function Dashboard() {
   const correct = history.reduce((total, session) => total + session.correct, 0);
   const average = attempted ? Math.round(correct / attempted * 100) : null;
   return <div className="lexora-page">
-    <header className="lexora-nav"><div className="lexora-shell"><a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a><div className="lexora-navright"><a className="lexora-smalllink" href="#/stats">Statistiques</a><a className="lexora-smalllink" href="#/lessons">Mes leçons</a><a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a><a className="lexora-admin-link" href="#/admin">Administration</a><AuthButton /><SettingsButton withLabel /></div></div></header>
+    <header className="lexora-nav"><div className="lexora-shell"><a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a><div className="lexora-navright"><a className="lexora-smalllink" href="#/vocab">Mes mots</a><a className="lexora-smalllink" href="#/stats">Statistiques</a><a className="lexora-smalllink" href="#/lessons">Mes leçons</a><a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a><a className="lexora-admin-link" href="#/admin">Administration</a><AuthButton /><SettingsButton withLabel /></div></div></header>
     <main className="lexora-shell lexora-content">
       <p className="lexora-eyebrow">Mon espace d'apprentissage</p>
       <h1 className="lexora-heading">Votre anglais, à votre rythme.</h1>
