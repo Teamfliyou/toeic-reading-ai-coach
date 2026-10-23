@@ -5,6 +5,7 @@ import { DEEPSEEK_MODEL, computeCost } from "./deepseek-config.mjs";
 import { quotaConfigured, reserve, finalize, release, currentMonth, budgetLimits } from "./quota.mjs";
 import { clientIp } from "./rate-limit.mjs";
 import { listReports, setReportStatus } from "./report.mjs";
+import { recordAudit, userChangeEvents, listAudit } from "./audit.mjs";
 import { registerAttempt, clearAttempt } from "./login-limiter.mjs";
 // Modèle partagé avec /api/explain (source unique : server/deepseek-config.mjs).
 export const MODEL = DEEPSEEK_MODEL;
@@ -137,6 +138,7 @@ export async function handleAdmin(req,res) {
    if(!gate.ok){res.setHeader("Retry-After",String(gate.retryAfterSec));return json(res,429,{error:"Trop de tentatives. Réessayez plus tard."});}
    const user=await setupFirstAdmin(await readBody(req));
    await clearAttempt(gate.attemptId);
+   await recordAudit({actor:user,action:"setup.first_admin",target:user.username,req});
    return json(res,201,{created:true,user});
   }
   if(action==="logout"){res.setHeader("Set-Cookie",cookie(req,""));return json(res,200,{ok:true});}
@@ -148,6 +150,7 @@ export async function handleAdmin(req,res) {
    const session=await login(req,username,password);
    if(!session)return json(res,401,{error:"Identifiants incorrects"});
    await clearAttempt(gate.attemptId);
+   await recordAudit({actor:session.user,action:"login.success",target:session.user.username,req});
    res.setHeader("Set-Cookie",cookie(req,session.token));
    return json(res,200,{ok:true,user:session.user});
   }
@@ -159,15 +162,25 @@ export async function handleAdmin(req,res) {
   }
   if(action==="create-user"){
    if(user.role!=="admin")return json(res,403,{error:"Réservé aux administrateurs"});
-   const created=await addUser(await readBody(req));return json(res,201,{user:created});
+   const created=await addUser(await readBody(req));
+   await recordAudit({actor:user,action:"user.create",target:created.username,details:{role:created.role},req});
+   return json(res,201,{user:created});
   }
   if(action==="update-user"){
    if(user.role!=="admin")return json(res,403,{error:"Réservé aux administrateurs"});
-   const changed=await modifyUser(user,await readBody(req));return json(res,200,{user:changed});
+   const body=await readBody(req);
+   const changed=await modifyUser(user,body);
+   for(const event of userChangeEvents(body,changed))await recordAudit({actor:user,req,...event});
+   return json(res,200,{user:changed});
+  }
+  if(action==="audit"){
+   if(user.role!=="admin")return json(res,403,{error:"Réservé aux administrateurs"});
+   const body=await readBody(req);
+   return json(res,200,{entries:await listAudit({action:typeof body.action==="string"?body.action:undefined})});
   }
   if(action==="reports"){const body=await readBody(req);return json(res,200,{reports:await listReports(typeof body.status==="string"?body.status:"open")});}
-  if(action==="report-status"){const body=await readBody(req);return json(res,200,{report:await setReportStatus(body.id,body.status,user.username)});}
-  if(action==="publish"){try{return json(res,200,await publishBatch(await readBody(req)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Publication échouée"});}}
+  if(action==="report-status"){const body=await readBody(req);const report=await setReportStatus(body.id,body.status,user.username);await recordAudit({actor:user,action:"report.status",target:body.id,details:{status:body.status},req});return json(res,200,{report});}
+  if(action==="publish"){try{const published=await publishBatch(await readBody(req));await recordAudit({actor:user,action:"question.publish",details:{saved:published.saved,passageSaved:published.passageSaved},req});return json(res,200,published);}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Publication échouée"});}}
   if(action==="generate-stream"){
    res.statusCode=200;
    res.setHeader("Content-Type","application/x-ndjson; charset=utf-8");
@@ -180,6 +193,7 @@ export async function handleAdmin(req,res) {
      const body=await readBody(req);
      emit("checking","Contrôle des paramètres");
      const data=await withBudget(user,()=>generate(body,emit));
+     await recordAudit({actor:user,action:"questions.generate",details:{part:Number(body.part),count:data.questions.length,costUsd:data.cost.estimatedUsd},req});
      res.write(JSON.stringify({type:"result",data})+"\n");
    }catch(e){
      res.write(JSON.stringify({type:"error",message:e instanceof Error?e.message:"Erreur de génération"})+"\n");
@@ -187,7 +201,7 @@ export async function handleAdmin(req,res) {
    return;
   }
   if(action==="generate"){
-   try{const body=await readBody(req);return json(res,200,await withBudget(user,()=>generate(body)));}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Génération échouée"});}
+   try{const body=await readBody(req);const batch=await withBudget(user,()=>generate(body));await recordAudit({actor:user,action:"questions.generate",details:{part:Number(body.part),count:batch.questions.length,costUsd:batch.cost.estimatedUsd},req});return json(res,200,batch);}catch(e){return json(res,400,{error:e instanceof Error?e.message:"Génération échouée"});}
   }
   return json(res,404,{error:"Action inconnue"});
  }catch(e){return json(res,400,{error:e instanceof Error?e.message:"Erreur du serveur"});}
