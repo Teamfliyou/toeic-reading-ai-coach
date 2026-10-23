@@ -22,6 +22,15 @@ export default defineConfig({
           const { handleExplain } = await import("./server/explain.mjs");
           await handleExplain(req, res);
         });
+        server.middlewares.use("/api/coach", async (req, res) => {
+          if (req.method !== "POST") {
+            res.statusCode = 405;
+            res.end("Method Not Allowed");
+            return;
+          }
+          const { handleCoach } = await import("./server/coach.mjs");
+          await handleCoach(req, res);
+        });
         server.middlewares.use("/api/health", async (_req, res) => {
           const { handleHealth } = await import("./server/explain.mjs");
           handleHealth(_req, res);

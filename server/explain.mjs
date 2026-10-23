@@ -307,7 +307,16 @@ function sendJson(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-export async function handleExplain(req, res) {
+/**
+ * Gestionnaire commun des appels IA (explication, question de relance) : contrôle
+ * d'origine, identité, débit, cache, réservation de quota/budget, appel, réconciliation
+ * du coût. `spec` fournit la partie propre à chaque endpoint :
+ *   parse(body)            -> { ok, input } | { ok: false, error }
+ *   cached?(input)         -> réponse déjà disponible (sans quota) ou null
+ *   execute(input, ctx)    -> { response, usage } (ctx : { userApiKey, aiUser })
+ *   estimateUsd?()         -> réservation a priori
+ */
+export async function handleAiEndpoint(req, res, spec) {
   if (req.method && req.method !== "POST") {
     return sendJson(res, 405, { error: "Méthode non autorisée." });
   }
@@ -388,38 +397,14 @@ export async function handleExplain(req, res) {
       return sendJson(res, 400, { error: "JSON invalide." });
     }
 
-    const { questionId, selectedKey } = body;
-    if (
-      typeof questionId !== "string" ||
-      !questionId.trim() ||
-      questionId.length > 200
-    ) {
-      return sendJson(res, 400, {
-        error: "Champ `questionId` requis (chaîne de 200 caractères maximum).",
-      });
-    }
-    if (!["A", "B", "C", "D"].includes(selectedKey)) {
-      return sendJson(res, 400, { error: "`selectedKey` invalide." });
-    }
+    const parsed = spec.parse(body);
+    if (!parsed.ok) return sendJson(res, 400, { error: parsed.error });
+    const input = parsed.input;
 
-    // Cache partagé : une explication identique déjà générée est resservie
-    // sans consommer de quota ni appeler DeepSeek.
-    if (storeConfigured()) {
-      const cached = await getCachedExplanation({
-        questionId,
-        selectedKey,
-        promptVersion: PROMPT_VERSION,
-        model: DEEPSEEK_MODEL,
-      }).catch(() => null);
-      if (cached) {
-        touchExplanation(cached.id).catch(() => {});
-        return sendJson(res, 200, {
-          explanation: cached.payload,
-          lesson: cached.lesson ?? null,
-          latencyMs: 0,
-          cached: true,
-        });
-      }
+    // Réponse déjà disponible (cache partagé) : ni quota ni appel DeepSeek.
+    if (spec.cached) {
+      const hit = await spec.cached(input);
+      if (hit) return sendJson(res, 200, hit);
     }
 
     // Réservation atomique du quota et du budget (clé serveur uniquement).
@@ -436,7 +421,7 @@ export async function handleExplain(req, res) {
             ? Number(process.env.AI_PER_MINUTE) || 3
             : Number(process.env.AI_ANON_PER_MINUTE) || 2,
           windowSeconds: 60,
-          estimatedUsd: estimateCostUsd(),
+          estimatedUsd: spec.estimateUsd ? spec.estimateUsd() : estimateCostUsd(),
           limitUsd,
           suspendUsd,
           month: currentMonth(),
@@ -470,23 +455,7 @@ export async function handleExplain(req, res) {
       eventId = reservation.eventId;
     }
 
-    const result = await explainMistake(questionId, selectedKey, userApiKey, {
-      userId: aiUser?.id,
-    });
-
-    // Enregistrement de la réponse IA : historique + cache partagé.
-    if (storeConfigured()) {
-      await saveExplanation({
-        questionId,
-        selectedKey,
-        promptVersion: PROMPT_VERSION,
-        model: DEEPSEEK_MODEL,
-        payload: result.explanation,
-        lesson: result.lesson,
-        userId: aiUser?.id ?? null,
-        usage: result.usage,
-      }).catch(() => {});
-    }
+    const result = await spec.execute(input, { userApiKey, aiUser });
 
     // Réconciliation du budget : la réservation devient le coût réel.
     if (eventId) {
@@ -494,11 +463,7 @@ export async function handleExplain(req, res) {
       eventId = null;
     }
 
-    return sendJson(res, 200, {
-      explanation: result.explanation,
-      lesson: result.lesson,
-      latencyMs: result.latencyMs,
-    });
+    return sendJson(res, 200, result.response);
   } catch (error) {
     if (eventId) {
       // Si DeepSeek a répondu (donc facturé) mais que le résultat est inutilisable,
@@ -538,6 +503,62 @@ export async function handleExplain(req, res) {
     return sendJson(res, 500, { error: message });
   }
 }
+
+const explainSpec = {
+  parse(body) {
+    const { questionId, selectedKey } = body;
+    if (typeof questionId !== "string" || !questionId.trim() || questionId.length > 200) {
+      return { ok: false, error: "Champ `questionId` requis (chaîne de 200 caractères maximum)." };
+    }
+    if (!["A", "B", "C", "D"].includes(selectedKey)) {
+      return { ok: false, error: "`selectedKey` invalide." };
+    }
+    return { ok: true, input: { questionId, selectedKey } };
+  },
+
+  // Cache partagé : une explication identique déjà générée est resservie.
+  async cached({ questionId, selectedKey }) {
+    if (!storeConfigured()) return null;
+    const cached = await getCachedExplanation({
+      questionId,
+      selectedKey,
+      promptVersion: PROMPT_VERSION,
+      model: DEEPSEEK_MODEL,
+    }).catch(() => null);
+    if (!cached) return null;
+    touchExplanation(cached.id).catch(() => {});
+    return { explanation: cached.payload, lesson: cached.lesson ?? null, latencyMs: 0, cached: true };
+  },
+
+  async execute({ questionId, selectedKey }, { userApiKey, aiUser }) {
+    const result = await explainMistake(questionId, selectedKey, userApiKey, {
+      userId: aiUser?.id,
+    });
+    // Enregistrement de la réponse IA : historique + cache partagé.
+    if (storeConfigured()) {
+      await saveExplanation({
+        questionId,
+        selectedKey,
+        promptVersion: PROMPT_VERSION,
+        model: DEEPSEEK_MODEL,
+        payload: result.explanation,
+        lesson: result.lesson,
+        userId: aiUser?.id ?? null,
+        usage: result.usage,
+      }).catch(() => {});
+    }
+    return {
+      usage: result.usage,
+      response: {
+        explanation: result.explanation,
+        lesson: result.lesson,
+        latencyMs: result.latencyMs,
+      },
+    };
+  },
+};
+
+export const handleExplain = (req, res) => handleAiEndpoint(req, res, explainSpec);
 
 export function handleHealth(req, res) {
   sendJson(res, 200, {

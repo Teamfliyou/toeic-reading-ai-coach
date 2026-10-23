@@ -11,6 +11,7 @@ import { useSettings } from "@/lib/SettingsContext";
 import { getAccessToken } from "@/lib/supabaseAuth";
 import ProgressBar from "./ProgressBar";
 import { recordAnswer } from "@/lib/tracker";
+import { OFFLINE_AI_MESSAGE } from "@/lib/online";
 import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@/lib/lessons";
 import PassageView from "./PassageView";
 import AiExplanation from "./AiExplanation";
@@ -84,6 +85,12 @@ export default function PracticeClient({
     async (questionId: string, key: OptionKey) => {
       const lessonId = question ? startLesson(question, key) : null;
       explainAbort.current?.abort();
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        if (lessonId) failLesson(lessonId);
+        setAiLoading(false);
+        setAiError(OFFLINE_AI_MESSAGE);
+        return;
+      }
       const controller = new AbortController();
       explainAbort.current = controller;
       setAiLoading(true);
@@ -339,6 +346,8 @@ export default function PracticeClient({
                 loading={aiLoading}
                 error={aiError}
                 onVote={handleVote}
+                question={question}
+                selectedKey={selectedKey}
               />
               <button
                 onClick={goNext}

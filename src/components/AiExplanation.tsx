@@ -1,6 +1,7 @@
 
 import { useState } from "react";
-import type { AiExplanation } from "@/lib/types";
+import type { AiExplanation, Question } from "@/lib/types";
+import FollowUp from "./FollowUp";
 
 function PointCard({
   index,
@@ -33,11 +34,16 @@ export default function AiExplanation({
   loading,
   error,
   onVote,
+  question,
+  selectedKey,
 }: {
   explanation: AiExplanation | null;
   loading: boolean;
   error: string | null;
   onVote: (value: 1 | -1) => void;
+  /** Question et réponse choisie : activent la question de relance. */
+  question?: Question;
+  selectedKey?: string | null;
 }) {
   const [vote, setVote] = useState<1 | -1 | null>(null);
 
@@ -103,6 +109,10 @@ export default function AiExplanation({
             body={explanation.tip}
             tone="bg-cyan-500/20 text-cyan-300"
           />
+
+          {question && selectedKey && (
+            <FollowUp key={`${question.id}:${selectedKey}`} question={question} selectedKey={selectedKey} />
+          )}
 
           <div className="flex items-center gap-2 pt-1">
             <span className="text-xs text-white/50">

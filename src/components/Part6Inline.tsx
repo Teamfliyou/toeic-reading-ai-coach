@@ -9,6 +9,7 @@ import InlineSelect, { type BlankState } from "./InlineSelect";
 import AiExplanation from "./AiExplanation";
 import ScoreBoard from "./ScoreBoard";
 import { recordAnswer } from "@/lib/tracker";
+import { OFFLINE_AI_MESSAGE } from "@/lib/online";
 import { startLesson, completeLesson, failLesson, type GeneratedLesson } from "@/lib/lessons";
 import { useSettings } from "@/lib/SettingsContext";
 import { getAccessToken } from "@/lib/supabaseAuth";
@@ -129,6 +130,12 @@ export default function Part6Inline({
       const lessonId = startLesson(q, key);
       const controller = new AbortController();
       explainAborts.current.add(controller);
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        failLesson(lessonId);
+        explainAborts.current.delete(controller);
+        setExpl({ questionId: q.id, label, data: null, loading: false, error: OFFLINE_AI_MESSAGE, latencyMs: null });
+        return;
+      }
       setExpl({
         questionId: q.id,
         label,
@@ -378,6 +385,8 @@ export default function Part6Inline({
                 loading={expl.loading}
                 error={expl.error}
                 onVote={handleVote}
+                question={questions.find((q) => q.id === expl.questionId)}
+                selectedKey={answers[expl.questionId]?.selected ?? null}
               />
             </div>
           </div>
