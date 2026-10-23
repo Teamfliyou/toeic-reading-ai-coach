@@ -7,12 +7,14 @@
 
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self'",
+  // Plausible (mesure d'audience facultative, sans cookie) : voir README. Retirer les deux
+  // occurrences de plausible.io si la mesure n'est pas utilisée.
+  "script-src 'self' https://plausible.io",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
   "media-src 'self' https://*.supabase.co",
-  "connect-src 'self' https://*.supabase.co",
+  "connect-src 'self' https://*.supabase.co https://plausible.io",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
