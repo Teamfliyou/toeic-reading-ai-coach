@@ -57,6 +57,7 @@ const ACTIONS = {
     await recordAudit({ actor: u, action: "generation.create", target: out.job.id, details: { part: out.plan.part, total: out.plan.total, batches: out.plan.batches, estimatedUsd: out.plan.estimatedUsd }, req: ctx.req });
     return out;
   } },
+  "bank-gen-plan": { limit: 16_000, run: (b) => ({ plan: generation.planJob(b), limits: generation.limits() }) },
   "bank-gen-list": { limit: 4_000, run: () => generation.listJobs() },
   "bank-gen-get": { limit: 8_000, run: (b) => generation.jobReport(b) },
   "bank-gen-tick": { limit: 8_000, owner: true, run: async (b, u) => {

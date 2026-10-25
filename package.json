@@ -14,7 +14,9 @@
     "test": "node --test",
     "lint": "eslint .",
     "check:data": "node scripts/check-data.mjs",
-    "seed:generate": "node scripts/generate-seed-sql.mjs"
+    "seed:generate": "node scripts/generate-seed-sql.mjs",
+    "template:build": "node scripts/build-import-template.mjs",
+    "demo:bank": "node scripts/bank-demo.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
