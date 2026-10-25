@@ -181,7 +181,7 @@ export const passageWordCount = (passage) =>
  * Contrôle la cohérence d'un document (parties 6 et 7) et de ses questions.
  * `questions` : questions normalisées par `checkQuestion` (même document).
  */
-export function checkPassageGroup(part, passageInput, questions) {
+export function checkPassageGroup(part, passageInput, questions, { expectedQuestions = null } = {}) {
   const errors = [];
   const warnings = [];
   const parsed = PassageSchema.safeParse(passageInput);
@@ -193,6 +193,9 @@ export function checkPassageGroup(part, passageInput, questions) {
   const texts = [passage.title, ...passage.documents.flatMap((d) => [d.title, ...d.body])];
   if (texts.some(looksFrench)) errors.push(error("passage_not_english", "Le document doit être entièrement en anglais."));
   const words = passageWordCount(passage);
+  if (expectedQuestions && questions.length !== expectedQuestions) {
+    errors.push(error("passage_question_count", `${questions.length} question(s) pour ce document au lieu de ${expectedQuestions}.`));
+  }
 
   if (part === 6) {
     const blanks = blankNumbers(passage.documents.flatMap((d) => d.body).join(" "));

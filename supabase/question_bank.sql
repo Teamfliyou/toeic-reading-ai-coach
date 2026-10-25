@@ -649,6 +649,9 @@ declare
   v_res jsonb;
   v_cost numeric := coalesce((p_stats->>'cost_usd')::numeric, 0);
   v_status text;
+  v_target text;
+  v_inserted int;
+  v_dups int;
 begin
   select * into v_b from public.generation_batches where id = p_batch for update;
   if not found then raise exception 'Lot introuvable'; end if;
@@ -658,22 +661,21 @@ begin
   end if;
   select * into v_j from public.generation_jobs where id = v_b.job_id for update;
 
-  -- Statut initial : « en validation » (aucune alerte) ou « brouillon » (à vérifier) ; décidé par item.
-  v_res := (
-    select jsonb_build_object(
-      'inserted', coalesce(sum((r->>'inserted')::int), 0),
-      'duplicates', coalesce(sum((r->>'duplicates')::int), 0),
-      'results', coalesce(jsonb_agg(r->'results'), '[]'::jsonb))
-    from (
-      select public.bank_insert_items(g.items, jsonb_build_object(
-        'status', g.st, 'source', 'ai', 'actor', 'ai:job:' || v_j.id::text,
-        'generation_job_id', v_j.id, 'origin_version', coalesce(p_stats->>'origin_version', 'gen-v1'))) as r
-      from (
-        select it->>'target_status' as st, jsonb_agg(it) as items
-        from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) it
-        group by it->>'target_status'
-      ) g
-    ) s);
+  -- Statut initial décidé par élément : « en validation » (aucune alerte) ou « brouillon » (à vérifier).
+  v_inserted := 0; v_dups := 0;
+  for v_target in select distinct it->>'target_status' from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) it loop
+    v_res := public.bank_insert_items(
+      (select jsonb_agg(it) from jsonb_array_elements(p_items) it where it->>'target_status' = v_target),
+      jsonb_build_object('status', v_target, 'source', 'ai', 'actor', 'ai:job:' || v_j.id::text,
+        'generation_job_id', v_j.id, 'origin_version', coalesce(p_stats->>'origin_version', 'gen-v1')));
+    v_inserted := v_inserted + (v_res->>'inserted')::int;
+    v_dups := v_dups + (v_res->>'duplicates')::int;
+    insert into public.bank_issues (job_id, ref, severity, code, message, payload)
+      select v_j.id, r->>'ref', 'error', 'duplicate_exact',
+             'Doublon exact d''une question existante' || coalesce(' (' || (r->>'existing_slug') || ')', ''), r
+        from jsonb_array_elements(v_res->'results') r where r->>'outcome' = 'duplicate';
+  end loop;
+  v_res := jsonb_build_object('inserted', v_inserted, 'duplicates', v_dups);
 
   perform public.bank_record_issues(p_issues, null, v_j.id);
 
@@ -730,6 +732,14 @@ begin
   select status into v_status from public.generation_jobs where id = v_b.job_id;
   return jsonb_build_object('final', v_final, 'job_status', v_status);
 end $$;
+
+-- Rend un lot pris à tort (budget épuisé, autre exécution en cours) sans compter l'essai.
+create or replace function public.gen_release_batch(p_batch uuid, p_token uuid) returns void
+language sql as $$
+  update public.generation_batches set status = 'pending', attempts = greatest(attempts - 1, 0),
+      lease_until = null, lease_token = null
+    where id = p_batch and status = 'running' and lease_token = p_token
+$$;
 
 create or replace function public.gen_cancel_job(p_job uuid, p_actor text) returns jsonb
 language plpgsql as $$
@@ -1222,6 +1232,15 @@ language sql stable as $$
   where status in ('queued', 'running', 'paused') and estimated_usd > actual_usd
 $$;
 
+-- Dépense IA du mois (budget partagé avec les explications) ; null si les tables IA sont absentes.
+create or replace function public.gen_budget_spent(p_month text) returns numeric
+language plpgsql stable as $$
+begin
+  return coalesce((select spent_usd from public.ai_budget where month = p_month), 0);
+exception when undefined_table then
+  return null;
+end $$;
+
 -- 13) Droits des fonctions ------------------------------------------------------
 do $$
 declare f text;
@@ -1232,13 +1251,13 @@ begin
     'bank_import_commit(uuid,int,jsonb,jsonb,jsonb,text)', 'bank_import_cancel(uuid)',
     'gen_create_job(jsonb,text,int)', 'gen_claim_batch(uuid,int,text,int)', 'gen_refresh_jobs(uuid)',
     'gen_commit_batch(uuid,uuid,jsonb,jsonb,jsonb)', 'gen_fail_batch(uuid,uuid,text,numeric,boolean,int)',
-    'gen_cancel_job(uuid,text)', 'gen_pause_job(uuid,boolean)', 'gen_resume_job(uuid)',
+    'gen_cancel_job(uuid,text)', 'gen_release_batch(uuid,uuid)', 'gen_pause_job(uuid,boolean)', 'gen_resume_job(uuid)',
     'bank_admin_row(questions)', 'bank_admin_list(jsonb,int,int)', 'bank_admin_get(uuid)',
     'bank_update_question(uuid,jsonb,int,text)', 'bank_update_passage(uuid,text,jsonb,text)',
     'bank_set_status(uuid[],text,text,boolean)', 'bank_delete_questions(uuid[],text)',
     'bank_find_similar_many(jsonb)', 'bank_duplicate_groups(int,int)', 'bank_admin_stats()',
     'bank_find_similar_passages_many(jsonb)', 'bank_import_report(uuid)', 'bank_import_list()',
-    'bank_issues_list(uuid,uuid,text,int,int)', 'gen_job_report(uuid)', 'gen_job_list()', 'gen_open_estimate()'
+    'bank_issues_list(uuid,uuid,text,int,int)', 'gen_job_report(uuid)', 'gen_job_list()', 'gen_open_estimate()', 'gen_budget_spent(text)'
   ] loop
     execute format('revoke all on function public.%s from public, anon, authenticated', f);
     execute format('grant execute on function public.%s to service_role', f);

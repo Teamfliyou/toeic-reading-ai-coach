@@ -8,17 +8,19 @@ const read = (name) => readFileSync(new URL(`../supabase/${name}`, import.meta.u
 const strip = (sql) => sql.replace(/create extension if not exists\s+"?pgcrypto"?;/gi, "");
 
 /** Crée une base avec les rôles Supabase, le schéma de départ, le seed et la migration. */
-export async function createBankDb({ seed = true, migrate = true } = {}) {
+export async function createBankDb({ seed = true, migrate = true, withAi = false } = {}) {
   const db = new PGlite();
   await db.exec(`
     create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
     grant usage on schema public to anon, authenticated, service_role;
     alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
-    alter default privileges in schema public grant execute on functions to public;
+    alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
   `);
   for (const file of ["schema.sql", "questions_slug.sql", "questions_category.sql"]) await db.exec(strip(read(file)));
   if (seed) await db.exec(strip(read("seed.sql")));
   if (migrate) await db.exec(strip(read("question_bank.sql")));
+  // Tables de quotas et de budget IA (partagées avec les explications).
+  if (withAi) for (const file of ["ai_explanations.sql", "ai_hardening.sql"]) await db.exec(strip(read(file)));
   return db;
 }
 
