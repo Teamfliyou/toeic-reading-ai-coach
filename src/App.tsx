@@ -16,6 +16,7 @@ import Review from "@/pages/Review";
 import Listening from "@/pages/Listening";
 import Vocab from "@/pages/Vocab";
 import Goals from "@/pages/Goals";
+import Adaptive from "@/pages/Adaptive";
 import { initSync } from "@/lib/sync";
 import OfflineBanner from "@/components/OfflineBanner";
 import { migrateLegacyMistakes } from "@/lib/tracker";
@@ -31,6 +32,7 @@ function startTracking() {
 const TITLES: [RegExp, string][] = [
   [/^#\/practice\//, "Entraînement"],
   [/^#\/review/, "Révision"],
+  [/^#\/adaptive/, "Entraînement adaptatif"],
   [/^#\/exam/, "Examen blanc"],
   [/^#\/stats/, "Statistiques"],
   [/^#\/vocab/, "Mes mots"],
@@ -88,7 +90,7 @@ export default function App() {
   const firstRender = useRef(true);
   useEffect(startTracking, []);
   useRouteAnnouncements(hash, firstRender);
-  const match = hash.match(/^#\/practice\/(part[567])$/);
+  const match = hash.match(/^#\/practice\/(part[567])(\?.*)?$/);
   const reviewMatch = hash.match(/^#\/review\/(part[567])$/);
   const content = hash === "#/lessons" ? (
     <Lessons />
@@ -104,6 +106,8 @@ export default function App() {
     <Vocab />
   ) : hash === "#/review" ? (
     <Review />
+  ) : hash === "#/adaptive" ? (
+    <Adaptive />
   ) : hash === "#/admin" ? (
     <Admin />
   ) : hash === "#/diagnostic" ? (
@@ -111,7 +115,7 @@ export default function App() {
   ) : reviewMatch ? (
     <Practice part={Number(reviewMatch[1].replace("part", "")) as Part} reviewMode />
   ) : match && match[1] ? (
-    <Practice part={Number(match[1].replace("part", "")) as Part} />
+    <Practice part={Number(match[1].replace("part", "")) as Part} search={match[2] ?? ""} />
   ) : (
     <Dashboard />
   );

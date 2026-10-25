@@ -25,11 +25,14 @@ export default function PracticeClient({
   questions,
   passages,
   reviewMode = false,
+  onNewSeries,
 }: {
   part: Part;
   questions: Question[];
   passages: Passage[];
   reviewMode?: boolean;
+  /** Charge une nouvelle série (banque volumineuse) au lieu de rejouer les mêmes questions. */
+  onNewSeries?: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [selectedKey, setSelectedKey] = useState<OptionKey | null>(null);
@@ -178,11 +181,15 @@ export default function PracticeClient({
   }, []);
 
   const handleRestart = useCallback(() => {
+    if (onNewSeries) {
+      onNewSeries();
+      return;
+    }
     setIndex(0);
     setFinished(false);
     setCorrectCount(0);
     resetForNext();
-  }, [resetForNext]);
+  }, [resetForNext, onNewSeries]);
 
   if (finished) {
     return (
@@ -191,6 +198,7 @@ export default function PracticeClient({
         correct={correctCount}
         total={total}
         onRestart={handleRestart}
+        restartLabel={onNewSeries ? "Nouvelle série de questions" : undefined}
       />
     );
   }

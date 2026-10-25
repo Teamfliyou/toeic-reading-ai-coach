@@ -42,6 +42,12 @@ export interface Question {
   /** Type de piège (voir data/categories.json). */
   category?: string;
   tags?: string[];
+  /** Thème professionnel (banque d'exercices). */
+  theme?: string | null;
+  /** Explication pédagogique en français, si elle est renseignée. */
+  explanation?: string | null;
+  /** Justification de chaque mauvaise réponse (clé A–D). */
+  rationales?: Record<string, string> | null;
 }
 
 export interface AiExplanation {

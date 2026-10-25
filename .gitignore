@@ -9,6 +9,7 @@
 
 # build output
 /dist
+/dist-demo
 /.vite
 
 # misc

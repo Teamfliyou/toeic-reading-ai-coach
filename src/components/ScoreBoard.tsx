@@ -9,11 +9,13 @@ export default function ScoreBoard({
   correct,
   total,
   onRestart,
+  restartLabel = "Recommencer cette partie",
 }: {
   part: Part;
   correct: number;
   total: number;
   onRestart: () => void;
+  restartLabel?: string;
 }) {
   const info = getPartInfo(part);
   useEffect(() => { saveSession(part, correct, total); }, [part, correct, total]);
@@ -55,7 +57,7 @@ export default function ScoreBoard({
             onClick={onRestart}
             className="rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all duration-200 hover:opacity-90"
           >
-            Recommencer cette partie
+            {restartLabel}
           </button>
           <a
             href="#/"

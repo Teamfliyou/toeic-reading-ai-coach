@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Passage, Question } from "@/lib/types";
-import { loadAll } from "@/lib/data";
+import { loadQuestionsByIds } from "@/lib/data";
 import { dueNow, readCards, recordAnswer } from "@/lib/tracker";
 import { INTERVAL_DAYS } from "@/lib/srs";
 import QuestionView from "@/components/QuestionView";
@@ -24,11 +24,12 @@ export default function Review() {
 
   useEffect(() => {
     let active = true;
-    loadAll().then((d) => active && setData(d)).catch(() => active && setFailed(true));
+    // Seules les questions à réviser sont chargées (jamais toute la banque).
+    loadQuestionsByIds(queue).then((d) => active && setData(d)).catch(() => active && setFailed(true));
     return () => {
       active = false;
     };
-  }, []);
+  }, [queue]);
 
   const questions = useMemo(() => {
     const byId = new Map((data?.questions ?? []).map((q) => [q.id, q]));

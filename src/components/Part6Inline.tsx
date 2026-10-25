@@ -40,9 +40,12 @@ interface ActiveExplanation {
 export default function Part6Inline({
   questions,
   passages,
+  onNewSeries,
 }: {
   questions: Question[];
   passages: Passage[];
+  /** Charge une nouvelle série (banque volumineuse) au lieu de rejouer les mêmes textes. */
+  onNewSeries?: () => void;
 }) {
   const [answers, setAnswers] = useState<Record<string, BlankState>>({});
   const [passageIndex, setPassageIndex] = useState(0);
@@ -258,13 +261,17 @@ export default function Part6Inline({
   }, [isLast]);
 
   const handleRestart = useCallback(() => {
+    if (onNewSeries) {
+      onNewSeries();
+      return;
+    }
     answeredIds.current.clear();
     lastEventAt.current = performance.now();
     setAnswers({});
     setPassageIndex(0);
     setFinished(false);
     setExpl(null);
-  }, []);
+  }, [onNewSeries]);
 
   const handleVote = useCallback((_value: 1 | -1) => {
     // MVP : le vote est mémorisé côté composant AiExplanation.
@@ -277,6 +284,7 @@ export default function Part6Inline({
         correct={correctTotal}
         total={totalBlanks}
         onRestart={handleRestart}
+        restartLabel={onNewSeries ? "Nouvelle série de textes" : undefined}
       />
     );
   }

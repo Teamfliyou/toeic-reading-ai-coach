@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Passage, Question } from "@/lib/types";
-import { loadAll } from "@/lib/data";
-import { recordAnswer } from "@/lib/tracker";
+import { loadExamPool, loadQuestionsByIds } from "@/lib/data";
+import { buildReadingExam, reducedNotice, EXAM_TARGET, type BuiltExam } from "@/lib/examBuilder";
+import { recentSeenIds } from "@/lib/adaptive";
+import { myAttempts, recordAnswer } from "@/lib/tracker";
 import { addExamRecord } from "@/lib/goalsStore";
 import {
   EXAM_DURATION_MS,
   addTime,
-  buildExam,
   formatClock,
   gradeExam,
   newExamState,
@@ -24,6 +25,45 @@ import "./lexora.css";
 import "./phase2.css";
 
 const STORE_KEY = "lernoviq_exam_v1";
+/** Questions et documents de l'examen en cours : la banque est tirée au hasard, on les mémorise. */
+const SNAPSHOT_KEY = "lernoviq_exam_snapshot_v1";
+/** Question affichée : l'élève retrouve sa place après un rechargement. */
+const INDEX_KEY = "lernoviq_exam_index_v1";
+function readIndex(): number {
+  try {
+    const n = Number(localStorage.getItem(INDEX_KEY));
+    return Number.isInteger(n) && n >= 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+interface Snapshot {
+  questions: Question[];
+  passages: Passage[];
+  reduced: boolean;
+  counts: BuiltExam["counts"];
+  notice: string;
+}
+
+function readSnapshot(): Snapshot | null {
+  try {
+    const raw: unknown = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || "null");
+    const s = raw as Snapshot | null;
+    return s && Array.isArray(s.questions) && Array.isArray(s.passages) ? s : null;
+  } catch {
+    return null;
+  }
+}
+function writeSnapshot(snapshot: Snapshot | null) {
+  try {
+    if (snapshot) localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
+    else localStorage.removeItem(SNAPSHOT_KEY);
+  } catch {
+    /* Sans stockage, l'examen ne survivra pas à un rechargement. */
+  }
+}
+const toSnapshot = (exam: BuiltExam): Snapshot => ({ questions: exam.questions, passages: exam.passages, reduced: exam.reduced, counts: exam.counts, notice: reducedNotice(exam) });
 
 function readExam(): ExamState | null {
   try {
@@ -44,25 +84,58 @@ function writeExam(state: ExamState | null) {
 }
 
 export default function Exam() {
-  const [data, setData] = useState<{ questions: Question[]; passages: Passage[] } | null>(null);
-  const [loadError, setLoadError] = useState(false);
   const [state, setState] = useState<ExamState | null>(() => readExam());
-  const [index, setIndex] = useState(0);
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(() => readSnapshot());
+  const [prepared, setPrepared] = useState<BuiltExam | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const data = useMemo(() => (snapshot ? { questions: snapshot.questions, passages: snapshot.passages } : null), [snapshot]);
+  const [index, setIndex] = useState(() => (readExam() ? readIndex() : 0));
   const [now, setNow] = useState(() => Date.now());
   const [confirmEnd, setConfirmEnd] = useState(false);
   const enteredAt = useRef(performance.now());
 
+  // Tire et compose un examen (parties 5, 6, 7) sans jamais charger toute la banque.
+  const prepare = useCallback(async () => {
+    setPreparing(true);
+    setLoadError(false);
+    try {
+      const seen = recentSeenIds(myAttempts(), [5, 6, 7], 600);
+      const pool = await loadExamPool(seen);
+      setPrepared(buildReadingExam(pool, seen));
+    } catch {
+      setLoadError(true);
+    } finally {
+      setPreparing(false);
+    }
+  }, []);
+
   useEffect(() => {
     let active = true;
-    loadAll()
-      .then((result) => active && setData(result))
-      .catch(() => active && setLoadError(true));
+    if (state) {
+      // Examen commencé avant l'enregistrement de son contenu : on le reconstitue par identifiants.
+      if (!snapshot) {
+        loadQuestionsByIds(state.questionIds)
+          .then((d) => active && setSnapshot({ questions: d.questions, passages: d.passages, reduced: state.questionIds.length < 100, counts: { p5: 0, p6: 0, p7: 0 }, notice: "" }))
+          .catch(() => active && setLoadError(true));
+      }
+    } else if (!prepared && !preparing) void prepare();
     return () => {
       active = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state === null]);
 
   useEffect(() => writeExam(state), [state]);
+  useEffect(() => {
+    try {
+      if (state) localStorage.setItem(INDEX_KEY, String(index));
+      else localStorage.removeItem(INDEX_KEY);
+    } catch {
+      /* Sans stockage, la position n'est pas conservée. */
+    }
+  }, [state, index]);
+  useEffect(() => writeSnapshot(state ? snapshot : null), [state, snapshot]);
 
   const questions = useMemo(() => new Map((data?.questions ?? []).map((q) => [q.id, q])), [data]);
   const ids = useMemo(
@@ -132,8 +205,11 @@ export default function Exam() {
   };
 
   const start = () => {
-    if (!data) return;
-    const next = newExamState(buildExam(data.questions), Date.now());
+    if (!prepared || !prepared.questions.length) return;
+    // Durée : 75 minutes pour 100 questions ; proportionnelle pour un examen réduit.
+    const duration = Math.max(10 * 60_000, Math.round((EXAM_DURATION_MS * prepared.questions.length) / 100));
+    const next = newExamState(prepared.questions.map((q) => q.id), Date.now(), prepared.reduced ? duration : EXAM_DURATION_MS);
+    setSnapshot(toSnapshot(prepared));
     enteredAt.current = performance.now();
     setIndex(0);
     setNow(Date.now());
@@ -141,6 +217,8 @@ export default function Exam() {
   };
   const reset = () => {
     setState(null);
+    setSnapshot(null);
+    setPrepared(null);
     setIndex(0);
   };
 
@@ -157,7 +235,7 @@ export default function Exam() {
     </header>
   );
 
-  if (loadError) {
+  if (loadError && (state ? !data : !prepared)) {
     return (
       <div className="lexora-page lexora-exercises">{header}
         <main className="lexora-shell lexora-content"><div className="lexora-card">
@@ -168,34 +246,45 @@ export default function Exam() {
       </div>
     );
   }
-  if (!data) {
+  if (state && !data) {
     return <div className="lexora-page lexora-exercises">{header}<main className="lexora-shell lexora-content"><div className="lexora-card">Chargement de l'examen…</div></main></div>;
   }
 
   // --- Accueil ---------------------------------------------------------------
   if (!state) {
-    const total = buildExam(data.questions).length;
-    const perPart = ([5, 6, 7] as const).map((p) => ({ p, n: data.questions.filter((q) => q.part === p).length }));
+    if (!prepared) {
+      return <div className="lexora-page lexora-exercises">{header}<main className="lexora-shell lexora-content"><div className="lexora-card" role="status">{preparing ? "Composition de l'examen…" : "Préparation de l'examen…"}</div></main></div>;
+    }
+    const total = prepared.questions.length;
+    const perPart = ([5, 6, 7] as const).map((p) => ({ p, n: prepared.counts[`p${p}` as "p5" | "p6" | "p7"], target: EXAM_TARGET[`p${p}` as "p5" | "p6" | "p7"] }));
     return (
       <div className="lexora-page lexora-exercises">{header}
         <main className="lexora-shell lexora-content" style={{ maxWidth: 780 }}>
           <p className="lexora-eyebrow">Examen blanc · Reading</p>
           <h1 className="lexora-heading">Conditions d'examen, sans explication en cours de route.</h1>
-          <p className="lexora-muted">Parties 5, 6 et 7 à la suite, avec un minuteur de {EXAM_DURATION_MS / 60000} minutes. Vous pouvez naviguer librement, modifier vos réponses et marquer des questions « à revoir ». Les corrections et le score estimé s'affichent à la fin.</p>
+          <p className="lexora-muted">Parties 5, 6 et 7 à la suite, avec un minuteur de {EXAM_DURATION_MS / 60000} minutes pour un examen complet. Vous pouvez naviguer librement, revenir aux questions précédentes, modifier vos réponses et marquer des questions « à revoir ». La correction et le score estimé s'affichent à la fin.</p>
           <section className="lexora-card" style={{ margin: "24px 0" }}>
             <p className="lexora-statlabel">Contenu de cet examen</p>
-            <p className="lexora-statvalue">{total} questions</p>
-            <p className="lexora-subtle">{perPart.map(({ p, n }) => `Partie ${p} : ${n}`).join(" · ")}</p>
-            {total < 100 && <p className="lexora-disclaimer">Le jeu de questions actuel est plus court qu'un vrai examen Reading (100 questions). Le score estimé est donc extrapolé à partir de votre pourcentage de réussite.</p>}
+            <p className="lexora-statvalue">{total} question{total > 1 ? "s" : ""}{prepared.reduced ? " · examen réduit" : " · examen complet"}</p>
+            <p className="lexora-subtle">{perPart.map(({ p, n, target }) => `Partie ${p} : ${n}/${target}`).join(" · ")} · niveaux {prepared.difficulty[1]} faciles, {prepared.difficulty[2]} intermédiaires, {prepared.difficulty[3]} avancées</p>
+            {prepared.reduced && <p className="lexora-disclaimer" role="alert"><strong>Examen réduit.</strong> {reducedNotice(prepared)} La durée est ajustée en proportion.</p>}
+            {!prepared.reduced && prepared.repeated > 0 && <p className="lexora-disclaimer">{prepared.repeated} question(s) de cet examen vous ont déjà été proposées : la banque n'a pas assez de questions inédites pour cette composition.</p>}
+            {!prepared.reduced && prepared.repeated === 0 && <p className="lexora-subtle">Aucune question déjà vue : tirage varié à chaque examen.</p>}
           </section>
+          {loadError && <p className="lexora-notice" role="alert">Impossible de charger les questions pour le moment.</p>}
           <div className="lexora-actions">
             <a className="lexora-secondary" href="#/">Retour</a>
-            <button type="button" className="lexora-primary" onClick={start} disabled={!total}>Commencer l'examen →</button>
+            <span style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button type="button" className="lexora-secondary" onClick={() => { setPrepared(null); void prepare(); }} disabled={preparing}>Tirer un autre examen</button>
+              <button type="button" className="lexora-primary" onClick={start} disabled={!total}>Commencer l'examen →</button>
+            </span>
           </div>
         </main>
       </div>
     );
   }
+
+  if (!data) return null; // (état en cours sans contenu : déjà traité plus haut)
 
   // --- Résultats -------------------------------------------------------------
   if (state.finishedAt) {
@@ -211,7 +300,8 @@ export default function Exam() {
             <p className="lexora-statlabel">Score Reading estimé (sur 495)</p>
             <p className="lexora-scorebig">{result.score}</p>
             <p className="lexora-muted" style={{ marginTop: 12 }}>{result.correct} bonnes réponses sur {result.total} · {result.unanswered.length} sans réponse · temps utilisé {formatClock(Math.min(spent, EXAM_DURATION_MS))}</p>
-            <p className="lexora-disclaimer">Estimation indicative issue d'une table de conversion approximative : le barème officiel varie d'une session à l'autre et n'est pas publié. Ce n'est pas un score officiel.{result.reduced ? ` L'examen compte ${result.total} questions au lieu de 100 : le score est extrapolé.` : ""}</p>
+            <p className="lexora-disclaimer">Estimation indicative issue d'une table de conversion approximative : le barème officiel varie d'une session à l'autre et n'est pas publié. Ce n'est pas un score officiel ETS.{result.reduced ? ` L'examen compte ${result.total} questions au lieu de 100 : le score est extrapolé.` : ""}</p>
+            {(result.reduced || snapshot?.reduced) && <p className="lexora-disclaimer" role="note"><strong>Examen réduit :</strong> {snapshot?.notice || "ce n'est pas un examen complet de 100 questions."}</p>}
             <div className="lexora-rows">
               {([5, 6, 7] as const).map((p) => {
                 const r = result.byPart[p];
@@ -244,6 +334,7 @@ export default function Exam() {
                       <p style={{ margin: "8px 0" }}>{q.prompt}</p>
                       <p style={{ margin: 0, color: "#9a3232" }}>Votre réponse : {mine ? `${mine.key}. ${mine.text}` : "aucune"}</p>
                       <p style={{ margin: 0, color: "#176443" }}>Bonne réponse : {good?.key}. {good?.text}</p>
+                      {q.explanation && <p className="lexora-subtle" style={{ margin: "6px 0 0" }}>{q.explanation}</p>}
                       <ReportButton questionId={q.id} part={q.part} />
                     </article>
                   );

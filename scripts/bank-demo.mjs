@@ -2,7 +2,12 @@
 // SANS Supabase ni clé DeepSeek : une base PostgreSQL en mémoire (PGlite) charge la vraie
 // migration SQL, et un faux DeepSeek produit des questions de démonstration.
 //
-//   npm run build && npm run demo:bank      puis ouvrir http://localhost:4173/#/admin
+//   npm run demo:bank      puis ouvrir http://localhost:4173/#/admin
+//   DEMO_BULK=1 npm run demo:bank   ajoute 200 questions publiées (examen complet de 100 questions possible)
+//
+// Au premier lancement, l'application est compilée dans dist-demo/ avec l'adresse « Supabase »
+// pointant sur ce serveur : les écrans élèves (exercices, examen, révision) lisent donc la même
+// base en mémoire que l'administration.
 //
 // L'authentification d'administration est volontairement contournée (compte « demo »,
 // rôle admin) : ce script ne doit jamais être exposé sur Internet.
@@ -10,11 +15,22 @@ import express from "express";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => readFileSync(join(root, p), "utf8");
 const strip = (sql) => sql.replace(/create extension if not exists\s+"?pgcrypto"?;/gi, "");
+
+const port = Number(process.env.PORT) || 4173;
+const dist = join(root, "dist-demo");
+if (!existsSync(join(dist, "index.html")) || process.argv.includes("--rebuild")) {
+  console.log("Compilation de l'application de démonstration (dist-demo)…");
+  process.env.VITE_SUPABASE_URL = `http://localhost:${port}/supabase`;
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY = "demo-anon-key";
+  const { build } = await import("vite");
+  await build({ root, logLevel: "warn", build: { outDir: dist, emptyOutDir: true } });
+}
 
 const db = new PGlite();
 await db.exec(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
@@ -23,6 +39,36 @@ await db.exec(`create role anon nologin; create role authenticated nologin; crea
   alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;`);
 for (const f of ["schema.sql", "questions_slug.sql", "questions_category.sql", "seed.sql", "question_bank.sql", "ai_explanations.sql", "ai_hardening.sql"]) {
   await db.exec(strip(read(`supabase/${f}`)));
+}
+
+if (process.env.DEMO_BULK) {
+  const W = "manager report budget client invoice meeting schedule contract supplier shipment warehouse delivery customer account proposal agreement department director employee training seminar project deadline revenue forecast inventory purchase refund software network printer office conference reception visitor policy payroll".split(" ");
+  const V = "approved reviewed submitted updated cancelled postponed confirmed revised signed delivered requested completed".split(" ");
+  let r = 5;
+  const rnd = () => (r = (r * 1664525 + 1013904223) % 4294967296) / 4294967296;
+  const pk = (l) => l[Math.floor(rnd() * l.length)];
+  const opts = (id) => ["A", "B", "C", "D"].map((key, i) => ({ key, text: `${["by", "until", "since", "during"][i]} ${id}` }));
+  const items = [];
+  for (let i = 0; i < 150; i += 1) {
+    items.push({ ref: i, part: 5, passage: null, question: { prompt: `The ${pk(W)} ${pk(V)} the ${pk(W)} ${pk(W)} ${i} before the ______ ${pk(W)}.`, options: opts(`p5-${i}`), correct_key: "ABCD"[i % 4], difficulty: 1 + (i % 3), category: ["prepositions", "vocabulary", "verb-tenses", "connectors"][i % 4] } });
+  }
+  for (let d = 0; d < 12; d += 1) {
+    const sentences = [1, 2, 3, 4].map((n) => `The ${pk(W)} ${pk(V)} the ${pk(W)} d${d}x${n} (${n})______ ${pk(W)}.`);
+    const passage = { key: `p6-${d}`, title: `Memo ${d}`, documents: [{ kind: "memo", title: "To: Staff", body: [sentences.join(" ")] }] };
+    sentences.forEach((s2, n) => items.push({ ref: 1000 + d * 10 + n, part: 6, passage, question: { prompt: s2, options: opts(`p6-${d}-${n}`), correct_key: "ABCD"[(d + n) % 4], difficulty: 1 + ((d + n) % 3), category: "vocabulary", order_index: n + 1 } }));
+  }
+  for (let d = 0; d < 24; d += 1) {
+    const size = 2 + (d % 4);
+    const text = Array.from({ length: 5 }, (_, n) => `The ${pk(W)} ${pk(V)} the ${pk(W)} d${d}y${n} and the ${pk(W)} ${pk(V)} on time.`).join(" ");
+    const docs = [{ kind: "notice", title: "Notice", body: [text] }, ...(d % 3 === 0 ? [{ kind: "email", title: "Reply", body: [`Thank you for the ${pk(W)} d${d}. We ${pk(V)} it ${pk(W)} yesterday afternoon.`] }] : [])];
+    const passage = { key: `p7-${d}`, title: `Set ${d}`, documents: docs };
+    for (let n = 0; n < size; n += 1) items.push({ ref: 2000 + d * 10 + n, part: 7, passage, question: { prompt: `What did the ${pk(W)} do about d${d}q${n}?`, options: opts(`p7-${d}-${n}`), correct_key: "ABCD"[(d + n) % 4], difficulty: 1 + ((d + n) % 3), category: "reading-detail", order_index: n + 1 } });
+  }
+  for (let i = 0; i < items.length; i += 100) {
+    await db.query("select public.bank_insert_items($1::jsonb, $2::jsonb)", [JSON.stringify(items.slice(i, i + 100)), JSON.stringify({ status: "draft", source: "import", actor: "demo" })]);
+  }
+  await db.exec("update questions set status = 'published' where status = 'draft'; update passages set status = 'published'");
+  console.log(`Banque de démonstration : ${items.length} questions publiées en plus du jeu de départ.`);
 }
 
 // --- Faux Supabase (RPC → PGlite) et faux DeepSeek -------------------------------------------
@@ -133,7 +179,14 @@ app.all("/api/admin", express.json({ limit: "4mb" }), async (req, res) => {
   if (isBankAction(action)) return handleBankAction(action, { req, res, user, json: (r, s, d) => send(r, s, d), readBody: async (r) => r.body });
   return send(res, 404, { error: "Action absente de la démonstration" });
 });
-app.use(express.static(join(root, "dist")));
-app.get("*", (_req, res) => res.sendFile(join(root, "dist", "index.html")));
-const port = Number(process.env.PORT) || 4173;
+// Adresse « Supabase » des écrans élèves : fonctions publiques de la banque (lecture seule).
+app.post("/supabase/rest/v1/rpc/:name", express.json({ limit: "1mb" }), async (req, res) => {
+  const name = String(req.params.name);
+  if (!/^bank_(pick_questions|pick_passages|exam_candidates|public_counts|questions_by_ids)$/.test(name)) return res.status(404).json({ code: "PGRST202", message: "Could not find the function" });
+  const out = await rpc(name, req.body ?? {});
+  res.status(out.status).type("json").send(await out.text());
+});
+app.use("/supabase", (_req, res) => res.status(200).json([]));
+app.use(express.static(dist));
+app.get("*", (_req, res) => res.sendFile(join(dist, "index.html")));
 app.listen(port, "127.0.0.1", () => console.log(`Démo de la bibliothèque : http://localhost:${port}/#/admin  (rôle ${user.role}, base en mémoire)`));

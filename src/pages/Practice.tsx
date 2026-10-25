@@ -1,25 +1,39 @@
 import { useEffect, useState } from "react";
 import type { Part, Question, Passage } from "@/lib/types";
-import { loadPart } from "@/lib/data";
+import { loadQuestionsByIds, loadSeries, type PickedSet } from "@/lib/data";
+import { parseSeriesParams, recentSeenIds } from "@/lib/adaptive";
+import categories from "../../data/categories.json";
 import { getPartInfo } from "@/lib/parts";
 import PracticeClient from "@/components/PracticeClient";
 import Part6Inline from "@/components/Part6Inline";
 import SettingsButton from "@/components/SettingsButton";
 import AuthButton from "@/components/AuthButton";
-import { readCards } from "@/lib/tracker";
+import { myAttempts, readCards } from "@/lib/tracker";
 import "./lexora.css";
 
-export default function Practice({ part, reviewMode = false }: { part: Part; reviewMode?: boolean }) {
+export default function Practice({ part, reviewMode = false, search = "" }: { part: Part; reviewMode?: boolean; search?: string }) {
   const info = getPartInfo(part);
   // Révision d'une partie : toutes les cartes non maîtrisées (dues ou non).
   const mistakeIds = reviewMode ? new Set(readCards().filter(c => c.part === part && !c.mastered).map(c => c.questionId)) : null;
-  const [dataset, setDataset] = useState<{ questions: Question[]; passages: Passage[] } | null>(null);
+  const [dataset, setDataset] = useState<(PickedSet | { questions: Question[]; passages: Passage[]; origin?: undefined; relaxed?: undefined }) | null>(null);
+  // Chaque « nouvelle série » tire d'autres questions dans la banque (jamais toute la banque).
+  const [series, setSeries] = useState(0);
+  const params = parseSeriesParams(search, part, categories.filter((c) => c.parts.includes(part)).map((c) => c.id));
+  const paramsKey = JSON.stringify(params);
   useEffect(() => {
     let active = true;
     setDataset(null);
-    loadPart(part).then((result) => { if (active) setDataset(result); });
+    const load = reviewMode
+      ? loadQuestionsByIds([...(mistakeIds ?? [])])
+      : loadSeries(part, params, recentSeenIds(myAttempts(), [part], 400));
+    load.then((result) => { if (active) setDataset(result); }).catch(() => { if (active) setDataset({ questions: [], passages: [] }); });
     return () => { active = false; };
-  }, [part]);
+    // mistakeIds et params sont dérivés de reviewMode, part et de l'adresse.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [part, reviewMode, series, paramsKey]);
+  const newSeries = () => setSeries((n) => n + 1);
+  const category = params.category ?? params.categories?.map((id) => categories.find((c) => c.id === id)?.label ?? id).join(", ");
+  const categoryLabel = params.category ? categories.find((c) => c.id === params.category)?.label ?? params.category : category;
   return (
     <div className="lexora-page lexora-exercises">
       <header className="lexora-nav">
@@ -40,6 +54,14 @@ export default function Practice({ part, reviewMode = false }: { part: Part; rev
           <p className="lexora-muted">{reviewMode
             ? "Une bonne réponse retire la question de vos erreurs à revoir."
             : "Prenez votre temps, choisissez votre réponse et progressez à votre rythme."}</p>
+          {!reviewMode && dataset && (
+            <p className="lexora-subtle" role="status" style={{ marginTop: 8 }}>
+              {categoryLabel ? `Série ciblée : ${categoryLabel}${params.difficulty ? ` · niveau ${params.difficulty}/3` : ""}. ` : "Série tirée au hasard dans la banque. "}
+              Les questions que vous n'avez jamais vues passent en premier.
+              {dataset.relaxed && dataset.relaxed.length > 0 ? ` La banque manque de questions pour tous vos filtres : ${dataset.relaxed.join(", ")} élargi(s).` : ""}
+              {dataset.origin === "local" ? " Mode secours : jeu de questions local (connexion à la banque impossible)." : ""}
+            </p>
+          )}
         </div>
       {!dataset ? (
         <div className="glass p-8 text-center text-slate-600">Chargement des exercices…</div>
@@ -48,9 +70,9 @@ export default function Practice({ part, reviewMode = false }: { part: Part; rev
       ) : reviewMode ? ( 
         <PracticeClient key={`${part}-review`} part={part} reviewMode questions={dataset.questions.filter(q => mistakeIds?.has(q.id))} passages={dataset.passages} /> 
       ) : part === 6 ? (
-        <Part6Inline key={part} questions={dataset.questions} passages={dataset.passages} />
+        <Part6Inline key={`${part}-${series}`} questions={dataset.questions} passages={dataset.passages} onNewSeries={newSeries} />
       ) : (
-        <PracticeClient key={part} part={part} questions={dataset.questions} passages={dataset.passages} />
+        <PracticeClient key={`${part}-${series}`} part={part} questions={dataset.questions} passages={dataset.passages} onNewSeries={newSeries} />
       )}
       </main>
     </div>
