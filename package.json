@@ -16,6 +16,7 @@
     "check:data": "node scripts/check-data.mjs",
     "seed:generate": "node scripts/generate-seed-sql.mjs",
     "template:build": "node scripts/build-import-template.mjs",
+    "listening:generate": "node scripts/generate-listening-sql.mjs",
     "demo:bank": "node scripts/bank-demo.mjs"
   },
   "dependencies": {

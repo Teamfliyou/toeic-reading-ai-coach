@@ -102,7 +102,7 @@ export async function publishBatch(body){
     if(!passageId)throw new Error("Identifiant de document manquant");
   }
   const allowed=categoriesForPart(part);
-  const rows=questions.map((q,i)=>({part,passage_id:passageId,order_index:Date.now()%100000000+i,prompt:q.prompt,options:q.options,correct_key:q.correctKey,difficulty:[1,2,3].includes(Number(q.difficulty))?Number(q.difficulty):Number(body.difficulty)||2,category:allowed.includes(q.category)?q.category:null,tags:[],status:"published",source:"ai",explanation:typeof q.explanation==="string"?q.explanation.slice(0,2000):null,origin_version:"studio-v1"}));
+  const rows=questions.map((q,i)=>({part,passage_id:passageId,order_index:part===5?0:i+1,prompt:q.prompt,options:q.options,correct_key:q.correctKey,difficulty:[1,2,3].includes(Number(q.difficulty))?Number(q.difficulty):Number(body.difficulty)||2,category:allowed.includes(q.category)?q.category:null,tags:[],status:"published",source:"ai",explanation:typeof q.explanation==="string"?q.explanation.slice(0,2000):null,origin_version:"studio-v1"}));
   const insert=(payload)=>fetch(endpoint("questions"),{method:"POST",headers,body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
   let response=await insert(rows);
   // Base non migrée (colonnes category/tags absentes) : on publie sans catégorie plutôt que d'échouer.

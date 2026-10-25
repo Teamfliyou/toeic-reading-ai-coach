@@ -9,6 +9,7 @@ import { BankError, bankConfigured } from "./db.mjs";
 import * as importing from "./import-service.mjs";
 import * as library from "./library.mjs";
 import * as generation from "./generation.mjs";
+import * as listening from "./listening.mjs";
 
 const MB = 1024 * 1024;
 
@@ -55,6 +56,17 @@ const ACTIONS = {
   "bank-gen-create": { limit: 16_000, run: async (b, u, ctx) => {
     const out = await generation.createJob(b, u);
     await recordAudit({ actor: u, action: "generation.create", target: out.job.id, details: { part: out.plan.part, total: out.plan.total, batches: out.plan.batches, estimatedUsd: out.plan.estimatedUsd }, req: ctx.req });
+    return out;
+  } },
+  "bank-listening-import": { limit: 2 * MB, run: async (b, u, ctx) => {
+    const out = await listening.importListening(b, u.username);
+    await recordAudit({ actor: u, action: "bank.import", target: "listening", details: { accepted: out.inserted, rejected: out.rejected, duplicates: out.duplicates }, req: ctx.req });
+    return out;
+  } },
+  "bank-listening-list": { limit: 8_000, run: (b) => listening.listListening(b) },
+  "bank-listening-status": { limit: 64_000, run: async (b, u, ctx) => {
+    const out = await listening.setListeningStatus(b, u.username);
+    await recordAudit({ actor: u, action: "bank.status", target: `listening:${b.status}`, details: { changed: out.changed }, req: ctx.req });
     return out;
   } },
   "bank-gen-plan": { limit: 16_000, run: (b) => ({ plan: generation.planJob(b), limits: generation.limits() }) },

@@ -71,6 +71,14 @@ create table listening_questions (
 
 Lecture publique (RLS `select using (true)`), écriture réservée au service_role / à l'espace admin, comme `questions`.
 
+### 3.3 Migration en cours (Part 2) : bibliothèque centralisée
+
+Implémentée dans `supabase/listening_bank.sql` (tables `listening_items` et `listening_tracks`, RLS en lecture publique des seuls exercices publiés, fonction `listening_pick`), avec `supabase/listening_seed.sql` généré depuis `data/listening.json` (`npm run listening:generate`). Les parties 1, 3 et 4 reprendront le modèle « set » ci-dessus ; la table `listening_items` accepte déjà `part` 1 à 4 (3 choix en partie 2, 4 sinon).
+
+- **Conservation du comportement** : l'application lit la bibliothèque quand elle contient des exercices publiés, sinon `data/listening.json` (hors ligne, base non migrée, Supabase inaccessible).
+- **Pistes audio** : `listening_tracks` (URL https ou chemin, durée, locuteur, transcription, fournisseur `recording` / `tts` / `external`). Aucune piste n'est fabriquée par l'application ; sans enregistrement, la synthèse vocale du navigateur reste le repli.
+- **Import en masse** : action d'administration `bank-listening-import` (250 lignes par appel, idempotent, brouillons, contrôle de l'anglais, des 3 réponses et de l'URL audio) ; publication individuelle ou multiple avec confirmation pour les exercices à vérifier (`bank-listening-status`).
+
 ## 4. Stockage des fichiers audio
 
 - **Bucket Supabase Storage `listening-audio`**, lecture publique, écriture par l'admin uniquement (service_role). Chemins : `part2/l2-01.mp3`, `part3/set-014.mp3`. Les URL sont référencées dans `audio_path` ; la CSP autorise déjà `media-src 'self' https://*.supabase.co`.

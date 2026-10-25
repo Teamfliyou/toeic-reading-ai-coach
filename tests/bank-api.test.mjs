@@ -222,3 +222,24 @@ test("doublons : le catalogue n'en contient aucun une fois l'index unique en pla
   assert.equal(dup.status, 200);
   assert.equal(dup.body.total, 0);
 });
+
+test("sans IA : bibliothèque, import, édition et publication fonctionnent sans clé DeepSeek", async () => {
+  const key = process.env.DEEPSEEK_API_KEY;
+  delete process.env.DEEPSEEK_API_KEY;
+  try {
+    assert.equal((await call("bank-stats", {})).status, 200);
+    assert.equal((await call("bank-list", { limit: 5 })).status, 200);
+    const list = await call("bank-list", { filters: { status: "published", part: 5 }, limit: 1 });
+    const q = list.body.rows[0];
+    const edit = await call("bank-update", { id: q.id, expectedVersion: q.version, patch: { theme: "Offline" } }, editor);
+    assert.equal(edit.status, 200);
+    // La génération, elle, est refusée avec un message clair — sans rien débiter.
+    const gen = await call("bank-gen-create", { part: 5, kind: "grammar", difficulty: 2, total: 20 }, admin);
+    assert.equal(gen.status, 503);
+    assert.match(gen.body.error, /DEEPSEEK_API_KEY/);
+    const tick = await call("bank-gen-tick", { jobId: "00000000-0000-4000-8000-000000000000" }, admin);
+    assert.equal(tick.status, 503);
+  } finally {
+    process.env.DEEPSEEK_API_KEY = key;
+  }
+});

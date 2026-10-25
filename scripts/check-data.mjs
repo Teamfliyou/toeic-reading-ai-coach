@@ -3,6 +3,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { buildSeedSql } from "./generate-seed-sql.mjs";
+import { buildListeningSeedSql } from "./generate-listening-sql.mjs";
+import { processChunk, suggestMapping } from "../server/bank/import.mjs";
 import { looksFrench } from "../server/admin.mjs";
 
 const CATEGORIES = JSON.parse(
@@ -161,10 +163,24 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const seedSql = readFileSync(new URL("../supabase/seed.sql", import.meta.url), "utf8");
   const listening = JSON.parse(readFileSync(new URL("../data/listening.json", import.meta.url), "utf8"));
   const errors = [...validateDataset(data, { seedSql }), ...validateListening(listening)];
+
+  // Migration du Listening : le script SQL de départ doit refléter data/listening.json.
+  const listeningSeed = readFileSync(new URL("../supabase/listening_seed.sql", import.meta.url), "utf8");
+  if (listeningSeed.replace(/\r\n/g, "\n") !== buildListeningSeedSql(listening)) {
+    errors.push("supabase/listening_seed.sql n'est pas synchronisé avec data/listening.json : lancez « npm run listening:generate ».");
+  }
+
+  // Modèle d'importation : ses exemples (parties 5, 6, 7) doivent s'importer sans erreur ni alerte.
+  const template = JSON.parse(readFileSync(new URL("../data/import-template.json", import.meta.url), "utf8"));
+  const { mapping, missing } = suggestMapping(template.headers);
+  if (missing.length) errors.push(`Modèle d'import : champs obligatoires non reconnus (${missing.join(", ")}).`);
+  const imported = processChunk(template.rows.map((row, i) => ({ n: i + 2, data: row })), mapping);
+  for (const issue of imported.issues) errors.push(`Modèle d'import, ligne ${issue.ref} : ${issue.message}`);
+  if (imported.items.length !== template.rows.length) errors.push("Modèle d'import : toutes les lignes d'exemple doivent être valides.");
   if (errors.length) {
     console.error(`check:data — ${errors.length} problème(s) :`);
     for (const e of errors) console.error(`  - ${e}`);
     process.exit(1);
   }
-  console.log(`check:data — OK (${data.questions.length} questions, ${data.passages.length} passages, ${listening.part2.length} items Listening, seed synchronisé).`);
+  console.log(`check:data — OK (${data.questions.length} questions, ${data.passages.length} passages, ${listening.part2.length} items Listening, seeds synchronisés, modèle d'import valide).`);
 }

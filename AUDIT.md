@@ -184,3 +184,45 @@ Limites connues :
 - Le service worker n'a pas pu être enregistré dans le navigateur intégré de l'outil de développement ; sa logique est vérifiée par simulation (`tests/pwa.test.mjs`) mais **doit être essayée une fois dans Chrome / Safari** (installation, mode avion).
 - Les fonctions SQL et la synchronisation Supabase (historique, vocabulaire, objectifs, signalements, journal d'audit, limitation de connexion) ne sont pas testées contre une vraie base : à valider après exécution des migrations.
 - La Part 2 du Listening utilise la synthèse vocale du navigateur tant qu'aucun enregistrement n'est fourni.
+
+
+---
+
+## Phase 5 — banque d'exercices : état réel vérifié et nouveaux constats
+
+Méthode : relecture du code actuel (pas de reprise automatique des constats précédents), exécution des 175 tests existants (verts), puis des tests ajoutés. Base de départ : 33 questions, 5 passages, 12 items Listening.
+
+### Constats de l'audit précédent — état réel
+
+| # | Sujet | État vérifié | Preuve |
+| --- | --- | --- | --- |
+| 1 | Anti-bruteforce admin | ✅ corrigé (distribué, par IP et identifiant) | `server/login-limiter.mjs`, `tests/hardening.test.mjs` |
+| 2, 3, 6, 10 | Quotas anonymes, réservations `pending`, remboursements | ✅ corrigés (migration `ai_hardening.sql` requise) | `tests/hardening.test.mjs`, `tests/ai-explain.test.mjs` ; réutilisés tels quels par la génération massive |
+| 4 | Jetons Supabase en `localStorage` | ⏳ **toujours vrai** (`src/lib/supabaseAuth.ts`) ; CSP en place | — |
+| 5, 8, 9, 12, 13 | Parsing IA, `\n`, course client, répartition, identifiants | ✅ corrigés | tests existants |
+| 7 | Génération admin | 🟡 budget et limite horaire en base ✅ ; **`order_index` collisionnant corrigé** (`Date.now()` remplacé par un rang) ; messages d'erreur internes et course du `setup` initial **toujours vrais** | `server/admin.mjs`, `server/admin-users.mjs` |
+| 11 | Clé personnelle sans limite de débit | ⏳ inchangé (le coût est à la charge de son titulaire) | — |
+| 14 | Accessibilité | ✅ (nouveaux écrans testés : contrastes AA, libellés) | `tests/bank-a11y.test.mjs` |
+| 16 | Vote 👍/👎, tables `attempts` / `feedback_votes` inutilisées | ⏳ inchangé | `supabase/schema.sql` |
+
+### Nouveaux constats (phase 5) et corrections
+
+| # | Gravité | Constat | Correction |
+| --- | --- | --- | --- |
+| 17 | 🔴 | **Le client chargeait toutes les questions de la table** (`select=*`, sans limite) à chaque exercice, examen ou révision : inutilisable au-delà de quelques milliers de lignes. | `src/lib/data.ts` : séries tirées côté serveur (`bank_pick_*`), plafonds, repli JSON ; révision par identifiants ; plus aucun `loadAll`. |
+| 18 | 🔴 | **RLS `select using (true)`** : un brouillon inséré dans `questions` aurait été lisible par tous. | `question_bank.sql` : lecture publique limitée à `published`/`archived`. |
+| 19 | 🟠 | L'examen « blanc » enchaînait *toutes* les questions disponibles, sans composition 30/16/54, sans variété, sans respect des passages. | `src/lib/examBuilder.ts` (sac à dos sur les ensembles), tests sur 100 questions. |
+| 20 | 🟠 | Publication admin non transactionnelle (document puis questions, suppression « au mieux » en cas d'échec) et sans détection de doublons. | La nouvelle voie (import, génération) est atomique (`bank_insert_items`, `gen_commit_batch`) et dédoublonnée ; la publication directe du Studio est **conservée** (repli si la migration est absente). Recommandation : préférer la génération massive. |
+| 21 | 🟠 | Corps des requêtes d'administration limité à 32 ko : inadapté à l'import. | Limite par action (`server/bank/api.mjs`), plafonds Vercel respectés (blocs de 200 lignes). |
+| 22 | 🟡 | Aucun historique des modifications ni statut de validation des questions. | `question_revisions`, statuts, version, contrôle de version. |
+| 23 | 🟡 | Listening : exercices uniquement dans un JSON local. | `listening_bank.sql` + repli JSON conservé. |
+
+### Reste à faire / limites connues
+
+- **Les migrations SQL n'ont pas été exécutées sur la base de production** (aucune opération destructive n'a été tentée). Elles ont été validées sur PostgreSQL (PGlite) mais pas sur une instance Supabase réelle : PostgREST, Supabase Auth et les droits par défaut des rôles ne sont que simulés dans les tests. À valider une fois sur une branche Supabase.
+- Les contrôles qualité sont **heuristiques** (réponses multiples, difficulté) : ils ne remplacent pas une relecture humaine, d'où la publication jamais automatique.
+- La relecture automatique et la génération n'ont pas été essayées avec la vraie API DeepSeek (clé non disponible dans l'environnement de développement) : le format de réponse attendu est validé strictement et les tests utilisent un faux DeepSeek.
+- Les écrans d'administration ont été vérifiés manuellement dans le navigateur intégré (démo locale) : import de 530 lignes, génération, édition, examen de 100 questions ; pas de test sur lecteur d'écran réel ni sur appareils physiques.
+- Tâche planifiée Vercel : documentée, non activée par défaut (dépend du plan).
+- Le Listening ne comporte toujours aucun enregistrement audio (synthèse vocale du navigateur) : aucune piste n'a été fabriquée.
+- Import des parties 5 à 7 uniquement (Listening : API sans écran dédié).

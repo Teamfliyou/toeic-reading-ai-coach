@@ -263,3 +263,31 @@ test("bout en bout : tirage SQL paginé, exclusion des vues, examen complet de 1
   const afterReview = await pickSet(src, 5, { limit: 200 });
   assert.ok(afterReview.questions.length <= 50);
 });
+
+test("historique et progression : l'examen complet est corrigé, noté (estimation) et consigné", async () => {
+  const { gradeExam, estimateReadingScore, newExamState, setAnswer, EXAM_DURATION_MS } = await import("../src/lib/exam.ts");
+  const exam = buildReadingExam(toPool(syntheticPool()), [], mulberry32(8));
+  assert.equal(exam.questions.length, 100);
+  const refs = exam.questions.map((q) => ({ id: q.id, part: q.part, orderIndex: q.orderIndex, correctKey: q.correctKey }));
+  let state = newExamState(exam.questions.map((q) => q.id), 0);
+  assert.equal(state.deadline - state.startedAt, EXAM_DURATION_MS, "75 minutes");
+  // Retour en arrière : une réponse peut être modifiée avant la fin.
+  state = setAnswer(state, exam.questions[0].id, "B");
+  state = setAnswer(state, exam.questions[0].id, "A");
+  for (const q of exam.questions.slice(1, 80)) state = setAnswer(state, q.id, "A");
+  for (const q of exam.questions.slice(80, 90)) state = setAnswer(state, q.id, "B");
+  const result = gradeExam(state, refs);
+  assert.equal(result.total, 100);
+  assert.equal(result.reduced, false);
+  assert.equal(result.correct, 80);
+  assert.equal(result.unanswered.length, 10);
+  assert.equal(result.wrong.length, 10);
+  assert.equal(result.score, estimateReadingScore(80, 100));
+  assert.deepEqual(Object.keys(result.byPart).map(Number), [5, 6, 7]);
+  assert.deepEqual(Object.values(result.byPart).map((p) => p.total), [30, 16, 54]);
+  assert.ok(result.score >= 5 && result.score <= 495 && result.score % 5 === 0, "estimation par pas de 5, jamais un score officiel");
+  // Examen réduit : détecté par la correction.
+  const small = buildReadingExam(toPool(local), [], mulberry32(1));
+  const smallState = newExamState(small.questions.map((q) => q.id), 0);
+  assert.equal(gradeExam(smallState, small.questions.map((q) => ({ id: q.id, part: q.part, orderIndex: q.orderIndex, correctKey: q.correctKey }))).reduced, true);
+});

@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from "react";
-import { getPart2Items, type ListeningItem } from "@/lib/listening";
-import { recordAnswer } from "@/lib/tracker";
+import { useEffect, useRef, useState } from "react";
+import { getPart2Items, loadPart2Items, type ListeningItem } from "@/lib/listening";
+import { myAttempts, recordAnswer } from "@/lib/tracker";
 import AudioPlayer from "@/components/AudioPlayer";
 import ReportButton from "@/components/ReportButton";
 import SettingsButton from "@/components/SettingsButton";
@@ -13,7 +13,22 @@ const CATEGORY_LABELS = new Map((categories as { id: string; label: string }[]).
 
 /** Listening · Partie 2 (question-réponse) : un seul jeu de lecture, transcription après réponse. */
 export default function Listening() {
-  const items = useMemo<ListeningItem[]>(() => getPart2Items(), []);
+  // Bibliothèque centralisée si elle contient des exercices, sinon fichier local (comportement historique).
+  const [items, setItems] = useState<ListeningItem[] | null>(null);
+  useEffect(() => {
+    let active = true;
+    const seen = myAttempts().filter((a) => a.part === 2).map((a) => a.questionId);
+    loadPart2Items(seen).then((set) => active && setItems(set.items)).catch(() => active && setItems(getPart2Items()));
+    return () => { active = false; };
+  }, []);
+
+  if (!items) {
+    return <div className="lexora-page lexora-exercises"><main className="lexora-shell lexora-content"><div className="lexora-card" role="status">Chargement des exercices…</div></main></div>;
+  }
+  return <ListeningSession items={items} />;
+}
+
+function ListeningSession({ items }: { items: ListeningItem[] }) {
   const [index, setIndex] = useState(0);
   const [heard, setHeard] = useState(false);
   const [readingMode, setReadingMode] = useState(false);

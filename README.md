@@ -375,3 +375,54 @@ Un éditeur peut générer et publier des questions, mais ne peut pas gérer les
 **Important :** n'ajoutez jamais `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_INITIAL_PASSWORD` ou `ADMIN_SESSION_SECRET` à des variables `VITE_*` ni au code client. Les sessions sont signées, en cookies HttpOnly/SameSite, valables 8 h. La limitation des tentatives de connexion est **distribuée** (table `admin_login_attempts`, par IP et par identifiant, fenêtre glissante) : exécutez `supabase/ai_hardening.sql`. Sans cette migration, un repli en mémoire (moins fiable sur Vercel Serverless) est utilisé. À terme, ajouter la MFA.
 
 **Nommage.** Le produit s'appelle *Lernoviq*, mais la table `public.lexora_admin_users`, le cookie `lexora_admin` et les classes CSS `lexora-*` conservent l'ancien nom *Lexora* : les renommer invaliderait les comptes et sessions existants. Si un renommage est un jour souhaité : créer une vue `lernoviq_admin_users` sur la table, basculer le code sur la vue, puis retirer l'ancien nom dans une version ultérieure. `ADMIN_INITIAL_PASSWORD` est un **code de configuration privé** (pas le mot de passe du compte) ; `ADMIN_INITIAL_USERNAME` n'est pas utilisé par le serveur.
+
+
+## Banque d'exercices évolutive, importation et génération massives (phase 5)
+
+Lernoviq peut gérer **100 000 questions et davantage** sans dégrader les performances : l'élève ne reçoit jamais la banque, seulement une série tirée côté serveur. Architecture détaillée, règles de qualité et tests : [`docs/question-bank.md`](docs/question-bank.md).
+
+| Fonctionnalité | Où | Description |
+| --- | --- | --- |
+| Bibliothèque | Administration → Bibliothèque | Liste paginée (25/page), recherche texte, filtres partie / difficulté / catégorie / statut / origine / « à vérifier », vues adaptées aux parties 5, 6 (trous surlignés) et 7 (documents), édition (énoncé, propositions, explication, justifications, document) avec historique et contrôle de version, publication individuelle ou multiple, archivage, suppression contrôlée (jamais une question déjà publiée), statistiques, doublons, signalements d'élèves. |
+| Importer des exercices | Administration → Bibliothèque → Importer des exercices | CSV, XLSX, JSON ; aperçu, correspondance automatique et manuelle des colonnes, contrôles (champs, réponses A/B/C/D, doublons exacts et similaires, passages), import par blocs **reprenable**, rapport, tout en **brouillon**. Modèle Excel téléchargeable (parties 5, 6 et 7). |
+| Génération massive | Administration → Génération massive | 20 / 100 / 500 / 1 000 / 2 000 ou quantité personnalisée ; file persistante en base, lots de 20 maximum, suivi du coût estimé et réel, historique des erreurs, reprise, pause, annulation, protection contre l'exécution en double. Budget et quotas existants conservés. |
+| Examen Reading complet | `#/exam` | 30 + 16 (4 documents) + 54 (ensembles cohérents) = 100 questions en 75 minutes ; variété, questions inédites d'abord ; **« Examen réduit »** signalé explicitement si la banque est insuffisante. Score toujours **estimé** (jamais officiel ETS). |
+| Entraînement adaptatif | `#/adaptive` | Séances ciblées, mixtes, jamais vues, difficulté progressive, révisions espacées. |
+| Listening centralisé | `supabase/listening_bank.sql` | Exercices, pistes audio et transcriptions en base ; le fichier JSON actuel reste le secours. |
+
+### Variables d'environnement ajoutées
+
+Toutes facultatives (valeurs par défaut sûres) ; voir `.env.example`. **Jamais** de préfixe `VITE_` pour `SUPABASE_SERVICE_ROLE_KEY`, `DEEPSEEK_API_KEY` ni `CRON_SECRET`.
+
+| Variable | Défaut | Rôle |
+| --- | --- | --- |
+| `GEN_MAX_QUESTIONS_PER_JOB` | `5000` | Plafond de questions d'une génération (administrateur). |
+| `GEN_EDITOR_MAX_QUESTIONS` | `100` | Plafond pour un éditeur. |
+| `GEN_BATCH_SIZE` | `10` | Questions par lot (20 maximum). |
+| `GEN_JOBS_PER_HOUR` | `5` | Générations créées par heure et par utilisateur. |
+| `GEN_AI_VERIFY` | `true` | Relecture automatique par une seconde passe IA. |
+| `AI_ESTIMATED_VERIFY_USD` | `0.004` | Réservation a priori de la relecture, par lot. |
+| `GEN_TICK_BUDGET_MS` | `50000` | Durée maximale d'un lot lancé depuis l'interface (garder sous `maxDuration`). |
+| `CRON_SECRET` | — | Active la tâche planifiée facultative `api/cron.mjs` (16 caractères minimum). |
+| `GEN_CRON_BUDGET_MS` | `45000` | Budget de temps d'une exécution planifiée. |
+
+### Déploiement (instructions précises)
+
+1. **Sauvegarde** : exporter la base Supabase (ou créer une branche) avant toute migration.
+2. **Migrations SQL**, dans l'éditeur SQL et **dans cet ordre** (aucune n'est exécutée automatiquement par ce dépôt) :
+   `supabase/question_bank.sql` → *(facultatif)* `supabase/listening_bank.sql` puis `supabase/listening_seed.sql`.
+   Les migrations précédentes (`schema`, `questions_slug`, `questions_category`, `ai_explanations`, `ai_hardening`, `admin_users`, `admin_audit`, `question_reports`, `user_*`) doivent déjà être en place. Les 33 questions actuelles restent **publiées**.
+3. **Variables Vercel** : celles déjà documentées (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET`, `DEEPSEEK_API_KEY`…) suffisent ; ajouter au besoin les variables du tableau ci-dessus.
+4. **Déployer** (`vercel.json` fixe `maxDuration: 60` pour `api/admin.mjs` et `api/cron.mjs`).
+5. **Vérifier** : Administration → Bibliothèque → Statistiques (33 questions publiées) ; importer le modèle Excel (10 brouillons) ; lancer une génération de 20 questions ; publier ; ouvrir `#/exam` (« Examen réduit » tant que la banque est petite).
+6. **Tâche planifiée (facultative)** : la page de génération suffit sur tous les plans. Pour traiter les générations sans navigateur ouvert (plan Pro : toutes les minutes ; plan Hobby : une fois par jour au plus), définir `CRON_SECRET` puis ajouter dans `vercel.json` : `"crons": [{ "path": "/api/cron", "schedule": "*/5 * * * *" }]`. Cette entrée n'est **pas** ajoutée par défaut : une fréquence supérieure à la limite du plan ferait échouer le déploiement.
+
+### Nouveaux scripts
+
+| Commande | Description |
+| --- | --- |
+| `npm run template:build` | Régénère `data/import-template.json` (exemples du modèle d'import). |
+| `npm run listening:generate` | Régénère `supabase/listening_seed.sql` depuis `data/listening.json`. |
+| `npm run demo:bank` | Démonstration locale sans Supabase (voir `docs/question-bank.md` §9). |
+
+`npm run check:data` vérifie aussi `listening_seed.sql` et que le modèle d'import s'importe sans erreur.

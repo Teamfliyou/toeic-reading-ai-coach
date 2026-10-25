@@ -1,5 +1,5 @@
 import "@/pages/phase2.css";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { Part } from "@/lib/types";
 import { SettingsProvider } from "@/lib/SettingsContext";
 import { AuthProvider } from "@/lib/AuthContext";
@@ -8,7 +8,8 @@ import AuthModal from "@/components/AuthModal";
 import Dashboard from "@/pages/Dashboard";
 import Practice from "@/pages/Practice";
 import Diagnostic from "@/pages/Diagnostic";
-import Admin from "@/pages/Admin";
+// L'administration (bibliothèque, import, lecteur XLSX) n'est chargée que pour ceux qui l'ouvrent.
+const Admin = lazy(() => import("@/pages/Admin"));
 import Lessons from "@/pages/Lessons";
 import Exam from "@/pages/Exam";
 import Stats from "@/pages/Stats";
@@ -109,7 +110,7 @@ export default function App() {
   ) : hash === "#/adaptive" ? (
     <Adaptive />
   ) : hash === "#/admin" ? (
-    <Admin />
+    <Suspense fallback={<div className="lexora-page"><main className="lexora-shell lexora-content" role="status">Chargement de l'administration…</main></div>}><Admin /></Suspense>
   ) : hash === "#/diagnostic" ? (
     <Diagnostic />
   ) : reviewMatch ? (
