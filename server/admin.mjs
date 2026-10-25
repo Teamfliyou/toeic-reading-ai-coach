@@ -8,15 +8,17 @@ import { listReports, setReportStatus } from "./report.mjs";
 import { recordAudit, userChangeEvents, listAudit } from "./audit.mjs";
 import { registerAttempt, clearAttempt } from "./login-limiter.mjs";
 import { looksFrench, isEnglishContent } from "./bank/language.mjs";
+import { bankConfigured } from "./bank/db.mjs";
+import { handleBankAction, isBankAction } from "./bank/api.mjs";
 // Modèle partagé avec /api/explain (source unique : server/deepseek-config.mjs).
 export const MODEL = DEEPSEEK_MODEL;
 const CATEGORIES=JSON.parse(readFileSync(new URL("../data/categories.json",import.meta.url),"utf8"));
 /** Catégories (types de piège) autorisées pour une partie. */
 export const categoriesForPart=(part)=>CATEGORIES.filter(c=>c.parts.includes(part)).map(c=>c.id);
 function json(res, code, data) { res.statusCode=code;res.setHeader("Content-Type","application/json; charset=utf-8");res.setHeader("Cache-Control","no-store");res.end(JSON.stringify(data)); }
-async function readBody(req) {
+async function readBody(req, limit = 32000) {
   if (req.body && typeof req.body === "object") return req.body;
-  let body="";for await(const chunk of req){body+=chunk;if(body.length>32000)throw Error("Requête trop volumineuse");}
+  let body="";for await(const chunk of req){body+=chunk;if(body.length>limit)throw Error("Requête trop volumineuse");}
   return JSON.parse(body||"{}");
 }
 function sameOrigin(req) {
@@ -91,17 +93,20 @@ export async function publishBatch(body){
   const endpoint=(table)=>new URL("/rest/v1/"+table,url).toString();
   let passageId=null;
   if(part!==5){
-    const r=await fetch(endpoint("passages"),{method:"POST",headers,body:JSON.stringify({part,title:passage.title.slice(0,250),documents:passage.documents}),signal:AbortSignal.timeout(12000)});
+    const passageRow={part,title:passage.title.slice(0,250),documents:passage.documents};
+    // Base migrée (question_bank.sql) : le document est enregistré comme publié, d'origine IA.
+    let r=await fetch(endpoint("passages"),{method:"POST",headers,body:JSON.stringify({...passageRow,status:"published",source:"ai"}),signal:AbortSignal.timeout(12000)});
+    if(r.status===400)r=await fetch(endpoint("passages"),{method:"POST",headers,body:JSON.stringify(passageRow),signal:AbortSignal.timeout(12000)});
     if(!r.ok)throw new Error("Impossible d'enregistrer le document dans Supabase");
     const created=await r.json();passageId=created[0]?.id;
     if(!passageId)throw new Error("Identifiant de document manquant");
   }
   const allowed=categoriesForPart(part);
-  const rows=questions.map((q,i)=>({part,passage_id:passageId,order_index:Date.now()%100000000+i,prompt:q.prompt,options:q.options,correct_key:q.correctKey,difficulty:[1,2,3].includes(Number(q.difficulty))?Number(q.difficulty):Number(body.difficulty)||2,category:allowed.includes(q.category)?q.category:null,tags:[]}));
+  const rows=questions.map((q,i)=>({part,passage_id:passageId,order_index:Date.now()%100000000+i,prompt:q.prompt,options:q.options,correct_key:q.correctKey,difficulty:[1,2,3].includes(Number(q.difficulty))?Number(q.difficulty):Number(body.difficulty)||2,category:allowed.includes(q.category)?q.category:null,tags:[],status:"published",source:"ai",explanation:typeof q.explanation==="string"?q.explanation.slice(0,2000):null,origin_version:"studio-v1"}));
   const insert=(payload)=>fetch(endpoint("questions"),{method:"POST",headers,body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
   let response=await insert(rows);
   // Base non migrée (colonnes category/tags absentes) : on publie sans catégorie plutôt que d'échouer.
-  if(response.status===400)response=await insert(rows.map(({category:_c,tags:_t,...rest})=>rest));
+  if(response.status===400)response=await insert(rows.map(({category:_c,tags:_t,status:_s,source:_o,explanation:_e,origin_version:_v,...rest})=>rest));
   if(!response.ok) {
     if(passageId)await fetch(endpoint("passages")+"?id=eq."+encodeURIComponent(passageId),{method:"DELETE",headers}).catch(()=>{});
     throw new Error("Enregistrement des questions échoué");
@@ -116,7 +121,7 @@ export async function handleAdmin(req,res) {
   if(action==="session"&&req.method==="GET"){
    const state=await setupStatus();
    const u=state.configured ? await currentUser(req) : null;
-   return json(res,200,{authenticated:Boolean(u),user:u?publicUser(u):null,...state,configured:authConfigured(),generationConfigured:Boolean(process.env.DEEPSEEK_API_KEY),publicationConfigured:Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY)});
+   return json(res,200,{authenticated:Boolean(u),user:u?publicUser(u):null,...state,configured:authConfigured(),generationConfigured:Boolean(process.env.DEEPSEEK_API_KEY),bankConfigured:bankConfigured(),publicationConfigured:Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY)});
   }
   if(req.method!=="POST")return json(res,405,{error:"Méthode non autorisée"});
   if(!sameOrigin(req)||!String(req.headers["content-type"]||"").startsWith("application/json"))return json(res,403,{error:"Origine non autorisée"});
@@ -144,6 +149,7 @@ export async function handleAdmin(req,res) {
   }
   const user=await currentUser(req);
   if(!user)return json(res,401,{error:"Connexion requise"});
+  if(isBankAction(action))return handleBankAction(action,{req,res,user,json,readBody});
   if(action==="users"){
    if(user.role!=="admin")return json(res,403,{error:"Réservé aux administrateurs"});
    return json(res,200,{users:await listUsers()});

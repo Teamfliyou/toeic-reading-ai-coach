@@ -64,7 +64,7 @@ const startSchema = z.object({
 export async function startImport(body, actor) {
   const input = startSchema.parse(body);
   const batch = await rpc("bank_import_start", {
-    p_filename: input.filename.replace(/[\u0000-\u001f]/g, " "),
+    p_filename: [...input.filename].map((c) => (c.charCodeAt(0) < 32 ? " " : c)).join(""),
     p_format: input.format,
     p_fingerprint: input.fingerprint ?? null,
     p_total_rows: input.totalRows,

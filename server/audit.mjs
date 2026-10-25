@@ -21,6 +21,12 @@ export const AUDIT_ACTIONS = [
   "question.publish",
   "questions.generate",
   "report.status",
+  "bank.import",
+  "bank.update",
+  "bank.status",
+  "bank.delete",
+  "generation.create",
+  "generation.control",
 ];
 
 function config() {

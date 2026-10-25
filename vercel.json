@@ -1,4 +1,8 @@
 {
+  "functions": {
+    "api/admin.mjs": { "maxDuration": 60 },
+    "api/cron.mjs": { "maxDuration": 60 }
+  },
   "headers": [
     {
       "source": "/sw.js",

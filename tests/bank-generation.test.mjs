@@ -37,7 +37,7 @@ function aiP6(n = 4) {
   return {
     title: `Memo ${uniq()}`,
     documents: [{ kind: "memo", title: "To: Staff", body: [sentences.join(" ")] }],
-    questions: sentences.map((prompt, i) => aiQuestion({ prompt })),
+    questions: sentences.map((prompt) => aiQuestion({ prompt })),
   };
 }
 

@@ -95,7 +95,7 @@ const cell = (row, mapping, field) => {
   if (!header) return "";
   const value = row[header];
   if (value === null || value === undefined) return "";
-  return String(value).replace(/\u0000/g, "").trim().slice(0, MAX_CELL_LENGTH);
+  return String(value).replaceAll("\u0000", "").trim().slice(0, MAX_CELL_LENGTH);
 };
 
 // --- Normalisation des valeurs ----------------------------------------------------------
@@ -122,9 +122,9 @@ export function parsePart(raw, fallback) {
 export function parseCorrect(raw, options) {
   const value = String(raw ?? "").trim();
   if (!value) return { error: "Bonne réponse manquante." };
-  const letter = value.match(/^[(\[]?\s*([A-Da-d])\s*[)\].:]?$/);
+  const letter = value.match(/^[([]?\s*([A-Da-d])\s*[)\].:]?$/);
   if (letter) return { value: letter[1].toUpperCase() };
-  const digit = value.match(/^[(\[]?\s*([1-4])\s*[)\].:]?$/);
+  const digit = value.match(/^[([]?\s*([1-4])\s*[)\].:]?$/);
   if (digit) return { value: OPTION_KEYS[Number(digit[1]) - 1] };
   const matches = options.filter((o) => norm(o.text) === norm(value));
   if (matches.length === 1) return { value: matches[0].key };

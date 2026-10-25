@@ -118,8 +118,11 @@ export function checkQuestion(input, { source = "import", passageWords = 0 } = {
   if ([q.prompt, ...q.options.map((o) => o.text)].some(looksFrench)) {
     errors.push(error("not_english", "Le contenu de la question doit être entièrement en anglais."));
   }
-  const odd = (q.prompt + q.options.map((o) => o.text).join("")).match(/[^\u0000-ÿ‐-‧€]/g);
-  if (odd && odd.length > 3) warnings.push(warning("unusual_characters", "Caractères inhabituels (encodage ?) dans l'énoncé ou les propositions."));
+  const odd = [...(q.prompt + q.options.map((o) => o.text).join(""))].filter((c) => {
+    const code = c.codePointAt(0);
+    return code > 0xff && !(code >= 0x2010 && code <= 0x2027) && code !== 0x20ac;
+  });
+  if (odd.length > 3) warnings.push(warning("unusual_characters", "Caractères inhabituels (encodage ?) dans l'énoncé ou les propositions."));
 
   // Réponses multiples potentiellement correctes.
   const correct = q.options.find((o) => o.key === q.correctKey);
