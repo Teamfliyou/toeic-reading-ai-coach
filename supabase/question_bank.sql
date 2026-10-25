@@ -47,7 +47,7 @@ returns text language sql immutable as $$
   select encode(sha256(convert_to(
     p_part::text || '|' || public.bank_norm(p_prompt) || '|' ||
     coalesce((
-      select string_agg(public.bank_norm(o->>'text'), '|' order by public.bank_norm(o->>'text'))
+      select string_agg(public.bank_norm(o->>'text'), '|' order by public.bank_norm(o->>'text') collate "C")
       from jsonb_array_elements(coalesce(p_options, '[]'::jsonb)) o
     ), '') || '|' || coalesce(p_passage_hash, ''), 'UTF8')), 'hex')
 $$;
@@ -1155,6 +1155,73 @@ language sql stable as $$
         where status <> 'archived' and content_hash is not null group by content_hash having count(*) > 1) g))
 $$;
 
+-- Documents proches (index LSH) : [{i, part, lsh:[…]}].
+create or replace function public.bank_find_similar_passages_many(p_items jsonb) returns jsonb
+language sql stable as $$
+  select coalesce(jsonb_agg(jsonb_build_object('i', x.i, 'candidates', coalesce(c.cands, '[]'::jsonb))), '[]'::jsonb)
+  from jsonb_to_recordset(coalesce(p_items, '[]'::jsonb)) as x(i int, part int, lsh int[])
+  cross join lateral (
+    select jsonb_agg(jsonb_build_object('id', s.id, 'title', s.title, 'status', s.status, 'documents', s.documents)) as cands
+    from (select p.id, p.title, p.status, p.documents from public.passages p
+           where p.lsh && x.lsh and p.part = x.part and p.status <> 'archived' limit 5) s
+  ) c
+$$;
+
+-- Rapports d'importation et de génération ------------------------------------------
+create or replace function public.bank_import_report(p_batch uuid) returns jsonb
+language sql stable as $$
+  select jsonb_build_object('batch', to_jsonb(b),
+    'issue_counts', coalesce((select jsonb_object_agg(s.severity || ':' || s.code, s.n) from (
+        select severity, code, count(*) n from public.bank_issues where import_batch_id = b.id group by severity, code) s), '{}'::jsonb))
+  from public.import_batches b where b.id = p_batch
+$$;
+
+create or replace function public.bank_import_list() returns jsonb
+language sql stable as $$
+  select coalesce(jsonb_agg(to_jsonb(b) - 'mapping' order by b.created_at desc), '[]'::jsonb)
+  from (select * from public.import_batches order by created_at desc limit 30) b
+$$;
+
+create or replace function public.bank_issues_list(
+  p_import uuid default null, p_job uuid default null, p_severity text default null,
+  p_limit int default 50, p_offset int default 0
+) returns jsonb language sql stable as $$
+  select jsonb_build_object(
+    'total', (select count(*) from public.bank_issues i
+               where (p_import is null or i.import_batch_id = p_import) and (p_job is null or i.job_id = p_job)
+                 and (p_severity is null or i.severity = p_severity)),
+    'issues', coalesce((select jsonb_agg(to_jsonb(x) order by x.id) from (
+        select i.id, i.ref, i.severity, i.code, i.message, i.payload from public.bank_issues i
+         where (p_import is null or i.import_batch_id = p_import) and (p_job is null or i.job_id = p_job)
+           and (p_severity is null or i.severity = p_severity)
+         order by i.id limit least(greatest(p_limit, 1), 200) offset greatest(p_offset, 0)) x), '[]'::jsonb))
+$$;
+
+create or replace function public.gen_job_report(p_job uuid) returns jsonb
+language sql stable as $$
+  select jsonb_build_object('job', to_jsonb(j),
+    'batches', coalesce((select jsonb_agg(jsonb_build_object('idx', b.idx, 'quantity', b.quantity, 'status', b.status,
+        'attempts', b.attempts, 'generated', b.generated, 'validated', b.validated, 'flagged', b.flagged,
+        'rejected', b.rejected, 'cost_usd', b.cost_usd, 'error', b.error) order by b.idx)
+        from public.generation_batches b where b.job_id = j.id), '[]'::jsonb),
+    'issue_counts', coalesce((select jsonb_object_agg(s.severity || ':' || s.code, s.n) from (
+        select severity, code, count(*) n from public.bank_issues where job_id = j.id group by severity, code) s), '{}'::jsonb))
+  from public.generation_jobs j where j.id = p_job
+$$;
+
+create or replace function public.gen_job_list() returns jsonb
+language sql stable as $$
+  select coalesce(jsonb_agg(to_jsonb(j) order by j.created_at desc), '[]'::jsonb)
+  from (select * from public.generation_jobs order by created_at desc limit 30) j
+$$;
+
+-- Dépense IA cumulée des jobs actifs ou du mois : garde-fou avant de créer un nouveau job.
+create or replace function public.gen_open_estimate() returns numeric
+language sql stable as $$
+  select coalesce(sum(estimated_usd - actual_usd), 0) from public.generation_jobs
+  where status in ('queued', 'running', 'paused') and estimated_usd > actual_usd
+$$;
+
 -- 13) Droits des fonctions ------------------------------------------------------
 do $$
 declare f text;
@@ -1169,7 +1236,9 @@ begin
     'bank_admin_row(questions)', 'bank_admin_list(jsonb,int,int)', 'bank_admin_get(uuid)',
     'bank_update_question(uuid,jsonb,int,text)', 'bank_update_passage(uuid,text,jsonb,text)',
     'bank_set_status(uuid[],text,text,boolean)', 'bank_delete_questions(uuid[],text)',
-    'bank_find_similar_many(jsonb)', 'bank_duplicate_groups(int,int)', 'bank_admin_stats()'
+    'bank_find_similar_many(jsonb)', 'bank_duplicate_groups(int,int)', 'bank_admin_stats()',
+    'bank_find_similar_passages_many(jsonb)', 'bank_import_report(uuid)', 'bank_import_list()',
+    'bank_issues_list(uuid,uuid,text,int,int)', 'gen_job_report(uuid)', 'gen_job_list()', 'gen_open_estimate()'
   ] loop
     execute format('revoke all on function public.%s from public, anon, authenticated', f);
     execute format('grant execute on function public.%s to service_role', f);

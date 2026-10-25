@@ -7,6 +7,7 @@ import { clientIp } from "./rate-limit.mjs";
 import { listReports, setReportStatus } from "./report.mjs";
 import { recordAudit, userChangeEvents, listAudit } from "./audit.mjs";
 import { registerAttempt, clearAttempt } from "./login-limiter.mjs";
+import { looksFrench, isEnglishContent } from "./bank/language.mjs";
 // Modèle partagé avec /api/explain (source unique : server/deepseek-config.mjs).
 export const MODEL = DEEPSEEK_MODEL;
 const CATEGORIES=JSON.parse(readFileSync(new URL("../data/categories.json",import.meta.url),"utf8"));
@@ -28,20 +29,7 @@ function validateItem(x,part){
   if(x.options.some((o,i)=>o?.key!=="ABCD"[i]||typeof o.text!=="string"||!o.text.trim()))return false;
   return "ABCD".includes(x.correctKey)&&x.part===part&&typeof x.explanation==="string";
 }
-// Mots-outils français absents de l'anglais : détecte un contenu d'examen rédigé en français.
-const FRENCH_WORDS=/\b(le|les|des|est|sont|vous|nous|pour|dans|une|avec|votre|qui|que|cette|ces|sur|mais|doit|être|sans|plus|très|aux|du)\b/gi;
-export function looksFrench(text){
-  const s=String(text||"");
-  const words=(s.match(/[A-Za-zÀ-ÿ']+/g)||[]).length;
-  if(words<4)return false;
-  return (s.match(FRENCH_WORDS)||[]).length/words>0.12||/[«»]/.test(s);
-}
-export function isEnglishContent(questions,passage){
-  const texts=[];
-  for(const q of questions||[]){texts.push(q.prompt);for(const o of q.options||[])texts.push(o.text);}
-  if(passage){texts.push(passage.title);for(const d of passage.documents||[]){texts.push(d.title);texts.push(...(Array.isArray(d.body)?d.body:[d.body]));}}
-  return !texts.some(looksFrench);
-}
+export { looksFrench, isEnglishContent };
 export async function generate(body, emit = () => {}) {
   const part=Number(body.part),quantity=Number(body.quantity),topic=String(body.topic||"").slice(0,120),difficulty=Number(body.difficulty),kind=String(body.kind||"");
   if(![5,6,7].includes(part)||!Number.isInteger(quantity)||quantity<1||quantity>20||![1,2,3].includes(difficulty)||!["grammar","vocabulary","email","memo","article","schedule","notice"].includes(kind))throw new Error("Paramètres de génération invalides");
