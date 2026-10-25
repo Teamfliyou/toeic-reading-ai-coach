@@ -291,3 +291,31 @@ test("historique et progression : l'examen complet est corrigé, noté (estimati
   const smallState = newExamState(small.questions.map((q) => q.id), 0);
   assert.equal(gradeExam(smallState, small.questions.map((q) => ({ id: q.id, part: q.part, orderIndex: q.orderIndex, correctKey: q.correctKey }))).reduced, true);
 });
+
+test("base non migrée : l'examen et la révision continuent d'utiliser les questions de Supabase", async () => {
+  const urls = [];
+  const bankRows = [
+    ...Array.from({ length: 40 }, (_, i) => ({ id: `0000000${i}-0000-4000-8000-000000000000`.slice(-36), slug: null, part: 5, passage_id: null, order_index: i, prompt: `Legacy P5 ${i} ______`, options: options(`l${i}`), correct_key: "A", difficulty: 1 + (i % 3), category: "vocabulary", tags: [] })),
+  ];
+  const fetchImpl = async (url) => {
+    const href = String(url);
+    urls.push(href);
+    if (href.includes("/rpc/")) return { ok: false, status: 404, json: async () => ({ code: "PGRST202" }), text: async () => "" };
+    if (href.includes("questions?part=eq.5")) return okJson(bankRows);
+    if (href.includes("questions?part=eq.")) return okJson([]);
+    if (href.includes("questions?slug=in.(old-1,old-2)")) return okJson(bankRows.slice(0, 2).map((r, i) => ({ ...r, slug: `old-${i + 1}` })));
+    if (href.includes("questions?id=in.(")) return okJson(bankRows.slice(2, 3));
+    return okJson([]);
+  };
+  const src = { url: "https://x.supabase.co", key: "k", local, fetchImpl, rng: mulberry32(2) };
+  const pool = await examCandidates(src, []);
+  assert.equal(pool.origin, "legacy");
+  assert.equal(pool.p5.length, 40, "les questions de Supabase (et non les 15 du jeu local) alimentent l'examen");
+  assert.ok(urls.filter((u) => u.includes("limit=200")).length >= 1, "lecture bornée");
+  const ids = await loadByIds(src, ["old-1", "old-2", bankRows[2].id]);
+  assert.deepEqual(ids.questions.map((q) => q.id).sort(), ["old-1", "old-2", bankRows[2].id].sort());
+  assert.ok(urls.some((u) => u.includes("slug=in.(old-1,old-2)")));
+  // Tout échoue (réseau coupé) : le jeu local prend le relais.
+  const offline = await examCandidates({ url: "https://x.supabase.co", key: "k", local, fetchImpl: async () => { throw new Error("hors ligne"); } }, []);
+  assert.equal(offline.origin, "local");
+});

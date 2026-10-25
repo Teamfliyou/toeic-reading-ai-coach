@@ -201,20 +201,48 @@ export async function pickSet(src: Source, part: Part, opts: PickOptions = {}): 
   return { ...pickLocal(src.local, part, { limit: opts.limit, exclude: opts.exclude }, src.rng), origin: "local", relaxed: ["difficulty", "theme", "category"] };
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Base non migrée : lecture REST par identifiants (100 par requête), sans fonction SQL. */
+async function legacyByIds(src: Source, ids: string[]): Promise<Dataset> {
+  const doFetch = src.fetchImpl ?? fetch;
+  const get = async (path: string) => {
+    const r = await doFetch(`${src.url}/rest/v1/${path}`, { headers: { apikey: src.key }, signal: AbortSignal.timeout(src.timeoutMs ?? 8000) });
+    if (!r.ok) throw new Error(`Supabase ${path} : HTTP ${r.status}`);
+    return (await r.json()) as Record<string, unknown>[];
+  };
+  const rows: Record<string, unknown>[] = [];
+  for (let i = 0; i < ids.length; i += 100) {
+    const chunk = ids.slice(i, i + 100);
+    const slugs = chunk.filter((id) => !UUID.test(id)).map((id) => encodeURIComponent(id));
+    const uuids = chunk.filter((id) => UUID.test(id));
+    if (slugs.length) rows.push(...(await get(`questions?slug=in.(${slugs.join(",")})&select=*`)));
+    if (uuids.length) rows.push(...(await get(`questions?id=in.(${uuids.join(",")})&select=*`)));
+  }
+  const passageIds = [...new Set(rows.map((r) => r.passage_id as string | null).filter((x): x is string => Boolean(x)))];
+  const passages = passageIds.length ? await get(`passages?id=in.(${passageIds.join(",")})&select=*`) : [];
+  return { questions: rows.map((r) => mapQuestion(r, src.local)), passages: passages.map(mapPassage) };
+}
+
 /** Questions retrouvées par identifiant (révision, historique) : 200 par appel, jeu local en secours. */
 export async function loadByIds(src: Source, ids: string[]): Promise<Dataset> {
   const unique = [...new Set(ids)];
   const found: Dataset = { questions: [], passages: [] };
   const passageIds = new Set<string>();
+  const merge = (data: Dataset) => {
+    for (const q of data.questions) if (!found.questions.some((x) => x.id === q.id)) found.questions.push(q);
+    for (const p of data.passages) if (!passageIds.has(p.id)) { passageIds.add(p.id); found.passages.push(p); }
+  };
   if (src.url && src.key) {
     try {
       for (let i = 0; i < unique.length; i += 200) {
-        const data = mapBankSet(await callRpc(src, "bank_questions_by_ids", { p_ids: unique.slice(i, i + 200) }), src.local);
-        for (const q of data.questions) if (!found.questions.some((x) => x.id === q.id)) found.questions.push(q);
-        for (const p of data.passages) if (!passageIds.has(p.id)) { passageIds.add(p.id); found.passages.push(p); }
+        merge(mapBankSet(await callRpc(src, "bank_questions_by_ids", { p_ids: unique.slice(i, i + 200) }), src.local));
       }
-    } catch {
-      /* Supabase indisponible ou non migré : on complète avec le jeu local */
+    } catch (error) {
+      // Migration absente : lecture REST par identifiants ; sinon (réseau) on complète avec le jeu local.
+      if (error instanceof MissingFunction) {
+        try { merge(await legacyByIds(src, unique)); } catch { /* jeu local */ }
+      }
     }
   }
   const have = new Set(found.questions.map((q) => q.id));
@@ -243,8 +271,16 @@ export async function examCandidates(src: Source, exclude: string[] = []): Promi
         origin: "bank",
       };
       if (pool.p5.length + pool.p6.questions.length + pool.p7.questions.length > 0) return pool;
-    } catch {
-      /* repli local */
+    } catch (error) {
+      // Migration absente : questions publiées lues par REST (200 par partie) plutôt que le seul jeu local.
+      if (error instanceof MissingFunction) {
+        // Une partie vide dans la base reprend le jeu local ; si tout est vide ou injoignable : jeu local.
+        const fromBase = await Promise.all(([5, 6, 7] as Part[]).map((part) => legacyPick(src, part, { limit: 1000, exclude }).catch(() => null)));
+        if (fromBase.some((d) => d !== null)) {
+          const [p5, p6, p7] = fromBase.map((d, i) => d ?? pickLocal(src.local, ([5, 6, 7] as Part[])[i], { limit: 1000, exclude }, src.rng));
+          return { p5: p5.questions, p6, p7, origin: "legacy" };
+        }
+      }
     }
   }
   const all = (part: Part) => pickLocal(src.local, part, { limit: 1000, exclude }, src.rng);
