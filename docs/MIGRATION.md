@@ -91,7 +91,8 @@ Statuts : ⬜ non commencée · 🟨 en cours · 🟦 implémentée · 🟩 test
 | `quota.mjs`, `rate-limit.mjs`, route `/api/explain` (quotas, budget, cache Supabase) | `crates/server` + `crates/security` | 🟩 testée (17 tests d'intégration contre faux DeepSeek et faux backend) |
 | `server/coach.mjs`, `report.mjs`, `audit.mjs` | `ai` / `server` | ⬜ |
 | `totp.mjs`, scrypt, sessions admin, `rate-limit.mjs` | `crates/security` | 🟩 testée (13 tests ; hachage, jeton et TOTP identiques au JS) |
-| routes `/api/admin`, `login-limiter.mjs`, `auth.mjs`, `/api/coach`, `/api/report`, `/api/cron` | `crates/server` | ⬜ |
+| `/api/coach`, `/api/report` | `crates/server` + `crates/ai` | 🟩 testée (18 tests d'intégration au total pour le serveur) |
+| routes `/api/admin`, `login-limiter.mjs`, `auth.mjs`, `/api/cron` | `crates/server` | ⬜ |
 | `supabase/*.sql` | inchangé (serveur) ; SQLite pour le local | ⬜ |
 | Stockage local (tentatives, cartes, vocabulaire, objectifs, examens, paramètres, import de l'export web, sauvegarde) | `crates/database` (SQLx + SQLite, migrations versionnées) | 🟩 testée (7 tests dont persistance fichier) |
 | `sync.ts`, `supabaseAuth.ts`, `AuthContext`, `SettingsContext` | `security` + `ui` | ⬜ |

@@ -9,6 +9,8 @@ Interface **100 % en français**, au design moderne **liquid glass**
 
 ---
 
+> **Version Rust / Tauri (en cours de migration)** : une application Windows native est développée sur la branche `main` (dossiers `crates/` et `src-tauri/`). Voir [docs/MIGRATION.md](docs/MIGRATION.md) pour l'avancement, [docs/RELEASE.md](docs/RELEASE.md) pour compiler et publier, et [docs/SERVER.md](docs/SERVER.md) pour le serveur. L'application web ci-dessous reste fonctionnelle.
+
 ## Table des matières
 
 - [Présentation](#présentation)

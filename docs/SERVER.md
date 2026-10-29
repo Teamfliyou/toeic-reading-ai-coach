@@ -26,5 +26,8 @@ cargo run -p lernoviq-server        # PORT=3000 par défaut
 - Clé personnelle : jamais de budget du service ; clé refusée → 401 sans fuite de la clé.
 - Quotas anonymes appliqués ; en-têtes `X-Forwarded-For` ignorés sans proxy de confiance.
 
+## Routes
+`GET /api/health`, `POST /api/explain`, `POST /api/coach` (relance, 3 échanges maximum, 400 tokens), `POST /api/report` (10 signalements par heure et par empreinte salée de l'IP, doublons refusés).
+
 ## Pas encore porté
-`/api/coach`, `/api/report`, `/api/admin` (utilisateurs, audit, génération, import) et `/api/cron`. Les briques de sécurité (scrypt, sessions, TOTP) sont dans `crates/security` ; le Node `server.mjs` reste la référence pour ces routes.
+`/api/admin` (utilisateurs, audit, génération, import, MFA), `/api/cron` et la limite de connexion admin en base. Les briques de sécurité (scrypt, sessions, TOTP) sont dans `crates/security` ; le Node `server.mjs` reste la référence pour ces routes.
