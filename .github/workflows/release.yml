@@ -1,0 +1,59 @@
+name: Release
+
+# Publication officielle : uniquement à partir d'un tag vX.Y.Z.
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Cohérence de version (tag = Cargo.toml)
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          cargo_version=$(cargo metadata --no-deps --format-version 1 | node -e "const m=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(m.packages.find(p=>p.name==='lernoviq').version)")
+          echo "tag=$tag cargo=$cargo_version"
+          test "$tag" = "$cargo_version" || { echo "Le tag ne correspond pas à la version du workspace"; exit 1; }
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+
+  publish:
+    needs: verify
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write # création de la release et envoi des fichiers uniquement
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Outils (dioxus-cli, tauri-cli)
+        run: cargo install dioxus-cli --version 0.7.10 --locked && cargo install tauri-cli --version "^2" --locked
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tauriScript: cargo tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: "Lernoviq ${{ github.ref_name }}"
+          releaseBody: "Installateur Windows (NSIS). L'application se met à jour automatiquement."
+          releaseDraft: false
+          prerelease: false
+          uploadUpdaterJson: true

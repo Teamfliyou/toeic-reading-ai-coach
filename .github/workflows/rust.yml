@@ -2,9 +2,10 @@ name: Rust
 
 on:
   push:
-    paths: ["crates/**", "Cargo.toml", "Cargo.lock", ".github/workflows/rust.yml"]
+    branches: [main, "migration/**"]
+    paths: ["crates/**", "src-tauri/**", "data/**", "Cargo.toml", "Cargo.lock", ".github/workflows/rust.yml"]
   pull_request:
-    paths: ["crates/**", "Cargo.toml", "Cargo.lock", ".github/workflows/rust.yml"]
+    paths: ["crates/**", "src-tauri/**", "data/**", "Cargo.toml", "Cargo.lock", ".github/workflows/rust.yml"]
 
 permissions:
   contents: read
@@ -16,13 +17,37 @@ concurrency:
 jobs:
   verify:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+
+  # Build de développement : artifact téléchargeable, jamais une release officielle,
+  # sans clé de signature (les artifacts de mise à jour sont désactivés).
+  build-windows:
+    needs: verify
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Outils (dioxus-cli, tauri-cli)
+        run: cargo install dioxus-cli --version 0.7.10 --locked && cargo install tauri-cli --version "^2" --locked
+      - name: Installateur NSIS (sans signature de mise à jour)
+        run: cargo tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lernoviq-windows-dev
+          path: target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 14

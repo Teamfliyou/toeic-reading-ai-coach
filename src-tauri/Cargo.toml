@@ -1,0 +1,21 @@
+[package]
+name = "lernoviq"
+version.workspace = true
+edition.workspace = true
+description = "Lernoviq — Coach TOEIC (application Windows)"
+
+[lib]
+name = "lernoviq_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+serde.workspace = true
+serde_json.workspace = true
+lernoviq-core = { path = "../crates/core" }
+lernoviq-models = { path = "../crates/models" }

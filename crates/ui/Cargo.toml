@@ -1,0 +1,8 @@
+[package]
+name = "lernoviq-ui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+dioxus = { version = "0.7", features = ["web"] }
+lernoviq-core = { path = "../core" }
