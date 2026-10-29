@@ -45,7 +45,10 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
     let Some(update) = updater.check().await.map_err(|e| e.to_string())? else {
         return Ok(());
     };
-    update.download_and_install(|_chunk, _total| {}, || {}).await.map_err(|e| e.to_string())?;
+    update
+        .download_and_install(|_chunk, _total| {}, || {})
+        .await
+        .map_err(|e| e.to_string())?;
     app.restart()
 }
 
@@ -54,7 +57,12 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![app_version, estimate_score, check_update, install_update])
+        .invoke_handler(tauri::generate_handler![
+            app_version,
+            estimate_score,
+            check_update,
+            install_update
+        ])
         .run(tauri::generate_context!())
         .expect("erreur au démarrage de Lernoviq");
 }
