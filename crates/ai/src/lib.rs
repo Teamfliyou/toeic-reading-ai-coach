@@ -10,6 +10,8 @@ pub mod config;
 pub mod prompt;
 pub mod schema;
 
-pub use client::{AiError, AiFailure, DeepSeekClient, ExplainOutcome, ExplainQuestion};
+pub use client::{
+    AiError, AiFailure, DeepSeekClient, ExplainOutcome, ExplainQuestion, FollowOutcome,
+};
 pub use config::{compute_cost, Usage};
 pub use schema::{parse_explanation, Explanation, Lesson, ParseFailure, Parsed};

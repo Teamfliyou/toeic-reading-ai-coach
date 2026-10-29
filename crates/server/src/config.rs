@@ -29,6 +29,9 @@ pub struct Config {
     pub explain_rate_window_ms: i64,
     pub user_rate_window_ms: i64,
     pub estimated_call_usd: Option<f64>,
+    pub estimated_followup_usd: Option<f64>,
+    /// Sel de l'empreinte des signalements (jamais l'IP en clair).
+    pub report_salt: String,
     pub budget_limit_usd: f64,
     pub budget_suspend_usd: f64,
     pub max_body_bytes: usize,
@@ -119,6 +122,10 @@ impl Config {
             explain_rate_window_ms: num("EXPLAIN_RATE_WINDOW_MS").map_or(600_000, |n| n as i64),
             user_rate_window_ms: num("AI_PER_MINUTE_WINDOW_MS").map_or(60_000, |n| n as i64),
             estimated_call_usd: num("AI_ESTIMATED_CALL_USD"),
+            estimated_followup_usd: num("AI_ESTIMATED_FOLLOWUP_USD"),
+            report_salt: text("ADMIN_SESSION_SECRET")
+                .or_else(|| text("SUPABASE_SERVICE_ROLE_KEY"))
+                .unwrap_or_else(|| "lernoviq".into()),
             budget_limit_usd: num("AI_MONTHLY_LIMIT_USD")
                 .unwrap_or_else(|| to_usd(num("AI_MONTHLY_LIMIT_EUR").unwrap_or(10.0))),
             budget_suspend_usd: num("AI_MONTHLY_SUSPEND_USD")

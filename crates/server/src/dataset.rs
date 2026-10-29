@@ -43,6 +43,23 @@ pub fn find_local(id: &str) -> Option<ExplainQuestion> {
     })
 }
 
+/// Question signalable : Reading (jeu local) ou Listening Partie 2 → (partie, énoncé).
+pub fn find_reportable(id: &str) -> Option<(u8, String)> {
+    static LISTENING: OnceLock<Value> = OnceLock::new();
+    let listening: &Value = LISTENING.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../data/listening.json"))
+            .expect("data/listening.json valide")
+    });
+    if let Some(item) = listening["part2"]
+        .as_array()?
+        .iter()
+        .find(|i| i["id"] == id)
+    {
+        return Some((2, item["prompt"].as_str()?.to_string()));
+    }
+    find_local(id).map(|q| (q.part, q.prompt))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

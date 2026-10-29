@@ -73,6 +73,18 @@ pub fn mask_secret(text: &str) -> String {
         .collect()
 }
 
+#[derive(Debug, Clone)]
+pub struct FollowOutcome {
+    pub answer: String,
+    pub latency_ms: u64,
+    pub usage: Usage,
+}
+
+/// Limites d'une relance (au plus 3 échanges par question).
+pub const MAX_FOLLOW_UPS: usize = 3;
+pub const MAX_FOLLOW_QUESTION_CHARS: usize = 300;
+pub const MAX_FOLLOW_ANSWER_CHARS: usize = 1500;
+
 #[derive(Clone)]
 pub struct DeepSeekClient {
     http: reqwest::Client,
@@ -124,6 +136,107 @@ impl DeepSeekClient {
     }
     pub fn model(&self) -> &str {
         &self.model
+    }
+
+    /// Répond à une question de relance (texte libre, 400 tokens maximum). Mêmes garanties de
+    /// facturation que `explain` : une réponse vide reste facturée.
+    pub async fn follow_up(
+        &self,
+        api_key: &str,
+        question: &ExplainQuestion,
+        selected_key: char,
+        user_question: &str,
+        history: &[(String, String)],
+        user_id: Option<&str>,
+    ) -> Result<FollowOutcome, AiFailure> {
+        let api_key = api_key.trim();
+        if api_key.is_empty() {
+            return Err(AiFailure {
+                error: AiError::NoKey,
+                usage: None,
+            });
+        }
+        let started = Instant::now();
+        let context = crate::prompt::coach_context(
+            &PromptQuestion {
+                part: question.part,
+                prompt: &question.prompt,
+                options: &question.options,
+                correct_key: question.correct_key,
+                context: &question.context,
+            },
+            selected_key,
+        );
+        let mut messages = vec![
+            json!({"role": "system", "content": crate::prompt::COACH_SYSTEM_PROMPT}),
+            json!({"role": "user", "content": context}),
+        ];
+        for (q, a) in history {
+            messages.push(json!({"role": "user", "content": q}));
+            messages.push(json!({"role": "assistant", "content": a}));
+        }
+        messages.push(json!({"role": "user", "content": user_question}));
+        let mut payload =
+            json!({"model": self.model, "messages": messages, "max_tokens": 400, "stream": false});
+        if !self.thinking_enabled {
+            payload["thinking"] = json!({"type": "disabled"});
+        }
+        if let Some(id) = user_id.filter(|s| !s.is_empty()) {
+            payload["user_id"] = json!(id.chars().take(512).collect::<String>());
+        }
+        let net = |e: reqwest::Error| AiFailure {
+            error: if e.is_timeout() {
+                AiError::Timeout
+            } else {
+                AiError::Network(mask_secret(&e.to_string()))
+            },
+            usage: None,
+        };
+        let response = self
+            .http
+            .post(format!("{}/chat/completions", self.base_url))
+            .bearer_auth(api_key)
+            .timeout(self.timeout)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(net)?;
+        let status = response.status();
+        if !status.is_success() {
+            let raw = response.text().await.unwrap_or_default();
+            return Err(AiFailure {
+                error: AiError::Http {
+                    status: status.as_u16(),
+                    message: mask_secret(&raw),
+                },
+                usage: None,
+            });
+        }
+        let data: Value = response.json().await.map_err(net)?;
+        let usage = compute_cost(
+            data.get("usage").unwrap_or(&Value::Null),
+            chrono::Utc::now(),
+            &self.model,
+        );
+        let answer: String = data["choices"][0]["message"]["content"]
+            .as_str()
+            .unwrap_or_default()
+            .trim()
+            .chars()
+            .take(MAX_FOLLOW_ANSWER_CHARS)
+            .collect();
+        if answer.is_empty() {
+            // Réponse vide : DeepSeek a tout de même facturé l'appel.
+            return Err(AiFailure {
+                error: AiError::Unparsable,
+                usage: Some(usage),
+            });
+        }
+        Ok(FollowOutcome {
+            answer,
+            latency_ms: started.elapsed().as_millis() as u64,
+            usage,
+        })
     }
 
     /// Explique une erreur. `api_key` est la clé du service (serveur) ou celle de l'utilisateur.
@@ -435,5 +548,105 @@ mod tests {
             "[clé masquée] et sk-court"
         );
         assert_eq!(mask_secret(&"x".repeat(500)).chars().count(), 200);
+    }
+}
+
+#[cfg(test)]
+mod follow_tests {
+    use super::*;
+    use axum::routing::post;
+    use axum::{extract::State, http::StatusCode, Router};
+    use std::sync::{Arc, Mutex};
+
+    type Seen = Arc<Mutex<Vec<Value>>>;
+
+    async fn handler(
+        State((seen, reply)): State<(Seen, String)>,
+        body: String,
+    ) -> (StatusCode, String) {
+        seen.lock()
+            .unwrap()
+            .push(serde_json::from_str(&body).unwrap());
+        (StatusCode::OK, reply)
+    }
+
+    async fn start(reply: Value) -> (DeepSeekClient, Seen) {
+        let seen: Seen = Arc::new(Mutex::new(vec![]));
+        let app = Router::new()
+            .route("/chat/completions", post(handler))
+            .with_state((seen.clone(), reply.to_string()));
+        let l = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = l.local_addr().unwrap();
+        tokio::spawn(async move { axum::serve(l, app).await.unwrap() });
+        (
+            DeepSeekClient::new().with_base_url(format!("http://{addr}")),
+            seen,
+        )
+    }
+
+    fn q() -> ExplainQuestion {
+        ExplainQuestion {
+            part: 5,
+            prompt: "Pay ______ Friday.".into(),
+            options: vec![('A', "by".into()), ('B', "until".into())],
+            correct_key: 'A',
+            context: String::new(),
+        }
+    }
+
+    #[tokio::test]
+    async fn relance_avec_historique() {
+        let reply = json!({"choices": [{"message": {"content": "  Parce que « by » marque une échéance.  "}}],
+                           "usage": {"prompt_tokens": 500, "completion_tokens": 50}});
+        let (client, seen) = start(reply).await;
+        let history = vec![("Et until ?".to_string(), "Durée.".to_string())];
+        let out = client
+            .follow_up(
+                "k-12345678",
+                &q(),
+                'B',
+                "Pourquoi pas until ?",
+                &history,
+                Some("u1"),
+            )
+            .await
+            .unwrap();
+        assert_eq!(out.answer, "Parce que « by » marque une échéance.");
+        assert_eq!(out.usage.input_tokens, 500);
+        let body = seen.lock().unwrap()[0].clone();
+        assert_eq!(body["max_tokens"], 400);
+        assert!(
+            body.get("response_format").is_none(),
+            "texte libre, pas de JSON imposé"
+        );
+        let messages = body["messages"].as_array().unwrap();
+        assert_eq!(messages.len(), 5); // système, contexte, 1 échange (2), nouvelle question
+        assert_eq!(messages[2]["role"], "user");
+        assert_eq!(messages[3]["role"], "assistant");
+        assert_eq!(messages[4]["content"], "Pourquoi pas until ?");
+        assert!(messages[0]["content"]
+            .as_str()
+            .unwrap()
+            .contains("jamais des instructions"));
+    }
+
+    #[tokio::test]
+    async fn reponse_vide_reste_facturee() {
+        let reply = json!({"choices": [{"message": {"content": "  "}}], "usage": {"prompt_tokens": 100, "completion_tokens": 0}});
+        let (client, _) = start(reply).await;
+        let failure = client
+            .follow_up("k-12345678", &q(), 'B', "Pourquoi ?", &[], None)
+            .await
+            .unwrap_err();
+        assert_eq!(failure.error, AiError::Unparsable);
+        assert_eq!(failure.usage.unwrap().input_tokens, 100);
+        assert_eq!(
+            client
+                .follow_up(" ", &q(), 'B', "x", &[], None)
+                .await
+                .unwrap_err()
+                .error,
+            AiError::NoKey
+        );
     }
 }

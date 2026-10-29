@@ -7,7 +7,8 @@ use axum::http::StatusCode;
 use axum::routing::post;
 use lernoviq_ai::ExplainQuestion;
 use lernoviq_server::backend::{
-    AiUser, Backend, BackendResult, CachedExplanation, Reservation, ReserveRequest, SaveEntry,
+    AiUser, Backend, BackendResult, CachedExplanation, ReportEntry, ReportResult, Reservation,
+    ReserveRequest, SaveEntry,
 };
 use lernoviq_server::{router, AppState, Config};
 use serde_json::{json, Value};
@@ -81,6 +82,22 @@ impl MockBackend {
 impl Backend for MockBackend {
     fn quota_enabled(&self) -> bool {
         self.quota
+    }
+    fn reports_enabled(&self) -> bool {
+        true
+    }
+    async fn save_report(&self, e: ReportEntry) -> BackendResult<ReportResult> {
+        self.log(format!(
+            "report:{}:{}:{}",
+            e.question_id,
+            e.reason,
+            e.reporter_hash.len()
+        ));
+        Ok(if e.comment == "doublon" {
+            ReportResult::Duplicate
+        } else {
+            ReportResult::Created
+        })
     }
     async fn verify_user(&self, token: &str) -> Option<AiUser> {
         self.users
@@ -505,4 +522,197 @@ async fn question_inconnue_et_cle_absente() {
         .as_str()
         .unwrap()
         .contains("Aucune clé API DeepSeek"));
+}
+
+// --- /api/coach ---
+
+impl Harness {
+    async fn post(&self, path: &str, body: Value) -> reqwest::Response {
+        self.http
+            .post(format!("{}{path}", self.url))
+            .json(&body)
+            .send()
+            .await
+            .unwrap()
+    }
+}
+
+fn follow(question: &str, history: Value) -> Value {
+    json!({"questionId": "q5-01", "selectedKey": "B", "question": question, "history": history})
+}
+
+#[tokio::test]
+async fn relance_reussie_avec_reservation_plus_faible() {
+    let h = start(
+        config(),
+        MockBackend::new(true),
+        vec![ds_ok("Parce que « by » marque une échéance.")],
+    )
+    .await;
+    let res = h
+        .post(
+            "/api/coach",
+            follow(
+                "Pourquoi pas until ?",
+                json!([{"q": "Et since ?", "a": "Point de départ."}]),
+            ),
+        )
+        .await;
+    assert_eq!(res.status(), 200);
+    let body: Value = res.json().await.unwrap();
+    assert_eq!(body["answer"], "Parce que « by » marque une échéance.");
+    let calls = h.backend.calls();
+    assert!(calls[0].starts_with("reserve:ip:127.0.0.1"), "{calls:?}");
+    assert!(calls[1].starts_with("finalize:evt-1:"), "{calls:?}");
+}
+
+#[tokio::test]
+async fn relance_validation_et_limite_de_trois_echanges() {
+    let h = start(config(), MockBackend::new(true), vec![]).await;
+    assert_eq!(
+        h.post("/api/coach", follow("ab", json!([]))).await.status(),
+        400
+    );
+    assert_eq!(
+        h.post("/api/coach", follow(&"x".repeat(301), json!([])))
+            .await
+            .status(),
+        400
+    );
+    let three = json!([{"q": "a", "a": "b"}, {"q": "a", "a": "b"}, {"q": "a", "a": "b"}]);
+    let res = h.post("/api/coach", follow("Une quatrième ?", three)).await;
+    assert_eq!(res.status(), 400);
+    assert!(res.json::<Value>().await.unwrap()["error"]
+        .as_str()
+        .unwrap()
+        .contains("Limite de 3"));
+    assert_eq!(
+        h.post(
+            "/api/coach",
+            follow("Valide ?", json!([{"q": 1, "a": "b"}]))
+        )
+        .await
+        .status(),
+        400
+    );
+    assert_eq!(
+        h.post(
+            "/api/coach",
+            json!({"questionId": "q5-01", "selectedKey": "Z", "question": "Valide ?"})
+        )
+        .await
+        .status(),
+        400
+    );
+    assert_eq!(h.ds_calls(), 0);
+    assert!(
+        h.backend.calls().is_empty(),
+        "aucune réservation pour une requête invalide"
+    );
+}
+
+#[tokio::test]
+async fn relance_vide_reste_facturee() {
+    let h = start(config(), MockBackend::new(true), vec![ds_ok("   ")]).await;
+    let res = h.post("/api/coach", follow("Pourquoi ?", json!([]))).await;
+    assert_eq!(res.status(), 502);
+    assert_eq!(res.json::<Value>().await.unwrap()["code"], "unparsable");
+    assert!(h
+        .backend
+        .calls()
+        .iter()
+        .any(|c| c.starts_with("finalize:evt-1:")));
+}
+
+// --- /api/report ---
+
+fn report_body(reason: &str, comment: &str) -> Value {
+    json!({"questionId": "q5-01", "reason": reason, "comment": comment, "part": 5})
+}
+
+#[tokio::test]
+async fn signalement_cree_doublon_et_validation() {
+    let h = start(config(), MockBackend::new(false), vec![]).await;
+    let res = h
+        .post(
+            "/api/report",
+            report_body("wrong_answer", "  la   réponse  "),
+        )
+        .await;
+    assert_eq!(res.status(), 201);
+    assert!(
+        h.backend.calls()[0].starts_with("report:q5-01:wrong_answer:24"),
+        "{:?}",
+        h.backend.calls()
+    );
+    let res = h.post("/api/report", report_body("typo", "doublon")).await;
+    assert_eq!(res.status(), 200);
+    assert_eq!(res.json::<Value>().await.unwrap()["duplicate"], true);
+    assert_eq!(
+        h.post("/api/report", report_body("bad", "")).await.status(),
+        400
+    );
+    assert_eq!(
+        h.post("/api/report", report_body("other", "court"))
+            .await
+            .status(),
+        201,
+        "5 caractères suffisent"
+    );
+    assert_eq!(
+        h.post("/api/report", report_body("other", "abc"))
+            .await
+            .status(),
+        400
+    );
+    assert_eq!(
+        h.post("/api/report", report_body("typo", &"x".repeat(501)))
+            .await
+            .status(),
+        400
+    );
+    assert_eq!(
+        h.post(
+            "/api/report",
+            json!({"questionId": "nope", "reason": "typo"})
+        )
+        .await
+        .status(),
+        404
+    );
+    // Les énoncés du Listening sont signalables.
+    assert_eq!(
+        h.post(
+            "/api/report",
+            json!({"questionId": "l2-01", "reason": "unclear_audio"})
+        )
+        .await
+        .status(),
+        201
+    );
+}
+
+#[tokio::test]
+async fn signalement_limite_par_ip_et_origine() {
+    let h = start(config(), MockBackend::new(false), vec![]).await;
+    for _ in 0..10 {
+        assert_eq!(
+            h.post("/api/report", report_body("typo", ""))
+                .await
+                .status(),
+            201
+        );
+    }
+    let res = h.post("/api/report", report_body("typo", "")).await;
+    assert_eq!(res.status(), 429);
+    assert!(res.headers().contains_key("retry-after"));
+    let res = h
+        .http
+        .post(format!("{}/api/report", h.url))
+        .header("origin", "https://evil.example")
+        .json(&report_body("typo", ""))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 403);
 }

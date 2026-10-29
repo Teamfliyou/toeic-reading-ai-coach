@@ -55,12 +55,34 @@ pub struct SaveEntry {
     pub usage: Usage,
 }
 
+#[derive(Debug, Clone)]
+pub struct ReportEntry {
+    pub question_id: String,
+    pub part: Option<u8>,
+    pub prompt: String,
+    pub reason: String,
+    pub comment: String,
+    pub reporter_id: Option<String>,
+    pub reporter_hash: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReportResult {
+    Created,
+    Duplicate,
+    RateLimited,
+}
+
 pub type BackendResult<T> = Result<T, String>;
 
 #[async_trait]
 pub trait Backend: Send + Sync {
     /// Quotas et budget actifs (Supabase `service_role` configuré).
     fn quota_enabled(&self) -> bool;
+    /// Enregistrement des signalements disponible.
+    fn reports_enabled(&self) -> bool;
+    /// Enregistre un signalement (limite par empreinte et doublons vérifiés côté base).
+    async fn save_report(&self, entry: ReportEntry) -> BackendResult<ReportResult>;
     /// Valide un jeton Supabase Auth.
     async fn verify_user(&self, token: &str) -> Option<AiUser>;
     /// Question absente du jeu local (banque Supabase).
@@ -86,6 +108,12 @@ pub struct NoBackend;
 impl Backend for NoBackend {
     fn quota_enabled(&self) -> bool {
         false
+    }
+    fn reports_enabled(&self) -> bool {
+        false
+    }
+    async fn save_report(&self, _: ReportEntry) -> BackendResult<ReportResult> {
+        Err("signalements indisponibles".into())
     }
     async fn verify_user(&self, _: &str) -> Option<AiUser> {
         None
@@ -237,6 +265,61 @@ pub fn render_documents_json(documents: &Value) -> String {
 impl Backend for SupabaseBackend {
     fn quota_enabled(&self) -> bool {
         self.service_key.is_some()
+    }
+
+    fn reports_enabled(&self) -> bool {
+        self.service_key.is_some()
+    }
+
+    async fn save_report(&self, e: ReportEntry) -> BackendResult<ReportResult> {
+        // Limite distribuée : au plus 10 signalements par heure et par empreinte.
+        let since = (chrono::Utc::now() - chrono::Duration::hours(1))
+            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+        let recent = self
+            .rest_get(
+                &format!(
+                    "question_reports?reporter_hash=eq.{}&created_at=gte.{}&select=id&limit=11",
+                    enc(&e.reporter_hash),
+                    enc(&since)
+                ),
+                false,
+            )
+            .await?;
+        if recent.as_array().is_some_and(|a| a.len() >= 10) {
+            return Ok(ReportResult::RateLimited);
+        }
+        // Un même lecteur ne signale pas deux fois la même question pour le même motif.
+        let duplicate = self
+            .rest_get(
+                &format!("question_reports?reporter_hash=eq.{}&question_id=eq.{}&reason=eq.{}&status=eq.open&select=id&limit=1", enc(&e.reporter_hash), enc(&e.question_id), enc(&e.reason)),
+                false,
+            )
+            .await?;
+        if duplicate.as_array().is_some_and(|a| !a.is_empty()) {
+            return Ok(ReportResult::Duplicate);
+        }
+        let req = self
+            .service(
+                self.http
+                    .post(format!("{}/rest/v1/question_reports", self.base)),
+            )
+            .ok_or("clé service absente")?;
+        let body = json!([{"question_id": e.question_id, "part": e.part, "question_prompt": e.prompt, "reason": e.reason,
+                           "comment": e.comment, "reporter_id": e.reporter_id, "reporter_hash": e.reporter_hash}]);
+        let res = req
+            .header("Prefer", "return=minimal")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+        if res.status().is_success() {
+            Ok(ReportResult::Created)
+        } else {
+            Err(format!(
+                "Supabase {} sur question_reports",
+                res.status().as_u16()
+            ))
+        }
     }
 
     async fn verify_user(&self, token: &str) -> Option<AiUser> {
