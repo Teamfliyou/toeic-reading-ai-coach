@@ -87,11 +87,13 @@ Statuts : ⬜ non commencée · 🟨 en cours · 🟦 implémentée · 🟩 test
 | Types `types.ts`, `bank/types.ts` | `models` | 🟨 (`ExamQuestionRef`, `Attempt`, `Question`, `Passage`) |
 | `bank/{parse,csv,xlsx,practice,listeningPick}.ts` | `bank` | ⬜ |
 | `server/bank/*` (qualité, import, génération, bibliothèque, listening) | `bank` | ⬜ |
-| `server/explain.mjs`, `explanation-schema.mjs`, `quota.mjs`, `deepseek-config.mjs`, `rate-limit.mjs` | `ai` + `security` + `server` | ⬜ |
+| `deepseek-config.mjs`, `explanation-schema.mjs`, prompts et client de `explain.mjs` | `crates/ai` | 🟩 testée (18 tests, client testé contre un faux serveur HTTP) |
+| `quota.mjs`, `rate-limit.mjs`, route `/api/explain` (quotas, budget, cache Supabase) | `security` + `server` | ⬜ |
 | `server/coach.mjs`, `report.mjs`, `audit.mjs` | `ai` / `server` | ⬜ |
 | `server/admin*.mjs`, `login-limiter.mjs`, `totp.mjs`, `auth.mjs` | `security` + `server` | ⬜ |
 | `supabase/*.sql` | inchangé (serveur) ; SQLite pour le local | ⬜ |
-| `sync.ts`, `supabaseAuth.ts`, `AuthContext`, `SettingsContext` | `database` + `security` + `ui` | ⬜ |
+| Stockage local (tentatives, cartes, vocabulaire, objectifs, examens, paramètres, import de l'export web, sauvegarde) | `crates/database` (SQLx + SQLite, migrations versionnées) | 🟩 testée (7 tests dont persistance fichier) |
+| `sync.ts`, `supabaseAuth.ts`, `AuthContext`, `SettingsContext` | `security` + `ui` | ⬜ |
 | 14 pages + ~30 composants React | `crates/ui` (Dioxus) | ⬜ |
 | Service worker / PWA | remplacé par Tauri | ⬜ |
 | NSIS, updater, CI, release | `src-tauri`, `.github/workflows` | ⬜ |

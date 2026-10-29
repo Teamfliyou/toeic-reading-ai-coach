@@ -1,0 +1,14 @@
+[package]
+name = "lernoviq-database"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+lernoviq-models = { path = "../models" }
+lernoviq-core = { path = "../core" }
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+sqlx.workspace = true

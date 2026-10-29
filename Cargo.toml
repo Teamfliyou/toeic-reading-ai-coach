@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/models", "crates/core", "crates/bank", "crates/ui", "src-tauri"]
+members = ["crates/models", "crates/core", "crates/bank", "crates/database", "crates/ai", "crates/ui", "src-tauri"]
 
 [workspace.package]
 version = "0.1.0"
@@ -15,3 +15,8 @@ chrono = { version = "0.4", default-features = false, features = ["std", "serde"
 regex = "1"
 unicode-normalization = "0.1"
 sha2 = "0.10"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "chrono"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+axum = "0.8"
