@@ -1,0 +1,25 @@
+[package]
+name = "lernoviq-server"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "lernoviq-server"
+path = "src/main.rs"
+
+[dependencies]
+lernoviq-ai = { path = "../ai" }
+lernoviq-security = { path = "../security" }
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+axum.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+reqwest = { workspace = true }
