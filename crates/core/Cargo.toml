@@ -1,0 +1,12 @@
+[package]
+name = "lernoviq-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+lernoviq-models = { path = "../models" }
+serde.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
