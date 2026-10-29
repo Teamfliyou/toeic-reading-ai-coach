@@ -26,6 +26,9 @@ jobs:
           cargo_version=$(cargo metadata --no-deps --format-version 1 | node -e "const m=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log(m.packages.find(p=>p.name==='lernoviq').version)")
           echo "tag=$tag cargo=$cargo_version"
           test "$tag" = "$cargo_version" || { echo "Le tag ne correspond pas à la version du workspace"; exit 1; }
+      - name: Frontend factice (le macro Tauri exige le dossier ; le vrai est compilé par dx au build)
+        shell: bash
+        run: mkdir -p target/dx/lernoviq-ui/release/web/public && echo "<!doctype html>" > target/dx/lernoviq-ui/release/web/public/index.html
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace

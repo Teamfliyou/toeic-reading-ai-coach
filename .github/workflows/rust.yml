@@ -25,6 +25,9 @@ jobs:
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
+      - name: Frontend factice (le macro Tauri exige le dossier ; le vrai est compilé par dx au build)
+        shell: bash
+        run: mkdir -p target/dx/lernoviq-ui/release/web/public && echo "<!doctype html>" > target/dx/lernoviq-ui/release/web/public/index.html
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
