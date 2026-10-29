@@ -95,7 +95,9 @@ Statuts : ⬜ non commencée · 🟨 en cours · 🟦 implémentée · 🟩 test
 | `supabase/*.sql` | inchangé (serveur) ; SQLite pour le local | ⬜ |
 | Stockage local (tentatives, cartes, vocabulaire, objectifs, examens, paramètres, import de l'export web, sauvegarde) | `crates/database` (SQLx + SQLite, migrations versionnées) | 🟩 testée (7 tests dont persistance fichier) |
 | `sync.ts`, `supabaseAuth.ts`, `AuthContext`, `SettingsContext` | `security` + `ui` | ⬜ |
-| 14 pages + ~30 composants React | `crates/ui` (Dioxus) | ⬜ |
+| Pages Dashboard, Entraînement P5/P6/P7, Révision, Adaptatif, Examen, Statistiques, Vocabulaire, Objectifs, Leçons, Diagnostic + composants (Settings, explication IA, relance, mots, signalement) | `crates/ui` (Dioxus/WASM, CSS compilé repris tel quel) | 🟦 implémentée, vérifiée dans le navigateur (parcours entraînement, partie 6, examen complet) ; pas de tests automatisés d'interface |
+| Listening Partie 2, Administration (UI) | `crates/ui` | ⬜ écrans « pas encore disponible » (audio et routes admin non portés) |
+| Authentification Supabase (connexion, synchronisation) | `crates/security` + `crates/database` | ⬜ |
 | Service worker / PWA | remplacé par Tauri | ⬜ |
 | NSIS, updater, CI, release | `src-tauri`, `.github/workflows` | ⬜ |
 

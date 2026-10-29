@@ -19,3 +19,5 @@ serde.workspace = true
 serde_json.workspace = true
 lernoviq-core = { path = "../crates/core" }
 lernoviq-models = { path = "../crates/models" }
+lernoviq-database = { path = "../crates/database" }
+reqwest.workspace = true

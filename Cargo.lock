@@ -2996,7 +2996,9 @@ name = "lernoviq"
 version = "0.1.0"
 dependencies = [
  "lernoviq-core",
+ "lernoviq-database",
  "lernoviq-models",
+ "reqwest 0.13.5",
  "serde",
  "serde_json",
  "tauri",
@@ -3100,8 +3102,16 @@ dependencies = [
 name = "lernoviq-ui"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "dioxus",
+ "js-sys",
  "lernoviq-core",
+ "lernoviq-models",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

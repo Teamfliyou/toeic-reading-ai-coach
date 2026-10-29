@@ -354,6 +354,19 @@ impl Db {
         Ok(report)
     }
 
+    /// État complet au format JSON de l'interface (mêmes clés camelCase que l'export web).
+    pub async fn export_json(&self) -> Result<String> {
+        let goals = self.get_goals().await?;
+        let has_goals = goals.updated_at.timestamp() != 0;
+        Ok(serde_json::to_string(&serde_json::json!({
+            "attempts": self.list_attempts().await?,
+            "cards": self.list_cards().await?,
+            "vocab": self.list_words().await?,
+            "exams": self.list_exams().await?,
+            "goals": has_goals.then_some(goals),
+        }))?)
+    }
+
     /// Copie cohérente de la base dans `dest` (sauvegarde avant mise à jour ou migration).
     pub async fn backup_to(&self, dest: &Path) -> Result<()> {
         if dest.exists() {
@@ -575,6 +588,33 @@ mod tests {
         assert_eq!(db.list_exams().await.unwrap().len(), 1);
         assert_eq!(db.get_goals().await.unwrap().daily_goal, 12);
         assert!(db.import_legacy("pas du json").await.is_err());
+    }
+
+    #[tokio::test]
+    async fn export_puis_reimport_identique() {
+        let a = Db::open_memory().await.unwrap();
+        a.upsert_attempts(&[att("a", 1, None, false)])
+            .await
+            .unwrap();
+        a.set_goals(&Goals {
+            exam_date: None,
+            target_score: Some(300),
+            daily_goal: 12,
+            updated_at: t(2),
+        })
+        .await
+        .unwrap();
+        let json = a.export_json().await.unwrap();
+        let b = Db::open_memory().await.unwrap();
+        b.import_legacy(&json).await.unwrap();
+        assert_eq!(b.export_json().await.unwrap(), json);
+        let empty = Db::open_memory()
+            .await
+            .unwrap()
+            .export_json()
+            .await
+            .unwrap();
+        assert!(empty.contains("\"goals\":null"));
     }
 
     #[tokio::test]
