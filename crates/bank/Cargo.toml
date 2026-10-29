@@ -1,0 +1,8 @@
+[package]
+name = "lernoviq-bank"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+lernoviq-models = { path = "../models" }
+serde.workspace = true

@@ -44,3 +44,57 @@ pub struct Attempt {
 
 /// Au-delà, un temps est considéré comme une pause (onglet laissé ouvert).
 pub const MAX_COUNTED_TIME_MS: i64 = 5 * 60_000;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OptionKey {
+    A,
+    B,
+    C,
+    D,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct QuestionOption {
+    pub key: OptionKey,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PassageDocument {
+    pub id: String,
+    pub kind: String,
+    pub title: String,
+    pub body: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Passage {
+    pub id: String,
+    pub part: u8,
+    pub title: String,
+    pub documents: Vec<PassageDocument>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Question {
+    pub id: String,
+    pub part: u8,
+    pub passage_id: Option<String>,
+    pub order_index: u32,
+    pub prompt: String,
+    pub options: Vec<QuestionOption>,
+    pub correct_key: OptionKey,
+    /// 1 (facile), 2 (intermédiaire), 3 (avancée).
+    pub difficulty: u8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub theme: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub explanation: Option<String>,
+}

@@ -81,8 +81,10 @@ Statuts : ⬜ non commencée · 🟨 en cours · 🟦 implémentée · 🟩 test
 | `srs.ts` (Leitner, fusion) | `crates/core/src/srs.rs` | 🟩 testée (4 tests unitaires) |
 | `stats.ts`, `goals.ts` | `crates/core/src/{stats,goals}.rs` | 🟩 testée (10 tests) |
 | `adaptive.ts`, `vocab.ts` | `crates/core/src/{adaptive,vocab}.rs` | 🟩 testée (13 tests) |
-| `examBuilder.ts`, `tracker.ts`, `analytics.ts`, `parts.ts`, `lessons.ts` | `core` / `progress` | ⬜ |
-| Types `types.ts`, `bank/types.ts` | `models` | 🟨 (`ExamQuestionRef`, `Attempt`) |
+| `examBuilder.ts`, `attempts.ts` | `crates/core/src/{exam_builder,attempts}.rs` | 🟩 testée (9 tests) |
+| `bank/csv.ts` | `crates/bank/src/csv.rs` | 🟩 testée (3 tests) |
+| `tracker.ts`, `analytics.ts`, `parts.ts`, `lessons.ts` | `core` / `progress` | ⬜ |
+| Types `types.ts`, `bank/types.ts` | `models` | 🟨 (`ExamQuestionRef`, `Attempt`, `Question`, `Passage`) |
 | `bank/{parse,csv,xlsx,practice,listeningPick}.ts` | `bank` | ⬜ |
 | `server/bank/*` (qualité, import, génération, bibliothèque, listening) | `bank` | ⬜ |
 | `server/explain.mjs`, `explanation-schema.mjs`, `quota.mjs`, `deepseek-config.mjs`, `rate-limit.mjs` | `ai` + `security` + `server` | ⬜ |
