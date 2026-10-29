@@ -7,6 +7,8 @@ edition.workspace = true
 lernoviq-models = { path = "../models" }
 serde.workspace = true
 chrono.workspace = true
+regex.workspace = true
+unicode-normalization.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

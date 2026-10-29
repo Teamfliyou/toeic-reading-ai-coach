@@ -80,7 +80,8 @@ Statuts : ⬜ non commencée · 🟨 en cours · 🟦 implémentée · 🟩 test
 | `exam.ts` (score, chrono, correction) | `crates/core/src/exam.rs` | 🟩 testée (6 tests unitaires) |
 | `srs.ts` (Leitner, fusion) | `crates/core/src/srs.rs` | 🟩 testée (4 tests unitaires) |
 | `stats.ts`, `goals.ts` | `crates/core/src/{stats,goals}.rs` | 🟩 testée (10 tests) |
-| `adaptive.ts`, `examBuilder.ts`, `vocab.ts`, `tracker.ts`, `analytics.ts`, `parts.ts`, `lessons.ts` | `core` / `progress` | ⬜ |
+| `adaptive.ts`, `vocab.ts` | `crates/core/src/{adaptive,vocab}.rs` | 🟩 testée (13 tests) |
+| `examBuilder.ts`, `tracker.ts`, `analytics.ts`, `parts.ts`, `lessons.ts` | `core` / `progress` | ⬜ |
 | Types `types.ts`, `bank/types.ts` | `models` | 🟨 (`ExamQuestionRef`, `Attempt`) |
 | `bank/{parse,csv,xlsx,practice,listeningPick}.ts` | `bank` | ⬜ |
 | `server/bank/*` (qualité, import, génération, bibliothèque, listening) | `bank` | ⬜ |
