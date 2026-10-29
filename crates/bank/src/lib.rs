@@ -1,3 +1,6 @@
-//! Banque de questions : lecture/écriture CSV, import, qualité.
+//! Banque de questions : CSV, empreintes, similarité, langue, contrôles de qualité.
 
 pub mod csv;
+pub mod language;
+pub mod quality;
+pub mod text;

@@ -82,7 +82,7 @@ Statuts : ⬜ non commencée · 🟨 en cours · 🟦 implémentée · 🟩 test
 | `stats.ts`, `goals.ts` | `crates/core/src/{stats,goals}.rs` | 🟩 testée (10 tests) |
 | `adaptive.ts`, `vocab.ts` | `crates/core/src/{adaptive,vocab}.rs` | 🟩 testée (13 tests) |
 | `examBuilder.ts`, `attempts.ts` | `crates/core/src/{exam_builder,attempts}.rs` | 🟩 testée (9 tests) |
-| `bank/csv.ts` | `crates/bank/src/csv.rs` | 🟩 testée (3 tests) |
+| `bank/csv.ts`, `server/bank/{text,language,quality}.mjs` | `crates/bank/src/{csv,text,language,quality}.rs` | 🟩 testée (20 tests ; empreintes SHA-256, bandes LSH et mulberry32 vérifiés contre les valeurs du JS) |
 | `tracker.ts`, `analytics.ts`, `parts.ts`, `lessons.ts` | `core` / `progress` | ⬜ |
 | Types `types.ts`, `bank/types.ts` | `models` | 🟨 (`ExamQuestionRef`, `Attempt`, `Question`, `Passage`) |
 | `bank/{parse,csv,xlsx,practice,listeningPick}.ts` | `bank` | ⬜ |
@@ -103,3 +103,8 @@ Statuts : ⬜ non commencée · 🟨 en cours · 🟦 implémentée · 🟩 test
 3. Crate `database` (SQLite + migrations) et import des données `localStorage` exportées.
 4. Backend `crates/server` (axum) pour IA et administration, avec tests reprenant `tests/*.test.mjs`.
 5. Écrans Dioxus, puis `src-tauri`, puis workflows CI et release.
+
+## 7. Écarts volontaires avec le JavaScript
+
+- `strip_blanks` (qualité de la banque) : l'expression régulière JS `(d{1,2})s*_{2,}` avait perdu ses antislashs (bug). Le Rust applique l'intention : `\(\d{1,2}\)\s*_{2,}`. À corriger aussi côté JS tant qu'il existe.
+- Tirage aléatoire de l'examen : le générateur est injectable, la séquence diffère de `Math.random`.
