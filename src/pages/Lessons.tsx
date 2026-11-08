@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import TopNav from "@/components/TopNav";
 import { readLessons } from "@/lib/lessons";
 import "./lexora.css";
 
+const WordFormLesson = lazy(() => import("@/components/WordFormLesson"));
+
 export default function Lessons() {
   const [lessons] = useState(() => readLessons());
   const [expanded, setExpanded] = useState<string | null>(lessons[0]?.id ?? null);
+  const [courseOpen, setCourseOpen] = useState(false);
   const ready = lessons.filter(l => l.status === "ready");
   return <div className="lexora-page">
     <TopNav active="lessons" />
@@ -13,6 +16,14 @@ export default function Lessons() {
       <p className="lexora-eyebrow">Mon parcours personnalisé</p>
       <h1 className="lexora-heading">Mes leçons</h1>
       <p className="lexora-muted">Chaque erreur peut devenir une leçon ciblée : règle, exemple, exercice et astuce pour progresser.</p>
+      <section className="lexora-lesson-list" aria-label="Cours de référence">
+        <article className="lexora-card lexora-lesson">
+          <button type="button" className="lexora-lesson-toggle" aria-expanded={courseOpen} onClick={() => setCourseOpen(o => !o)}>
+            <span><span className="lexora-lesson-tag">Cours · Partie 5 · Grammaire</span><strong>Nom, verbe, adjectif ou adverbe ? Choisir la bonne forme</strong></span><span aria-hidden="true">{courseOpen ? "−" : "+"}</span>
+          </button>
+          {courseOpen && <Suspense fallback={<p className="lexora-muted" role="status">Chargement…</p>}><WordFormLesson /></Suspense>}
+        </article>
+      </section>
       <section className="lexora-stats" aria-label="Statistiques des leçons">
         <div className="lexora-card"><p className="lexora-statlabel">Leçons disponibles</p><p className="lexora-statvalue">{ready.length}</p></div>
         <div className="lexora-card"><p className="lexora-statlabel">Erreurs enregistrées</p><p className="lexora-statvalue">{lessons.length}</p></div>

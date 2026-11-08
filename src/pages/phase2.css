@@ -113,3 +113,33 @@ main:focus{outline:none}
 
 .lexora-lesson-tag{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--lime);color:var(--ink);font-size:13px;font-weight:700}
 .lexora-lesson-toggle>span:first-child{min-width:0;flex:1}
+
+/* Cours de référence : nom / verbe / adjectif / adverbe */
+.lexora-wf ol,.lexora-wf ul{padding-left:22px;margin:6px 0}
+.lexora-wf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:12px 0}
+.lexora-wf-card{border:1px solid var(--line);border-radius:20px;padding:18px 20px;background:var(--bg);font-size:15px;line-height:1.6}
+.lexora-wf-card h4{margin:0 0 4px;font-family:"Space Grotesk",sans-serif;font-size:19px;color:var(--ink)}
+.lexora-wf-card.wf-noun{border-top:5px solid var(--lime)}
+.lexora-wf-card.wf-verb{border-top:5px solid var(--lilac)}
+.lexora-wf-card.wf-adjective{border-top:5px solid var(--coral)}
+.lexora-wf-card.wf-adverb{border-top:5px solid var(--ink)}
+.lexora-wf-role{margin:0 0 8px}
+.lexora-wf-sub{margin:10px 0 2px;font-weight:700;color:var(--ink);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.lexora-wf code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px;color:var(--ink)}
+.lexora-wf-trap{margin:10px 0 0;padding:10px 12px;background:#fff;border-radius:12px;font-size:14px}
+.lexora-wf-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:15px}
+.lexora-wf-table th,.lexora-wf-table td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+.lexora-wf-table th{color:var(--ink)}
+.lexora-wf-quiz{margin-top:30px;padding-top:6px;border-top:1px solid var(--line)}
+.lexora-wf-list{list-style:none;padding:0!important;margin:14px 0;display:grid;gap:12px}
+.lexora-wf-item{background:var(--bg);border-radius:18px;padding:14px 16px}
+.lexora-wf-prompt{margin:0 0 10px;font-weight:600;color:var(--ink)}
+.lexora-wf-options{display:flex;flex-wrap:wrap;gap:8px}
+.lexora-wf-opt{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line2);background:#fff;color:var(--ink);font-size:15px;font-weight:600;cursor:pointer}
+.lexora-wf-opt:hover:not(:disabled){background:var(--track)}
+.lexora-wf-opt:disabled{cursor:default}
+.lexora-wf-opt.is-right{background:var(--lime);border-color:var(--lime)}
+.lexora-wf-opt.is-wrong{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.lexora-wf-why{margin:10px 0 0;font-size:14.5px}
+.lexora-wf-score{display:flex;align-items:center;gap:14px;font-weight:700;color:var(--ink)}
+@media(max-width:700px){.lexora-wf-grid{grid-template-columns:1fr}}
