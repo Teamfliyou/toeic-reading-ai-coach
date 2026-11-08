@@ -143,3 +143,13 @@ main:focus{outline:none}
 .lexora-wf-why{margin:10px 0 0;font-size:14.5px}
 .lexora-wf-score{display:flex;align-items:center;gap:14px;font-weight:700;color:var(--ink)}
 @media(max-width:700px){.lexora-wf-grid{grid-template-columns:1fr}}
+
+.lexora-wf-scroll{overflow-x:auto;margin:10px 0}
+.lexora-wf-nature{margin:6px 0 18px}
+.lexora-wf h4{margin:20px 0 6px;font-size:16px;color:var(--ink)}
+.lexora-wf-num{font-weight:700;margin-right:4px}
+.lexora-wf-fill{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0}
+.lexora-wf-input{min-height:38px;width:150px;padding:0 12px;border:1px solid var(--line2);border-radius:12px;background:#fff;color:var(--ink);font-size:15px}
+.lexora-wf-input.is-right{background:var(--lime);border-color:var(--lime)}
+.lexora-wf-input.is-wrong{background:var(--badbg);border-color:var(--bad)}
+.lexora-wf-answer{font-weight:700;color:var(--bad)}

@@ -1,169 +1,171 @@
-// Leçon de référence : choisir entre nom, verbe, adjectif et adverbe (TOEIC partie 5).
+// Leçon « Word families — Les familles de mots » (TOEIC partie 5).
 
-export type WordClass = {
-  id: "noun" | "verb" | "adjective" | "adverb";
-  label: string;
-  role: string;
-  suffixes: { suffix: string; examples: string }[];
-  positions: string[];
-  trap?: string;
+export type SuffixTable = { head: [string, string]; rows: [string, string][] };
+
+export type Nature = {
+  id: "noun" | "adjective" | "verb" | "adverb";
+  title: string;
+  definition: string;
+  examples: string;
+  table?: SuffixTable;
+  notes: string[];
 };
 
-export const WORD_CLASSES: WordClass[] = [
+export const FAMILY_EXAMPLE: [string, string][] = [
+  ["Verbe", "to influence (influencer)"],
+  ["Nom", "influence (influence)"],
+  ["Adjectif", "influential (influent)"],
+  ["Adverbe", "influentially (de manière influente)"],
+];
+
+export const NATURES: Nature[] = [
   {
-    id: "noun", label: "Nom", role: "Désigne une chose, une personne, une idée (sujet ou complément).",
-    suffixes: [
-      { suffix: "-tion / -sion", examples: "decision, expansion, application" },
-      { suffix: "-ment", examples: "payment, management, agreement" },
-      { suffix: "-ance / -ence", examples: "performance, experience, absence" },
-      { suffix: "-ity / -ness", examples: "quality, availability, awareness" },
-      { suffix: "-er / -or / -ist / -ee", examples: "manager, supervisor, specialist, employee" },
-      { suffix: "-ship / -hood / -ism", examples: "ownership, neighborhood, tourism" },
-    ],
-    positions: [
-      "Après un article ou un déterminant : the, a, an, this, that, my, our, their, its, some, any.",
-      "Après un adjectif : a new policy, a major change.",
-      "Après une préposition : of, in, for, with, by, on.",
-      "En sujet devant le verbe, ou en complément après le verbe : the delivery arrived.",
-    ],
-    trap: "Un possessif (our, their, his…) est toujours suivi d'un nom, éventuellement précédé d'un adjectif.",
+    id: "noun", title: "A. Le nom (noun)",
+    definition: "Un nom sert à désigner une personne, un lieu, une chose ou une idée.",
+    examples: "cat, school, teacher, street",
+    table: {
+      head: ["Suffixe fréquent", "Exemple"],
+      rows: [
+        ["-ance / -ence", "appearance"], ["-ness", "kindness"], ["-ity", "purity"], ["-hood", "neighbourhood"],
+        ["-ism", "tourism"], ["-ment", "improvement"], ["-tion / -sion", "specialization"], ["-er / -or", "teacher / actor"],
+        ["-ist", "flutist"], ["-cy", "fluency"], ["-age", "leverage"], ["-ship", "friendship"], ["-dom", "kingdom"],
+      ],
+    },
+    notes: [],
   },
   {
-    id: "verb", label: "Verbe", role: "Exprime une action ou un état ; il porte le temps de la phrase.",
-    suffixes: [
-      { suffix: "-ize / -ise", examples: "organize, finalize, authorize" },
-      { suffix: "-ify", examples: "simplify, clarify, verify" },
-      { suffix: "-ate", examples: "create, communicate, evaluate" },
-      { suffix: "-en", examples: "strengthen, widen, shorten" },
-    ],
-    positions: [
-      "Après un sujet : The manager approves the plan.",
-      "Après un modal : will, can, must, should, may + verbe à la base.",
-      "Après to (infinitif) : plans to expand, in order to save.",
-      "Après do / does / did / don't : did not receive.",
-    ],
-    trap: "Après un modal ou « to », on met toujours la forme de base : will improve, jamais will improvement.",
+    id: "adjective", title: "B. L'adjectif (adjective)",
+    definition: "Un adjectif sert à décrire ou qualifier un nom.",
+    examples: "old, small, fast, blue, helpful, funny",
+    table: {
+      head: ["Suffixe", "Exemples"],
+      rows: [
+        ["-able", "readable, understandable, recognizable, countable, forgivable, negotiable"],
+        ["-ible", "flexible, edible, responsible, impossible"],
+        ["-ive", "responsive, evasive, dismissive, expressive, informative"],
+        ["-al", "legal, brutal, terminal, lethal, fatal, suicidal, exponential"],
+        ["-ous", "furious, outrageous, delicious, spacious, marvellous, frivolous"],
+        ["-ful", "faithful, useful, hopeful, forgetful, beautiful, tearful"],
+        ["-less", "needless, spiritless, cloudless, harmless, useless, legless, worthless, priceless"],
+        ["-ish", "thirtyish, yellowish, moreish, Spanish"],
+      ],
+    },
+    notes: [],
   },
   {
-    id: "adjective", label: "Adjectif", role: "Décrit un nom ou qualifie le sujet.",
-    suffixes: [
-      { suffix: "-ful / -less", examples: "helpful, useful, careless" },
-      { suffix: "-able / -ible", examples: "reliable, available, flexible" },
-      { suffix: "-al / -ial", examples: "practical, financial, additional" },
-      { suffix: "-ive / -ous", examples: "effective, competitive, various" },
-      { suffix: "-ent / -ant", examples: "efficient, important, dependent" },
-      { suffix: "-ic / -ary / -y", examples: "economic, necessary, costly*" },
-    ],
-    positions: [
-      "Avant un nom : a reliable supplier, an excellent service.",
-      "Après be / become / seem / remain / look / feel : The results are satisfactory.",
-      "Après un adverbe d'intensité : very, quite, extremely, highly + adjectif.",
-      "Après l'article/le possessif mais avant le nom : its ___ service → adjectif.",
-    ],
-    trap: "*Attention : certains mots en -ly sont des adjectifs (friendly, costly, timely, lively, likely, daily).",
+    id: "verb", title: "C. Le verbe (verb)",
+    definition: "Un verbe exprime une action ou un état.",
+    examples: "run, eat, talk, be, hope",
+    table: {
+      head: ["Suffixe / terminaison", "Exemples"],
+      rows: [
+        ["-ise / -ize", "customize, organize, analyze, synthesize, recognize, realize, specialize"],
+        ["-ify", "electrify, identify, terrify, purify, beautify, horrify"],
+        ["-ate", "activate, animate, designate, originate"],
+        ["-en", "deepen, strengthen"],
+        ["-ed (forme conjuguée)", "wanted, acted"],
+      ],
+    },
+    notes: ["Attention : -ed est généralement une terminaison du passé ou du participe passé, pas un suffixe permettant de reconnaître systématiquement un verbe à l'infinitif."],
   },
   {
-    id: "adverb", label: "Adverbe", role: "Modifie un verbe, un adjectif, un autre adverbe ou toute la phrase.",
-    suffixes: [
-      { suffix: "adjectif + -ly", examples: "carefully, quickly, recently, significantly" },
-      { suffix: "-ally", examples: "automatically, financially (adjectif en -ic/-al)" },
-      { suffix: "Formes irrégulières", examples: "well, fast, hard, late, early, often, soon" },
+    id: "adverb", title: "D. L'adverbe (adverb)",
+    definition: "Un adverbe peut notamment préciser la manière dont se déroule une action.",
+    examples: "slowly, happily, loudly",
+    notes: [
+      "Le suffixe le plus fréquent est -ly.",
+      "Deux exceptions courantes pour les adverbes de manière : fast et hard, qui ne prennent pas -ly dans leur sens habituel.",
     ],
-    positions: [
-      "Entre le sujet et le verbe : She carefully reviewed the file.",
-      "Entre l'auxiliaire et le participe : has steadily increased / was immediately rejected.",
-      "Juste avant un adjectif : extremely easy, highly profitable.",
-      "En fin de phrase : The team worked efficiently.",
-    ],
-    trap: "Un adverbe n'est jamais obligatoire dans la phrase : si on peut le supprimer et que la phrase reste correcte, c'est souvent un adverbe.",
   },
 ];
 
-export const RECIPE: { clue: string; answer: string }[] = [
-  { clue: "article / possessif / préposition + ___ (+ of)", answer: "NOM" },
-  { clue: "article + ___ + nom", answer: "ADJECTIF" },
-  { clue: "be / become / seem + ___", answer: "ADJECTIF (ou participe passé)" },
-  { clue: "will / can / must / to + ___", answer: "VERBE (forme de base)" },
-  { clue: "___ + adjectif, ou sujet + ___ + verbe", answer: "ADVERBE" },
-  { clue: "have / has / be + ___ + participe passé", answer: "ADVERBE" },
+export const STRATEGY = [
+  "Repérer une question qui demande une forme grammaticale.",
+  "Identifier la nature du mot manquant : nom, verbe, adjectif ou adverbe.",
+  "Éliminer les propositions dont la nature grammaticale ne convient pas.",
+  "Vérifier que le mot retenu donne une phrase correcte et logique.",
 ];
 
-export type QuizItem = { prompt: string; options: string[]; answer: string; why: string };
-export type QuizSeries = { id: string; title: string; intro: string; items: QuizItem[] };
+export const CLUES: [string, string][] = [
+  ["a / an / the + ______", "Nom, ou adjectif suivi d'un nom"],
+  ["very + ______", "Adjectif ou adverbe"],
+  ["to + ______ (infinitif)", "Verbe à la base verbale"],
+  ["Verbe d'action + ______", "Souvent un adverbe de manière"],
+  ["______ + nom", "Souvent un adjectif"],
+];
 
-const NATURE = ["Nom", "Verbe", "Adjectif", "Adverbe"];
+export const REVIEW: [string, string, string, string][] = [
+  ["Nom", "Désigner", "-tion, -ment, -ness, -ity, -ship", "happiness"],
+  ["Adjectif", "Décrire un nom", "-able, -ive, -ful, -less, -ous", "helpful"],
+  ["Verbe", "Exprimer une action ou un état", "-ize, -ify, -ate, -en", "simplify"],
+  ["Adverbe", "Préciser notamment une action", "-ly", "carefully"],
+];
 
-export const SERIES: QuizSeries[] = [
-  {
-    id: "suffix",
-    title: "Exercice 1 · Reconnaître la nature grâce au suffixe",
-    intro: "Quelle est la nature de chaque mot ? Regardez la terminaison.",
-    items: [
-      { prompt: "management", options: NATURE, answer: "Nom", why: "Le suffixe -ment forme des noms (manage → management)." },
-      { prompt: "organize", options: NATURE, answer: "Verbe", why: "Le suffixe -ize forme des verbes." },
-      { prompt: "reliable", options: NATURE, answer: "Adjectif", why: "Le suffixe -able forme des adjectifs." },
-      { prompt: "recently", options: NATURE, answer: "Adverbe", why: "Adjectif + -ly = adverbe (recent → recently)." },
-      { prompt: "expansion", options: NATURE, answer: "Nom", why: "Le suffixe -sion forme des noms." },
-      { prompt: "simplify", options: NATURE, answer: "Verbe", why: "Le suffixe -ify forme des verbes." },
-      { prompt: "dependent", options: NATURE, answer: "Adjectif", why: "Le suffixe -ent est typique des adjectifs (dependant est le nom, dependent l'adjectif)." },
-      { prompt: "financially", options: NATURE, answer: "Adverbe", why: "financial + -ly : la terminaison -ally donne un adverbe." },
-    ],
-  },
-  {
-    id: "position",
-    title: "Exercice 2 · Deviner la nature du mot manquant",
-    intro: "Ne cherchez pas encore le mot : quelle est la nature de ce qui manque ?",
-    items: [
-      { prompt: "The ___ of the report was surprising.", options: NATURE, answer: "Nom", why: "Article « the » avant et préposition « of » après : un nom est attendu." },
-      { prompt: "She will ___ the file tomorrow.", options: NATURE, answer: "Verbe", why: "Après le modal « will », il faut un verbe à la base." },
-      { prompt: "We need a very ___ solution.", options: NATURE, answer: "Adjectif", why: "« very » + ___ + nom : l'adjectif qualifie « solution »." },
-      { prompt: "The CEO spoke ___ about the merger.", options: NATURE, answer: "Adverbe", why: "La phrase est complète sans lui : il précise comment le CEO a parlé." },
-      { prompt: "Our ___ has grown steadily.", options: NATURE, answer: "Nom", why: "Possessif « our » + ___ + verbe : le sujet est un nom." },
-      { prompt: "Employees are ___ to use the gym.", options: NATURE, answer: "Adjectif", why: "Après « be », on attend un adjectif (eligible)." },
-      { prompt: "They have ___ finished the report.", options: NATURE, answer: "Adverbe", why: "Entre l'auxiliaire « have » et le participe : adverbe." },
-      { prompt: "The firm plans to ___ its offices.", options: NATURE, answer: "Verbe", why: "Après « to » (infinitif) : un verbe." },
-    ],
-  },
-  {
-    id: "form",
-    title: "Exercice 3 · Choisir la bonne forme (style TOEIC partie 5)",
-    intro: "Choisissez la forme du mot qui complète la phrase.",
-    items: [
-      { prompt: "The company announced a major ___ in its pricing policy.", options: ["change", "changed", "changeable", "changeably"], answer: "change", why: "Article + adjectif (major) + ___ : un nom est attendu." },
-      { prompt: "Ms. Lee ___ reviewed the contract before signing.", options: ["careful", "carefully", "care", "carefulness"], answer: "carefully", why: "Entre le sujet et le verbe : adverbe." },
-      { prompt: "We offer a ___ solution to your storage problem.", options: ["practice", "practical", "practically", "practise"], answer: "practical", why: "Article + ___ + nom : adjectif." },
-      { prompt: "All employees must ___ with the new safety rules.", options: ["comply", "compliance", "compliant", "compliantly"], answer: "comply", why: "Après le modal « must » : verbe à la base." },
-      { prompt: "The manager was ___ with the team's results.", options: ["satisfy", "satisfied", "satisfaction", "satisfactorily"], answer: "satisfied", why: "Après « was » : adjectif (be satisfied with)." },
-      { prompt: "Please submit your ___ before the end of the month.", options: ["apply", "application", "applicable", "applicably"], answer: "application", why: "Possessif « your » + ___ : nom." },
-      { prompt: "The new software is ___ easy to install.", options: ["extreme", "extremely", "extremity", "extremist"], answer: "extremely", why: "Juste avant l'adjectif « easy » : adverbe." },
-      { prompt: "Sales have ___ increased since January.", options: ["steady", "steadily", "steadiness", "steadied"], answer: "steadily", why: "Entre « have » et le participe « increased » : adverbe." },
-      { prompt: "The committee plans to ___ the budget next week.", options: ["finalize", "final", "finally", "finality"], answer: "finalize", why: "Après « to » : verbe." },
-      { prompt: "A ___ of the survey will be sent to all participants.", options: ["summary", "summarize", "summarized", "summarily"], answer: "summary", why: "Article « A » + ___ + « of » : nom." },
-      { prompt: "The hotel is known for its ___ service.", options: ["excellence", "excellent", "excellently", "excel"], answer: "excellent", why: "Possessif « its » + ___ + nom « service » : adjectif." },
-      { prompt: "Mr. Tan is ___ for managing the Osaka branch.", options: ["responsible", "responsibly", "responsibility", "responsibilities"], answer: "responsible", why: "Après « is » : adjectif (responsible for)." },
-      { prompt: "The new policy will ___ the efficiency of our department.", options: ["improve", "improvement", "improvable", "improvingly"], answer: "improve", why: "Après le modal « will » : verbe à la base." },
-      { prompt: "Their proposal was ___ rejected by the board.", options: ["immediate", "immediately", "immediacy", "immediateness"], answer: "immediately", why: "Entre « was » et le participe « rejected » : adverbe." },
-      { prompt: "The ___ of the new building will take two years.", options: ["construct", "construction", "constructive", "constructively"], answer: "construction", why: "Article « The » + ___ + « of » : nom." },
-      { prompt: "It is ___ to arrive early on the day of the interview.", options: ["advise", "advisable", "advisor", "advisably"], answer: "advisable", why: "Après « It is » : adjectif." },
-    ],
-  },
-  {
-    id: "form2",
-    title: "Exercice 4 · Entraînement supplémentaire",
-    intro: "Même principe, phrases plus longues : repérez les mots autour du trou.",
-    items: [
-      { prompt: "The marketing team made a ___ effort to meet the deadline.", options: ["considerable", "considerably", "consider", "consideration"], answer: "considerable", why: "Article + ___ + nom « effort » : adjectif." },
-      { prompt: "Customers can ___ their orders online at any time.", options: ["track", "tracking", "tracker", "trackable"], answer: "track", why: "Après le modal « can » : verbe à la base." },
-      { prompt: "The new printer is ___ faster than the old one.", options: ["significant", "significance", "significantly", "signify"], answer: "significantly", why: "Devant le comparatif « faster » : adverbe." },
-      { prompt: "Thank you for your ___ in our company.", options: ["interested", "interesting", "interest", "interestingly"], answer: "interest", why: "Possessif « your » + ___ + préposition « in » : nom." },
-      { prompt: "Please read the instructions ___ before assembling the desk.", options: ["careful", "carefully", "care", "caring"], answer: "carefully", why: "Fin de proposition, après le complément : adverbe de manière." },
-      { prompt: "The merger was ___ for both companies.", options: ["benefit", "beneficial", "beneficially", "beneficiary"], answer: "beneficial", why: "Après « was » : adjectif." },
-      { prompt: "Ms. Garcia was ___ promoted to regional director.", options: ["recent", "recently", "recency", "recentness"], answer: "recently", why: "Entre « was » et le participe « promoted » : adverbe." },
-      { prompt: "We will ___ you of any change to the schedule.", options: ["notify", "notice", "notification", "notifiable"], answer: "notify", why: "Après « will » et avant « you of » : verbe (notify someone of)." },
-      { prompt: "The ___ of renewable energy has increased this year.", options: ["use", "used", "usable", "usefully"], answer: "use", why: "Article « The » + ___ + « of » : nom (le verbe use ne convient pas ici)." },
-      { prompt: "Participants must submit a ___ form before entering the lab.", options: ["complete", "completion", "completely", "completes"], answer: "complete", why: "Article + ___ + nom « form » : adjectif (complete = rempli)." },
-      { prompt: "The speaker was ___ received by the audience.", options: ["enthusiasm", "enthusiastic", "enthusiastically", "enthuse"], answer: "enthusiastically", why: "Entre « was » et le participe « received » : adverbe." },
-      { prompt: "Our new model is ___ to the previous one.", options: ["superior", "superiority", "superiorly", "superiors"], answer: "superior", why: "Après « is » : adjectif (superior to)." },
-    ],
-  },
+export type McqItem = { prompt: string; options: string[]; answer: string; why: string };
+
+// Exemple de question donné dans le cours.
+export const EXAMPLE_QUESTION: McqItem = {
+  prompt: "Given the bad weather in the Mediterranean last month, the delay in shipping the spare parts to Portugal was certainly ______.",
+  options: ["understand", "understandable", "understandably", "understanding"],
+  answer: "understandable",
+  why: "Après « was certainly », on attend ici un adjectif décrivant « the delay » : « le retard était certainement compréhensible ».",
+};
+
+export type FillItem = { before: string; after?: string; answers: string[] };
+export type FillFamily = { word: string; items: FillItem[] };
+
+// Exercice 1 : chaque famille a deux phrases à compléter.
+export const FILL_FAMILIES: FillFamily[] = [
+  { word: "CRITIC", items: [
+    { before: "Sometimes it is necessary to", after: ".", answers: ["criticize", "criticise"] },
+    { before: "He has a very", after: "approach.", answers: ["critical"] },
+  ] },
+  { word: "ELECTRIC", items: [
+    { before: "This amazing speech is going to", after: "the audience.", answers: ["electrify"] },
+    { before: "A washing machine is an", after: "appliance.", answers: ["electric", "electrical"] },
+  ] },
+  { word: "ACTIVE", items: [
+    { before: "He is an", after: "member of our association.", answers: ["active"] },
+    { before: "The police are", after: "searching for the criminal.", answers: ["actively"] },
+  ] },
+  { word: "HARM", items: [
+    { before: "Don't worry. He is completely", after: ".", answers: ["harmless"] },
+    { before: "Smoking is", after: "so please stop.", answers: ["harmful"] },
+  ] },
+  { word: "CHILD", items: [
+    { before: "I had a very happy", after: "which I spent near a lake.", answers: ["childhood"] },
+    { before: "Don't behave in such a", after: "manner.", answers: ["childish"] },
+  ] },
+  { word: "HAPPY", items: [
+    { before: "I would like to wish for love and", after: ".", answers: ["happiness"] },
+    { before: "He and his wife both seem", after: ".", answers: ["happy"] },
+  ] },
+  { word: "USE", items: [
+    { before: "Throw away that old coat because it is completely", after: ".", answers: ["useless"] },
+    { before: "They have", after: "over half of the supplies.", answers: ["used"] },
+  ] },
+  { word: "ORIGIN", items: [
+    { before: "What an", after: "idea.", answers: ["original"] },
+    { before: "The idea", after: "from China.", answers: ["originated"] },
+  ] },
+  { word: "EMPLOY", items: [
+    { before: "The government is hoping to create more", after: "in the area.", answers: ["employment"] },
+    { before: "The company is laying off thirty", after: ".", answers: ["employees"] },
+  ] },
+  { word: "RECOGNIZE", items: [
+    { before: "He has received a lot of", after: "for his research.", answers: ["recognition"] },
+    { before: "Mary has changed so much that I almost didn't", after: "her.", answers: ["recognize", "recognise"] },
+  ] },
+];
+
+// Exercice 2 : QCM, dans l'ordre (A) à (D) du cours.
+export const MCQ: McqItem[] = [
+  { prompt: "You should ______ the piano more if you want to improve.", options: ["practising", "practical", "practise", "practically"], answer: "practise", why: "Après « should », il faut un verbe à la base verbale : practise." },
+  { prompt: "This firm is very ______ concerning deliveries.", options: ["reliability", "rely", "relied", "reliable"], answer: "reliable", why: "Après « is very », on attend un adjectif : reliable (-able)." },
+  { prompt: "The brand is sold ______ in luxury stores.", options: ["exclusively", "exclusive", "exclusivity", "exclusiveness"], answer: "exclusively", why: "La phrase est complète sans lui et il précise comment la marque est vendue : adverbe (-ly)." },
+  { prompt: "He spoke ______ to emphasize the importance of the idea.", options: ["noisy", "loudness", "loudly", "loud"], answer: "loudly", why: "Après le verbe d'action « spoke » : adverbe de manière." },
+  { prompt: "The machine is ______ $300.", options: ["worthless", "worthy", "worth", "worthiness"], answer: "worth", why: "« be worth + somme » : worth se place directement devant le montant." },
+  { prompt: "The new company is ______ of our investment.", options: ["worthless", "worthy", "worth", "worthiness"], answer: "worthy", why: "« be worthy of » : adjectif suivi de la préposition « of »." },
+  { prompt: "I find that the manager's comments were very ______.", options: ["helpful", "help", "helplessness", "helpfully"], answer: "helpful", why: "Après « were very », on attend un adjectif qui décrit « comments » : helpful (-ful)." },
+  { prompt: "______ is important because we need to feel supported.", options: ["Friends", "Friendly", "Friendless", "Friendship"], answer: "Friendship", why: "Sujet singulier de « is » : un nom (-ship)." },
 ];
