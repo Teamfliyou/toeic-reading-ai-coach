@@ -20,6 +20,7 @@ import Goals from "@/pages/Goals";
 import Adaptive from "@/pages/Adaptive";
 import { initSync } from "@/lib/sync";
 import OfflineBanner from "@/components/OfflineBanner";
+import MobileTabBar from "@/components/MobileTabBar";
 import { migrateLegacyMistakes } from "@/lib/tracker";
 
 let started = false;
@@ -125,6 +126,7 @@ export default function App() {
       <AuthProvider>
         <SkipLink />
         {content}
+        <MobileTabBar hash={hash} />
         <OfflineBanner />
         <SettingsModal />
         <AuthModal />

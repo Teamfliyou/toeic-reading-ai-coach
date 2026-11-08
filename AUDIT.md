@@ -226,3 +226,32 @@ Méthode : relecture du code actuel (pas de reprise automatique des constats pr�
 - Tâche planifiée Vercel : documentée, non activée par défaut (dépend du plan).
 - Le Listening ne comporte toujours aucun enregistrement audio (synthèse vocale du navigateur) : aucune piste n'a été fabriquée.
 - Import des parties 5 à 7 uniquement (Listening : API sans écran dédié).
+
+
+---
+
+## Phase 6 — interface téléphone : avertissements et état
+
+Source : maquette « Application mobile » (12 écrans 390 × 844 : accueil, parties 5/6/7 avec coach, Listening, examen, résultats, révisions, progrès, leçons, mes mots, bienvenue, barre d'onglets).
+
+### Ce qui est en place
+- `src/components/MobileTabBar.tsx` : barre d'onglets du bas (Accueil, Leçons, Révisions avec pastille des cartes dues, Mes mots, Progrès), masquée en mode focus (exercices, examen, diagnostic, Listening, administration).
+- `src/pages/mobile.css` : tout le style téléphone est dans `@media (max-width:700px)` ; le rendu ordinateur n'est pas modifié.
+  - Accueil : séance du jour en carte sombre, blocs en lignes, raccourcis en grille 2 colonnes, parties en liste.
+  - Exercices (P5/P7, révision) : en-tête focus (croix + nom de la partie), barre segmentée de progression (réussi / raté / en cours), choix de 58 px, **coach IA en tiroir sombre** (`.lexora-coach-sheet`).
+  - Examen : bandeau sombre avec minuteur, barre du bas (précédente / « x / N répondues » / suivante), **vue d'ensemble en tiroir** avec grille 10 colonnes et « Terminer l'examen ».
+- `PracticeClient.tsx`, `Practice.tsx`, `Exam.tsx` : classes utilitaires (`lexora-mobile-only` / `lexora-desktop-only`) et état du tiroir de l'examen ; le comportement ordinateur est inchangé.
+- `index.html` : `viewport-fit=cover` et métadonnées d'application web.
+- Vérifié dans le navigateur intégré à 390 px : pas de défilement horizontal, tiroir coach, tiroir d'examen, barre d'onglets ; `tsc` et ESLint sans erreur.
+
+### Avertissements (à lire avant de publier)
+
+| # | Gravité | Avertissement |
+|---|---|---|
+| 24 | 🟠 | **Adaptation par le style** : les pages React gardent leur structure ; seuls l'accueil, les exercices et l'examen ont été retravaillés en détail. Progrès, Mes mots, Leçons, Révisions, Listening, résultats et diagnostic reçoivent le style commun (en-tête, cartes, boutons) mais pas une mise en page dédiée comme dans la maquette. |
+| 25 | 🟡 | **Partie 6 (texte à trous)** : garde son menu en ligne et son panneau d'explication actuels, sans tiroir coach ni barre segmentée. |
+| 26 | 🟡 | **Tiroir coach** : hors connexion API (serveur Vite seul) il affiche l'erreur « clé DeepSeek » ; le contenu réel (diagnostic, résolution, tip) n'a été vérifié que par lecture du CSS, pas avec une vraie réponse IA. |
+| 27 | 🟡 | **Pas de test sur appareil réel** (iOS Safari, Android Chrome) ni sur lecteur d'écran : vérification faite en émulation 375 px uniquement. Clavier virtuel et encoche à contrôler à la main. |
+| 28 | 🟡 | La barre est masquée sur la page Listening : à revoir si l'on veut la garder sous le lecteur audio. |
+| 29 | ⚪ | La maquette est un prototype statique (valeurs d'exemple : série de 12, score 385) ; les données affichées sont les vraies, pas celles de la maquette. |
+| 30 | ⚪ | Le seuil unique de 700 px est partagé avec le reste du CSS ; les tablettes (701–1024 px) gardent l'interface ordinateur. |

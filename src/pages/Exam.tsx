@@ -92,6 +92,7 @@ export default function Exam() {
   const [index, setIndex] = useState(() => (readExam() ? readIndex() : 0));
   const [now, setNow] = useState(() => Date.now());
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [gridOpen, setGridOpen] = useState(false);
   const enteredAt = useRef(performance.now());
 
   // Tire et compose un examen (parties 5, 6, 7) sans jamais charger toute la banque.
@@ -363,7 +364,7 @@ export default function Exam() {
         <div className="lexora-shell">
           <span><strong>Examen blanc</strong> <span className="lexora-subtle">· {answeredCount}/{ids.length} répondues</span></span>
           <span className="lexora-clock" data-low={remaining < 5 * 60000} role="timer" aria-label={`Temps restant ${formatClock(remaining)}`}>{formatClock(remaining)}</span>
-          <button type="button" className="lexora-primary" onClick={() => setConfirmEnd(true)}>Terminer l'examen</button>
+          <button type="button" className="lexora-primary lexora-desktop-only" onClick={() => setConfirmEnd(true)}>Terminer l'examen</button>
         </div>
       </div>
       <div className="lexora-sr" role="status" aria-live="polite">{announce}</div>
@@ -388,23 +389,30 @@ export default function Exam() {
           onSelect={(key) => setState(setAnswer(state, question.id, key))}
         />
 
-        <div className="lexora-actions" style={{ marginTop: 16 }}>
-          <button type="button" className="lexora-secondary" onClick={() => goTo(index - 1)} disabled={index === 0}>← Précédente</button>
-          <button type="button" className={`lexora-secondary ${state.flagged.includes(question.id) ? "lexora-flag-on" : ""}`} aria-pressed={state.flagged.includes(question.id)} onClick={() => setState(toggleFlag(state, question.id))}>
+        <div className="lexora-actions lexora-exam-nav" style={{ marginTop: 16 }}>
+          <button type="button" className="lexora-secondary lexora-prev" aria-label="Question précédente" onClick={() => goTo(index - 1)} disabled={index === 0}>←<span className="lexora-txt"> Précédente</span></button>
+          <button type="button" className="lexora-secondary lexora-gridbtn lexora-mobile-only" onClick={() => setGridOpen(true)}>{answeredCount} / {ids.length} répondues</button>
+          <button type="button" className={`lexora-secondary lexora-flag ${state.flagged.includes(question.id) ? "lexora-flag-on" : ""}`} aria-pressed={state.flagged.includes(question.id)} onClick={() => setState(toggleFlag(state, question.id))}>
             {state.flagged.includes(question.id) ? "Marquée à revoir" : "Marquer à revoir"}
           </button>
-          <button type="button" className="lexora-primary" onClick={() => goTo(index + 1)} disabled={index === ids.length - 1}>Suivante →</button>
+          <button type="button" className="lexora-primary lexora-next-q" aria-label="Question suivante" onClick={() => goTo(index + 1)} disabled={index === ids.length - 1}><span className="lexora-txt">Suivante </span>→</button>
         </div>
 
-        <nav aria-label="Navigation entre les questions" style={{ marginTop: 26 }}>
+        {gridOpen && <div className="lexora-sheet-backdrop lexora-mobile-only" onClick={() => setGridOpen(false)} aria-hidden="true" />}
+        <nav aria-label="Navigation entre les questions" className="lexora-gridsheet" data-open={gridOpen} style={{ marginTop: 26 }}>
+          <div className="lexora-sheet-top lexora-mobile-only">
+            <span className="lexora-sheet-handle" aria-hidden="true" />
+            <div><strong>Vue d'ensemble</strong><button type="button" className="lexora-secondary" onClick={() => setGridOpen(false)}>Fermer</button></div>
+          </div>
           <div className="lexora-palette">
             {ids.map((qid, i) => (
-              <button key={qid} type="button" onClick={() => goTo(i)} aria-current={i === index} data-answered={Boolean(state.answers[qid])} data-flagged={state.flagged.includes(qid)} aria-label={`Question ${i + 1}${state.answers[qid] ? ", répondue" : ", sans réponse"}${state.flagged.includes(qid) ? ", à revoir" : ""}`}>
+              <button key={qid} type="button" onClick={() => { goTo(i); setGridOpen(false); }} aria-current={i === index} data-answered={Boolean(state.answers[qid])} data-flagged={state.flagged.includes(qid)} aria-label={`Question ${i + 1}${state.answers[qid] ? ", répondue" : ", sans réponse"}${state.flagged.includes(qid) ? ", à revoir" : ""}`}>
                 {i + 1}
               </button>
             ))}
           </div>
           <p className="lexora-legend"><span>Fond bleu : répondue</span><span>Point orange : à revoir</span><span>Contour : question affichée</span></p>
+          <button type="button" className="lexora-primary lexora-mobile-only lexora-finish" onClick={() => { setGridOpen(false); setConfirmEnd(true); }}>Terminer l'examen</button>
         </nav>
       </main>
     </div>

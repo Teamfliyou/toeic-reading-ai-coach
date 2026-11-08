@@ -1,0 +1,151 @@
+/* Interface téléphone (maquette « Application mobile » de Lernoviq, écrans 390 × 844).
+   Tout est dans une media query : le rendu ordinateur n'est pas modifié. */
+.lexora-tabbar{display:none}
+.lexora-page .lexora-mobile-only{display:none}
+
+@media (max-width:700px){
+  :root{--tabbar-h:64px}
+  .lexora-page .lexora-desktop-only{display:none}
+  .lexora-page .lexora-mobile-only{display:block}
+  body.has-tabbar .lexora-page{padding-bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom))}
+
+  /* ---------- Barre d'onglets du bas ---------- */
+  .lexora-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E3E1D8}
+  .lexora-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:48px;text-decoration:none;font-size:11px;font-weight:600;color:#5B5F6A}
+  .lexora-tab-icon{position:relative;width:52px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+  .lexora-tab[aria-current=page]{color:#15171C}
+  .lexora-tab[aria-current=page] .lexora-tab-icon{background:#C5F04A}
+  .lexora-tab-badge{position:absolute;top:-2px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#C2410C;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .lexora-tab:focus-visible{outline:3px solid #15171C;outline-offset:-3px;border-radius:12px}
+
+  /* ---------- En-tête compact ---------- */
+  .lexora-nav{background:var(--bg)}
+  .lexora-nav-inner{flex-wrap:nowrap;gap:10px;padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:10px}
+  .lexora-nav-scroll{display:none}
+  .lexora-streak{display:flex;height:40px;padding:0 12px;font-size:14px}
+  .lexora-navright{gap:8px}
+  .lexora-brand span:last-child{display:none}
+  .settings-trigger{padding:0 12px}
+
+  /* ---------- Contenu général ---------- */
+  .lexora-shell{padding:0 16px}
+  .lexora-content{padding-top:18px;padding-bottom:24px}
+  .lexora-heading{font-size:26px;letter-spacing:-.02em;line-height:1.1}
+  .lexora-eyebrow{font-size:13px;margin-bottom:4px}
+  .lexora-card,.lexora-hero{border-radius:22px;padding:18px}
+  .lexora-actions{gap:10px}
+  .lexora-primary{min-height:54px}
+  .lexora-actions>.lexora-secondary,.lexora-actions>.lexora-primary{flex:1 1 100%}
+  .lexora-sectionhead{margin:26px 0 12px}
+  .lexora-sectionhead h2{font-size:20px}
+  .lexora-sectionhead .lexora-subtle{display:none}
+
+  /* ---------- Accueil ---------- */
+  .lexora-today{margin:16px 0;gap:14px}
+  .lexora-session{flex:1 1 100%;border-radius:26px;padding:22px;gap:16px}
+  .lexora-session::before{width:170px;height:170px;right:-50px;top:-50px;border-width:28px}
+  .lexora-session h2{font-size:24px;line-height:1.15}
+  .lexora-session .lexora-primary{min-height:54px;width:100%;font-size:16px}
+  .lexora-session .lexora-actions{flex-direction:column;align-items:stretch;gap:12px}
+  .lexora-session-link{text-align:center}
+  .lexora-blocks{grid-template-columns:1fr;gap:8px}
+  .lexora-block{flex-direction:row;align-items:center;gap:12px;padding:12px;border-radius:14px}
+  .lexora-block b{order:-1;font-size:12px;min-width:98px}
+  .lexora-block span{flex:1;font-size:15px}
+  .lexora-block small{font-size:12px}
+  .lexora-side{flex:1 1 100%;gap:12px}
+  .lexora-ring{gap:14px}
+  .lexora-ring svg{width:96px;height:96px}
+  .lexora-ringnum{font-size:17px}
+  .lexora-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .lexora-shortcut{min-height:0;padding:16px;border-radius:22px;gap:6px}
+  .lexora-shortcut:nth-child(n+2){grid-column:1/-1;flex-direction:row;align-items:center}
+  .lexora-shortcut b.t{font-size:17px}
+  .lexora-shortcut .go{margin-top:0;margin-left:auto;white-space:nowrap}
+  /* Parties : liste de lignes plutôt que grandes cartes */
+  .lexora-grid{grid-template-columns:1fr;gap:10px}
+  .lexora-part{flex-direction:row;align-items:center;gap:14px;padding:14px;border-radius:20px;display:grid;grid-template-columns:46px 1fr auto}
+  .lexora-part .lexora-actions{display:contents}
+  .lexora-part .lexora-subtle{grid-column:3;grid-row:1;font-size:12px}
+  .lexora-partno{width:46px;height:46px;border-radius:14px;grid-row:1/3;font-size:19px}
+  .lexora-part h3{font-size:16px;grid-column:2;grid-row:1}
+  .lexora-part p{display:none}
+  .lexora-part .lexora-arrow{display:none}
+  .lexora-part .lexora-badge{grid-column:3;grid-row:1}
+  .lexora-lesson-hero{margin-top:14px}
+  footer.lexora-subtle{margin-top:24px!important}
+
+  /* ---------- Séances : mode focus ---------- */
+  .lexora-focus .lexora-nav,.lexora-focus .lexora-practice-heading{display:none}
+  .lexora-page .lexora-focus-head{display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 4px;font-size:13px;font-weight:700;color:var(--muted)}
+  .lexora-focus-close{width:44px;height:44px;border-radius:999px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0}
+  .lexora-exercises .lexora-practice-main{padding-top:6px;padding-bottom:32px}
+  .lexora-segwrap{margin-bottom:14px}
+  .lexora-segtext{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:6px}
+  .lexora-segbar{display:grid;gap:3px}
+  .lexora-segbar span{height:6px;border-radius:99px;background:var(--line)}
+  .lexora-segbar span[data-state=ok]{background:var(--ink)}
+  .lexora-segbar span[data-state=ko]{background:var(--coral)}
+  .lexora-segbar span[data-state=now]{background:var(--lime);outline:1.5px solid var(--ink)}
+  .lexora-exercises .glass-strong,.lexora-exercises .glass{border-radius:22px}
+  .lexora-exercises .glass-strong{padding:18px 16px}
+  .lexora-exercises .lexora-question{font-size:24px;margin-bottom:20px!important}
+  .lexora-exercises .lexora-choice{min-height:58px;border-radius:16px;font-size:17px;padding:8px 14px 8px 8px}
+  .lexora-exercises .lexora-answer-key{width:40px;height:40px;font-size:15px;border-radius:12px}
+  .lexora-exercises .lexora-cta{min-height:54px;border-radius:999px;font-size:16px}
+
+  /* Coach IA : tiroir sombre en bas de l'écran */
+  .lexora-exercises .lexora-coach-sheet{position:fixed;left:0;right:0;bottom:0;z-index:55;max-height:66vh;overflow-y:auto;margin:0;
+    background:#15171C;color:#fff;border-radius:28px 28px 0 0;padding:10px 20px calc(24px + env(safe-area-inset-bottom));
+    box-shadow:0 -12px 40px rgba(21,23,28,.28);display:flex;flex-direction:column;gap:14px}
+  .lexora-exercises .lexora-coach-sheet>*{margin:0}
+  .lexora-page .lexora-sheet-handle{display:block;align-self:center;width:40px;height:5px;border-radius:99px;background:#3A3E47;flex-shrink:0}
+  .lexora-exercises .lexora-coach-sheet h3{color:#fff}
+  .lexora-exercises .lexora-coach-sheet [class*="text-white"]{color:#E8E9EC}
+  .lexora-exercises .lexora-coach-sheet [class*="text-red"]{color:#FF9D80}
+  .lexora-exercises .lexora-coach-sheet [class*="text-emerald"]{color:#C5F04A}
+  .lexora-exercises .lexora-coach-sheet [class*="text-cyan"]{color:#CBBEFF}
+  .lexora-exercises .lexora-coach-sheet .glass{background:#23262D;border:0;border-radius:14px}
+  .lexora-exercises .lexora-coach-sheet [class*="bg-white/"]{background-color:#23262D}
+  .lexora-exercises .lexora-coach-sheet [class*="bg-red-500"]{background:rgba(255,157,128,.18);color:#FF9D80}
+  .lexora-exercises .lexora-coach-sheet [class*="bg-emerald-500"]{background:rgba(197,240,74,.18);color:#C5F04A}
+  .lexora-exercises .lexora-coach-sheet [class*="bg-cyan-500"]{background:rgba(203,190,255,.2);color:#CBBEFF}
+  .lexora-exercises .lexora-coach-sheet input,.lexora-exercises .lexora-coach-sheet textarea{background:#23262D;color:#fff;border:1px solid #3A3E47;border-radius:14px;min-height:46px;padding:0 14px;font-size:14px}
+  .lexora-exercises .lexora-coach-sheet .lexora-secondary,.lexora-exercises .lexora-coach-sheet .glass-btn{background:transparent;border:1px solid #3A3E47;color:#fff}
+  .lexora-exercises .lexora-coach-sheet .lexora-next{background:#fff!important;color:#15171C!important;border-radius:999px;min-height:54px;font-weight:700;font-size:16px;order:99}
+  .lexora-exercises .lexora-coach-sheet [class*="bg-gradient-to-br"]{background:#C5F04A;color:#15171C}
+  .lexora-exercises:has(.lexora-coach-sheet) .lexora-practice-main{padding-bottom:62vh}
+
+  /* ---------- Examen blanc ---------- */
+  .lexora-exam-bar{background:#15171C;color:#fff;border:0}
+  .lexora-exam-bar .lexora-shell{flex-wrap:nowrap;padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:14px}
+  .lexora-exam-bar .lexora-subtle{color:#B8BCC6}
+  .lexora-exam-bar .lexora-clock{background:#C5F04A;color:#15171C;border:0;font-family:"Space Grotesk",sans-serif;font-size:22px;padding:0 14px}
+  .lexora-exam-bar .lexora-clock[data-low=true]{background:#FFE4DA;color:#9A3412}
+  .lexora-exam-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0!important;background:#fff;border-top:1px solid var(--line);
+    padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:flex;flex-wrap:nowrap;align-items:center;gap:10px}
+  .lexora-exam-nav .lexora-txt{display:none}
+  .lexora-exam-nav .lexora-prev,.lexora-exam-nav .lexora-next-q{flex:0 0 52px!important;width:52px;height:52px;min-height:52px;padding:0;font-size:20px;border-radius:999px}
+  .lexora-page .lexora-exam-nav .lexora-gridbtn{display:inline-flex;flex:1 1 auto!important;min-height:52px;background:var(--bg)}
+  .lexora-exam-nav .lexora-flag{position:fixed;right:16px;bottom:calc(86px + env(safe-area-inset-bottom));min-height:40px;padding:0 14px;font-size:13px;font-weight:700;border:2px solid var(--ink);flex:0 0 auto!important}
+  .lexora-exercises:has(.lexora-exam-nav) .lexora-content{padding-bottom:150px}
+  .lexora-sheet-backdrop{position:fixed;inset:0;z-index:58;background:rgba(21,23,28,.45)}
+  .lexora-gridsheet{position:fixed;left:0;right:0;bottom:0;z-index:59;margin:0!important;background:#fff;border-radius:26px 26px 0 0;padding:12px 16px calc(24px + env(safe-area-inset-bottom));
+    max-height:80vh;overflow-y:auto;transform:translateY(105%);visibility:hidden;transition:transform .2s ease,visibility 0s linear .2s}
+  .lexora-gridsheet[data-open=true]{transform:none;visibility:visible;transition:transform .2s ease}
+  .lexora-sheet-top .lexora-sheet-handle{background:#D6D3C8;margin:0 auto 12px}
+  .lexora-sheet-top>div{display:flex;justify-content:space-between;align-items:center;font-family:"Space Grotesk",sans-serif;font-size:18px}
+  .lexora-sheet-top .lexora-secondary{min-height:36px;padding:0 14px;font-size:13px}
+  .lexora-palette{grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin:12px 0}
+  .lexora-palette button{height:30px;border-radius:7px;font-size:10px;padding:0}
+  .lexora-gridsheet .lexora-finish{width:100%}
+  .lexora-page .lexora-gridsheet .lexora-finish{display:inline-flex}
+
+  /* Résultats d'examen */
+  .lexora-scorebig{font-size:56px}
+  .lexora-row{grid-template-columns:1fr;gap:6px}
+
+  /* ---------- Bandeaux fixes au-dessus de la barre d'onglets ---------- */
+  body.has-tabbar .lexora-offline{bottom:calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom))}
+}

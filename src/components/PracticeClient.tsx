@@ -43,6 +43,8 @@ export default function PracticeClient({
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  // Résultat par question, pour la barre segmentée du téléphone.
+  const [results, setResults] = useState<("ok" | "ko")[]>([]);
 
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Requête d'explication en cours : annulée si l'élève change de question ou quitte la page.
@@ -160,6 +162,7 @@ export default function PracticeClient({
 
     const isCorrect = selectedKey === question.correctKey;
     setStatus(isCorrect ? "correct" : "incorrect");
+    setResults((prev) => { const next = [...prev]; next[index] = isCorrect ? "ok" : "ko"; return next; });
     recordAnswer({
       question,
       selectedKey,
@@ -173,7 +176,7 @@ export default function PracticeClient({
     } else {
       fetchExplanation(question.id, selectedKey);
     }
-  }, [selectedKey, status, question, goNext, fetchExplanation, reviewMode]);
+  }, [selectedKey, status, question, index, goNext, fetchExplanation, reviewMode]);
 
   const handleVote = useCallback((_value: 1 | -1) => {
     // MVP : le vote 👍/👎 est déjà mémorisé par le composant AiExplanation.
@@ -188,6 +191,7 @@ export default function PracticeClient({
     setIndex(0);
     setFinished(false);
     setCorrectCount(0);
+    setResults([]);
     resetForNext();
   }, [resetForNext, onNewSeries]);
 
@@ -216,8 +220,16 @@ export default function PracticeClient({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <div className="mb-5">
+      <div className="mb-5 lexora-desktop-only">
         <ProgressBar current={index + 1} total={total} />
+      </div>
+      <div className="lexora-mobile-only lexora-segwrap">
+        <div className="lexora-segtext"><span>Partie {part} · {index + 1}/{total}</span></div>
+        <div className="lexora-segbar" style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }} aria-hidden="true">
+          {questions.map((q, i) => (
+            <span key={q.id} data-state={i === index ? "now" : results[i] ?? "todo"} />
+          ))}
+        </div>
       </div>
 
       <div
@@ -352,7 +364,8 @@ export default function PracticeClient({
           </div>
 
           {status === "incorrect" && (
-            <div className="space-y-4" role="status" aria-live="polite">
+            <div className="space-y-4 lexora-coach-sheet" role="status" aria-live="polite">
+              <span className="lexora-sheet-handle lexora-mobile-only" aria-hidden="true" />
               <a href="#/lessons" className="lexora-secondary">Voir mes leçons →</a>
               <AiExplanation
                 explanation={explanation}
