@@ -10,9 +10,9 @@ export const CONTENT_SECURITY_POLICY = [
   // Plausible (mesure d'audience facultative, sans cookie) : voir README. Retirer les deux
   // occurrences de plausible.io si la mesure n'est pas utilisée.
   "script-src 'self' https://plausible.io",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data:",
-  "font-src 'self'",
+  "font-src 'self' https://fonts.gstatic.com",
   "media-src 'self' https://*.supabase.co",
   "connect-src 'self' https://*.supabase.co https://plausible.io",
   "object-src 'none'",

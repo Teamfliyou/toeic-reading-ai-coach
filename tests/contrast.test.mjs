@@ -20,12 +20,17 @@ const ratio = (a, b) => {
 /** Couleur de texte déclarée pour un sélecteur de la feuille de style. */
 function colorOf(selector) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`${escaped}\\s*\\{[^}]*?(?<![-\\w])color:\\s*(#[0-9a-fA-F]{6})`).exec(css);
+  const match = new RegExp(`${escaped}\\s*\\{[^}]*?(?<![-\\w])color:\\s*(#[0-9a-fA-F]{6}|var\\(--[a-z0-9]+\\))`).exec(css);
   assert.ok(match, `couleur introuvable pour ${selector}`);
-  return match[1];
+  const value = match[1];
+  if (!value.startsWith("var(")) return value;
+  const name = value.slice(6, -1);
+  const token = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`).exec(css);
+  assert.ok(token, `variable --${name} introuvable`);
+  return token[1];
 }
 
-const BACKGROUNDS = { carte: "#ffffff", page: "#f7f8fa", hero: "#ecf1f7", encart: "#f3f6fa" };
+const BACKGROUNDS = { carte: "#ffffff", page: "#F4F3EE" };
 const TEXTS = [
   ".lexora-muted", ".lexora-subtle", ".lexora-statlabel", ".lexora-eyebrow", ".lexora-smalllink",
   ".lexora-disclaimer", ".lexora-legend", ".lexora-boxes span", ".lexora-linkbutton",
@@ -41,9 +46,9 @@ for (const selector of TEXTS) {
 }
 
 test("AA : étapes de génération inactives et boutons principaux", () => {
-  assert.ok(ratio(colorOf(".lexora-generation-status li"), "#f6f9fd") >= 4.5);
-  assert.ok(ratio("#ffffff", "#27456c") >= 4.5); // bouton principal
-  assert.ok(ratio("#ffffff", "#172239") >= 4.5); // bandeau hors connexion
+  assert.ok(ratio(colorOf(".lexora-generation-status li"), "#ffffff") >= 4.5);
+  assert.ok(ratio("#ffffff", "#15171C") >= 4.5); // bouton principal
+  assert.ok(ratio("#ffffff", "#15171C") >= 4.5); // bandeau hors connexion
 });
 
 test("l'utilitaire de contraste est correct (noir/blanc = 21:1)", () => {

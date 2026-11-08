@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #0b1220;
-  --foreground: #f4f5fb;
+  --background: #F4F3EE;
+  --foreground: #15171C;
 }
 
 * {
@@ -39,7 +39,7 @@ code,
   inset: 0;
   z-index: -2;
   overflow: hidden;
-  background: radial-gradient(900px 500px at 50% -25%, #172c43 0%, transparent 70%), #0b1220;
+  background: #F4F3EE;
 }
 
 .aurora::before,
@@ -84,7 +84,7 @@ code,
 /* ---- Glass surfaces ---- */
 @layer components {
   .glass {
-    @apply rounded-2xl border border-white/10 bg-[#141b29];
+    @apply rounded-3xl border border-white/10 bg-[#15171C];
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     box-shadow: 0 8px 32px rgba(2, 6, 23, 0.35),
@@ -92,7 +92,7 @@ code,
   }
 
   .glass-strong {
-    @apply rounded-2xl border border-white/10 bg-[#151c2b];
+    @apply rounded-3xl border border-white/10 bg-[#15171C];
     backdrop-filter: blur(28px) saturate(160%);
     -webkit-backdrop-filter: blur(28px) saturate(160%);
     box-shadow: 0 12px 48px rgba(2, 6, 23, 0.5),
@@ -137,8 +137,8 @@ code,
 }
 
 ::selection {
-  background: rgba(139, 92, 246, 0.4);
-  color: #fff;
+  background: #C5F04A;
+  color: #15171C;
 }
 
 @keyframes fade-up {
@@ -156,7 +156,7 @@ code,
 }
 
 /* Interface plus calme et lisible */
-:focus-visible { outline: 2px solid #67e8f9; outline-offset: 3px; }
+:focus-visible { outline: 2px solid #15171C; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

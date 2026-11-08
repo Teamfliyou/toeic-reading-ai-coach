@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import TopNav from "@/components/TopNav";
 import { DATA_EVENT } from "@/lib/tracker";
 import { answerWord, readWords, removeWord } from "@/lib/vocabStore";
 import { dueWords, type VocabWord } from "@/lib/vocab";
 import { useAuth } from "@/lib/AuthContext";
-import SettingsButton from "@/components/SettingsButton";
-import AuthButton from "@/components/AuthButton";
 import "./lexora.css";
 import "./phase2.css";
 
@@ -47,10 +46,7 @@ export default function Vocab() {
 
   return (
     <div className="lexora-page">
-      <header className="lexora-nav"><div className="lexora-shell">
-        <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
-        <div className="lexora-navright"><a className="lexora-smalllink" href="#/">Tableau de bord</a><AuthButton /><SettingsButton withLabel /></div>
-      </div></header>
+      <TopNav active="vocab" />
       <main className="lexora-shell lexora-content" style={{ maxWidth: 820 }}>
         <p className="lexora-eyebrow">Mon vocabulaire</p>
         <h1 className="lexora-heading">Mes mots</h1>

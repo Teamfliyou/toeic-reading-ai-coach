@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import TopNav from "@/components/TopNav";
 import { getPart2Items, loadPart2Items, type ListeningItem } from "@/lib/listening";
 import { myAttempts, recordAnswer } from "@/lib/tracker";
 import AudioPlayer from "@/components/AudioPlayer";
 import ReportButton from "@/components/ReportButton";
-import SettingsButton from "@/components/SettingsButton";
-import AuthButton from "@/components/AuthButton";
 import categories from "../../data/categories.json";
 import "./lexora.css";
 import "./phase2.css";
@@ -78,10 +77,7 @@ function ListeningSession({ items }: { items: ListeningItem[] }) {
 
   return (
     <div className="lexora-page lexora-exercises">
-      <header className="lexora-nav"><div className="lexora-shell">
-        <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
-        <div className="lexora-navright"><a className="lexora-smalllink" href="#/">Tableau de bord</a><AuthButton /><SettingsButton withLabel /></div>
-      </div></header>
+      <TopNav active="practice" />
       <main className="lexora-shell lexora-content" style={{ maxWidth: 780 }}>
         <p className="lexora-eyebrow">Listening · Partie 2 · Question-réponse</p>
         <h1 className="lexora-heading">Écoutez, puis choisissez la meilleure réponse.</h1>

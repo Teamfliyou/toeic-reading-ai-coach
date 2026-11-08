@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import TopNav from "@/components/TopNav";
 import { computeStats, currentStreak, type Rate } from "@/lib/stats";
 import { DATA_EVENT, myAttempts, readCards } from "@/lib/tracker";
 import { boxCounts, INTERVAL_DAYS } from "@/lib/srs";
 import { getPartInfo } from "@/lib/parts";
 import { useAuth } from "@/lib/AuthContext";
-import SettingsButton from "@/components/SettingsButton";
-import AuthButton from "@/components/AuthButton";
 import categories from "../../data/categories.json";
 import "./lexora.css";
 import "./phase2.css";
@@ -71,10 +70,7 @@ export default function Stats() {
 
   return (
     <div className="lexora-page">
-      <header className="lexora-nav"><div className="lexora-shell">
-        <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
-        <div className="lexora-navright"><a className="lexora-smalllink" href="#/">Tableau de bord</a><AuthButton /><SettingsButton withLabel /></div>
-      </div></header>
+      <TopNav active="stats" />
       <main className="lexora-shell lexora-content">
         <p className="lexora-eyebrow">Mon suivi</p>
         <h1 className="lexora-heading">Mes statistiques</h1>

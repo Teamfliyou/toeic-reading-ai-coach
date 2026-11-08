@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import TopNav from "@/components/TopNav";
 import type { Part, Question, Passage } from "@/lib/types";
 import { loadQuestionsByIds, loadSeries, type PickedSet } from "@/lib/data";
 import { parseSeriesParams, recentSeenIds } from "@/lib/adaptive";
@@ -6,8 +7,6 @@ import categories from "../../data/categories.json";
 import { getPartInfo } from "@/lib/parts";
 import PracticeClient from "@/components/PracticeClient";
 import Part6Inline from "@/components/Part6Inline";
-import SettingsButton from "@/components/SettingsButton";
-import AuthButton from "@/components/AuthButton";
 import { myAttempts, readCards } from "@/lib/tracker";
 import "./lexora.css";
 
@@ -36,17 +35,7 @@ export default function Practice({ part, reviewMode = false, search = "" }: { pa
   const categoryLabel = params.category ? categories.find((c) => c.id === params.category)?.label ?? params.category : category;
   return (
     <div className="lexora-page lexora-exercises">
-      <header className="lexora-nav">
-        <div className="lexora-shell">
-          <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
-          <div className="lexora-navright">
-            <a className="lexora-smalllink" href="#/">Tableau de bord</a>
-            <a className="lexora-smalllink" href="#/diagnostic">Diagnostic</a>
-            <AuthButton />
-            <SettingsButton withLabel />
-          </div>
-        </div>
-      </header>
+      <TopNav active="practice" />
       <main className="lexora-shell lexora-practice-main">
         <div className="lexora-practice-heading">
           <p className="lexora-eyebrow">Partie {part} · {info.tagline}</p>

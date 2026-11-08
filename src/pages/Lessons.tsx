@@ -1,6 +1,6 @@
 import { useState } from "react";
+import TopNav from "@/components/TopNav";
 import { readLessons } from "@/lib/lessons";
-import SettingsButton from "@/components/SettingsButton";
 import "./lexora.css";
 
 export default function Lessons() {
@@ -8,10 +8,7 @@ export default function Lessons() {
   const [expanded, setExpanded] = useState<string | null>(lessons[0]?.id ?? null);
   const ready = lessons.filter(l => l.status === "ready");
   return <div className="lexora-page">
-    <header className="lexora-nav"><div className="lexora-shell">
-      <a className="lexora-brand" href="#/"><span className="lexora-mark">N</span> Lernoviq</a>
-      <div className="lexora-navright"><a className="lexora-smalllink" href="#/">Tableau de bord</a><SettingsButton withLabel /></div>
-    </div></header>
+    <TopNav active="lessons" />
     <main className="lexora-shell lexora-content">
       <p className="lexora-eyebrow">Mon parcours personnalisé</p>
       <h1 className="lexora-heading">Mes leçons</h1>

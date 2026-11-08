@@ -1,110 +1,112 @@
-.lexora-page{min-height:100vh;background:#f7f8fa;color:#172239;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
-.lexora-page *{box-sizing:border-box}.lexora-shell{max-width:1160px;margin:auto;padding:0 30px}
-.lexora-nav{height:82px;border-bottom:1px solid #e8ebef;background:#fff}
-.lexora-nav .lexora-shell{height:100%;display:flex;justify-content:space-between;align-items:center}
-.lexora-brand{display:flex;gap:11px;align-items:center;color:#172239;font-weight:800;font-size:21px;letter-spacing:-.7px;text-decoration:none}
-.lexora-mark{height:35px;width:35px;background:#26446b;color:white;display:grid;place-items:center;border-radius:10px;font-size:19px}
-.lexora-navright{display:flex;align-items:center;gap:22px}
-.lexora-smalllink{font-size:13px;text-decoration:none;color:#5d6a7b;font-weight:600}
-.lexora-page h1,.lexora-page h2,.lexora-page h3,.lexora-page p{margin-top:0}
-.lexora-content{padding-top:54px;padding-bottom:90px}
-.lexora-eyebrow{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:750;color:#446180;margin:0 0 13px}
-.lexora-heading{font-size:clamp(32px,4vw,46px);letter-spacing:-1.8px;line-height:1.13;margin:0 0 14px;font-weight:780}
-.lexora-muted{color:#566377;line-height:1.6}
-.lexora-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:32px 0}
-.lexora-card{background:white;border:1px solid #e5e9ef;border-radius:15px;padding:25px;box-shadow:0 3px 12px rgba(19,43,75,.025)}
-.lexora-statlabel{font-size:13px;color:#5f6b7c;margin-bottom:9px}
-.lexora-statvalue{font-size:31px;font-weight:750;letter-spacing:-1px;margin:0}
-.lexora-primary{background:#27456c;color:white;border:1px solid #27456c;border-radius:9px;padding:13px 19px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:12px;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s}
-.lexora-primary:hover{background:#173251}.lexora-primary:disabled{opacity:.45;cursor:not-allowed}
-.lexora-secondary{display:inline-flex;align-items:center;padding:12px 17px;border:1px solid #dbe1e9;background:#fff;color:#304461;border-radius:9px;font-weight:650;text-decoration:none;font-size:14px;cursor:pointer}
-.lexora-hero{display:flex;justify-content:space-between;align-items:center;gap:28px;padding:33px;border:1px solid #dfe7f0;border-radius:17px;background:#ecf1f7}
-.lexora-hero h2{font-size:25px;letter-spacing:-.65px;margin-bottom:9px}
-.lexora-hero p{max-width:550px;margin-bottom:0;font-size:14px}
-.lexora-sectionhead{margin:42px 0 19px;display:flex;justify-content:space-between;align-items:end}
-.lexora-sectionhead h2{font-size:23px;letter-spacing:-.5px;margin:0}
-.lexora-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
-.lexora-part{display:flex;flex-direction:column;text-decoration:none;color:#172239;transition:border .15s,transform .15s}
-.lexora-part:hover{border-color:#aebdd0;transform:translateY(-2px)}
-.lexora-partno{font-size:12px;font-weight:750;letter-spacing:1px;color:#587291;text-transform:uppercase;margin-bottom:20px}
-.lexora-part h3{font-size:20px;letter-spacing:-.5px;margin-bottom:9px}
-.lexora-part p{font-size:14px;margin-bottom:22px;flex:1}
-.lexora-arrow{border-top:1px solid #e8edf3;padding-top:16px;font-size:13px;font-weight:750;color:#29476d}
-.lexora-notice{margin-top:22px;font-size:13px;color:#7b5763;padding:13px 17px;border:1px solid #f0dfd8;background:#fff9f5;border-radius:10px}
-.lexora-review{margin-top:24px}.lexora-review h2{font-size:19px;margin-bottom:9px}
+/* Lernoviq — systeme visuel : creme, encre, citron, lilas, corail. */
+.lexora-page{--bg:#F4F3EE;--ink:#15171C;--ink2:#23262D;--muted:#5B5F6A;--line:#E3E1D8;--line2:#D6D3C8;--track:#EEECE4;--lime:#C5F04A;--lilac:#CBBEFF;--coral:#FF7A59;--bad:#C2410C;--badbg:#FFE4DA;
+min-height:100vh;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.lexora-page *{box-sizing:border-box}
+.lexora-shell{max-width:1360px;margin:auto;padding:0 24px}
+.lexora-page h1,.lexora-page h2,.lexora-page h3{font-family:"Space Grotesk",Inter,sans-serif;margin-top:0}
+.lexora-page p{margin-top:0}
+
+/* Navigation */
+.lexora-nav{border-bottom:1px solid var(--line);background:var(--bg)}
+.lexora-nav-inner{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding-top:14px;padding-bottom:14px}
+.lexora-nav .lexora-shell:not(.lexora-nav-inner){height:72px;display:flex;justify-content:space-between;align-items:center}
+.lexora-brand{display:flex;gap:10px;align-items:center;color:var(--ink);font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:20px;letter-spacing:-.02em;text-decoration:none;flex-shrink:0}
+.lexora-mark{height:36px;width:36px;background:var(--ink);color:var(--lime);display:grid;place-items:center;border-radius:10px;font-size:19px}
+.lexora-nav-scroll{flex:1 1 520px;min-width:0;overflow-x:auto}
+.lexora-nav-pills{display:flex;gap:4px;padding:4px;background:#fff;border:1px solid var(--line);border-radius:999px;width:max-content}
+.lexora-nav-pill{display:flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap;color:#3E424C}
+.lexora-nav-pill:hover{background:var(--track)}
+.lexora-nav-pill[aria-current=page]{background:var(--ink);color:#fff}
+.lexora-navright{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+.lexora-streak{display:flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:999px;background:var(--ink);color:#fff;font-weight:600;font-size:14px}
+.lexora-smalllink{font-size:14px;text-decoration:none;color:var(--muted);font-weight:600}
+.lexora-smalllink:hover{color:var(--ink)}
+
+/* Typographie */
+.lexora-content{padding-top:36px;padding-bottom:72px}
+.lexora-eyebrow{font-size:13px;letter-spacing:.02em;font-weight:600;color:var(--muted);margin:0 0 8px}
+.lexora-heading{font-size:clamp(32px,4vw,44px);letter-spacing:-.03em;line-height:1.05;margin:0 0 14px;font-weight:700}
+.lexora-muted{color:var(--muted);line-height:1.6}
+.lexora-subtle{font-size:13px;color:var(--muted)}
+
+/* Cartes */
+.lexora-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:28px 0}
+.lexora-card{background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px}
+.lexora-statlabel{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:9px}
+.lexora-statvalue{font-family:"Space Grotesk",sans-serif;font-size:40px;font-weight:700;letter-spacing:-.02em;line-height:1;margin:0 0 6px}
+
+/* Boutons */
+.lexora-primary{background:var(--ink);color:#fff;border:0;border-radius:999px;min-height:48px;padding:0 24px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s,transform .15s}
+.lexora-primary:hover{background:#000;transform:translateY(-1px)}.lexora-primary:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.lexora-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:999px;font-weight:600;text-decoration:none;font-size:14px;cursor:pointer}
+.lexora-secondary:hover{background:var(--track)}
+.lexora-hero{display:flex;justify-content:space-between;align-items:center;gap:28px;padding:32px;border:1px solid var(--line);border-radius:28px;background:#fff}
+.lexora-hero h2{font-size:26px;letter-spacing:-.02em;margin-bottom:9px;line-height:1.15}
+.lexora-hero p{max-width:560px;margin-bottom:0;font-size:15px}
+.lexora-lesson-hero{margin-top:22px;background:var(--lilac);border-color:var(--lilac)}
+.lexora-lesson-hero .lexora-muted,.lexora-lesson-hero .lexora-eyebrow{color:var(--ink)}
+.lexora-sectionhead{margin:40px 0 16px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+.lexora-sectionhead h2{font-size:28px;letter-spacing:-.02em;margin:0}
+
+/* Accueil */
+.lexora-today{display:flex;flex-wrap:wrap;gap:20px;margin:28px 0}
+.lexora-session{flex:2 1 600px;min-width:0;background:var(--ink);color:#fff;border-radius:28px;padding:36px;display:flex;flex-direction:column;gap:24px;position:relative;overflow:hidden}
+.lexora-session::before{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;border:40px solid var(--ink2)}
+.lexora-session>*{position:relative}
+.lexora-session h2{font-size:clamp(26px,3vw,34px);line-height:1.1;letter-spacing:-.02em;max-width:560px;margin:0}
+.lexora-badge{align-self:flex-start;padding:6px 12px;border-radius:999px;background:var(--lime);color:var(--ink);font-size:13px;font-weight:700}
+.lexora-session .lexora-primary{background:var(--lime);color:var(--ink);min-height:56px;padding:0 28px;font-size:17px}
+.lexora-session .lexora-primary:hover{background:#d4f66e}
+.lexora-session-link{color:#fff;font-weight:600;font-size:15px}
+.lexora-blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:12px}
+.lexora-block{background:var(--ink2);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.lexora-block small{font-size:13px;color:#B8BCC6}.lexora-block b{font-size:13px;color:var(--lime)}.lexora-block span{font-weight:600;font-size:16px}
+.lexora-side{flex:1 1 340px;min-width:0;display:flex;flex-direction:column;gap:20px}
+.lexora-ring{display:flex;align-items:center;gap:24px}
+.lexora-ringnum{font-family:"Space Grotesk",sans-serif;font-size:22px;font-weight:700;line-height:1.2}
+.lexora-chip-lime{align-self:flex-start;padding:4px 10px;border-radius:999px;background:var(--lime);font-size:13px;font-weight:700}
+.lexora-shortcuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:20px}
+.lexora-shortcut{border-radius:24px;padding:24px;text-decoration:none;display:flex;flex-direction:column;gap:10px;min-height:150px;color:var(--ink);background:#fff;border:1px solid var(--line)}
+.lexora-shortcut b.t{font-family:"Space Grotesk",sans-serif;font-size:22px;line-height:1.2}
+.lexora-shortcut .k{font-size:13px;font-weight:700;color:var(--muted)}
+.lexora-shortcut .go{margin-top:auto;font-weight:700;font-size:14px}
+.lexora-shortcut--lilac{background:var(--lilac);border-color:var(--lilac)}.lexora-shortcut--lilac .k{color:var(--ink)}
+.lexora-shortcut:hover{transform:translateY(-2px);transition:transform .15s}
+.lexora-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:20px}
+.lexora-part{display:flex;flex-direction:column;gap:14px;text-decoration:none;color:var(--ink);transition:transform .15s,border-color .15s}
+.lexora-part:hover{border-color:var(--ink);transform:translateY(-2px)}
+.lexora-partno{width:48px;height:48px;border-radius:14px;background:var(--lime);display:grid;place-items:center;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:20px;margin:0}
+.lexora-part:nth-child(2) .lexora-partno{background:var(--lilac)}.lexora-part:nth-child(3) .lexora-partno{background:var(--ink);color:#fff}
+.lexora-part h3{font-size:22px;margin:0}
+.lexora-part p{font-size:14px;margin:0;flex:1}
+.lexora-arrow{font-size:14px;font-weight:700}
+.lexora-notice{margin-top:22px;font-size:14px;color:#7A3412;padding:14px 18px;border:1px solid #F5C9B5;background:var(--badbg);border-radius:18px}
+.lexora-review{margin-top:24px}.lexora-review h2{font-size:22px;margin-bottom:9px}
 .lexora-reviewlinks{display:flex;gap:9px;flex-wrap:wrap}
+
+/* Evaluation / questions */
 .lexora-assessment{max-width:780px;margin:45px auto 0}
-.lexora-progressline{background:#e5eaf1;height:6px;border-radius:10px;overflow:hidden;margin:18px 0 30px}
-.lexora-progressline div{height:100%;background:#294d79;transition:width .2s}
-.lexora-question{font-size:clamp(21px,3vw,28px);letter-spacing:-.4px;line-height:1.55;margin-bottom:32px!important}
+.lexora-progressline{background:var(--track);height:8px;border-radius:99px;overflow:hidden;margin:18px 0 30px}
+.lexora-progressline div{height:100%;background:var(--ink);border-radius:99px;transition:width .2s}
+.lexora-question{font-family:"Source Serif 4",Georgia,serif;font-size:clamp(22px,3vw,30px);line-height:1.45;margin-bottom:32px!important;text-wrap:pretty}
 .lexora-options{display:grid;gap:12px;margin-bottom:25px}
-.lexora-option{background:white;border:1px solid #dde4ed;border-radius:11px;padding:15px 16px;display:flex;align-items:center;gap:17px;text-align:left;color:#24334a;cursor:pointer;font-size:15px}
-.lexora-option:hover{border-color:#8aa0ba}.lexora-option[aria-pressed=true]{border-color:#27456c;background:#edf3fa}
-.lexora-optionkey{width:33px;height:33px;border-radius:7px;background:#f0f3f7;display:grid;place-items:center;font-weight:750;font-size:13px;flex:none}
-.lexora-option[aria-pressed=true] .lexora-optionkey{background:#27456c;color:white}
-.lexora-actions{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.lexora-resultmark{display:block;font-size:51px;letter-spacing:-2px;font-weight:800;color:#27456c}
-.lexora-subtle{font-size:13px;color:#5f6b7c}
-@media(max-width:700px){.lexora-shell{padding:0 18px}.lexora-content{padding-top:35px}.lexora-stats,.lexora-grid{grid-template-columns:1fr}.lexora-stats{gap:10px}.lexora-hero{display:block;padding:24px}.lexora-hero .lexora-primary{margin-top:19px}.lexora-navright{gap:10px}.lexora-smalllink{display:none}.lexora-heading{font-size:34px}.lexora-card{padding:21px}}
+.lexora-option{background:#fff;border:2px solid var(--line);border-radius:18px;min-height:64px;padding:10px 18px 10px 10px;display:flex;align-items:center;gap:14px;text-align:left;color:var(--ink);cursor:pointer;font-size:17px;font-weight:500}
+.lexora-option:hover{border-color:var(--ink)}
+.lexora-option[aria-pressed=true]{border-color:var(--ink);background:var(--lime);font-weight:600}
+.lexora-optionkey{width:40px;height:40px;border-radius:12px;background:var(--bg);display:grid;place-items:center;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:15px;flex:none}
+.lexora-option[aria-pressed=true] .lexora-optionkey{background:var(--ink);color:var(--lime)}
+.lexora-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.lexora-resultmark{display:block;font-family:"Space Grotesk",sans-serif;font-size:64px;letter-spacing:-.03em;font-weight:700;color:var(--ink)}
+.lexora-admin-link{font-size:13px;font-weight:600;color:var(--muted)}
 
-/* Accessible settings in the light dashboard */
-.settings-trigger{display:inline-flex;align-items:center;gap:9px;background:#fff;color:#253b5c;border:1px solid #dbe1e9;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:none;backdrop-filter:none}
-.settings-trigger:hover{background:#f0f4f9;border-color:#b9c7d8}
-.settings-trigger:focus-visible{outline:3px solid #91b0d4;outline-offset:2px}
+@media(max-width:700px){.lexora-shell{padding:0 16px}.lexora-content{padding-top:28px}.lexora-stats{grid-template-columns:1fr;gap:12px}.lexora-hero{display:block;padding:24px}.lexora-hero .lexora-primary{margin-top:19px}.lexora-heading{font-size:34px}.lexora-card{padding:22px}.lexora-session{padding:26px}.lexora-streak{display:none}}
 
-.lexora-admin-input{display:block;width:100%;border:1px solid #d8e0ea;border-radius:9px;background:#fff;padding:12px;color:#172239;font-size:14px;margin-top:8px;outline-offset:2px}
-.lexora-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:19px}.lexora-admin-grid label,.lexora-card>label{font-size:13px;font-weight:650;color:#3a4b64}.lexora-admin-question{padding:20px 0;border-top:1px solid #e6ebf0;font-size:14px;line-height:1.65}.lexora-admin-question p{margin:10px 0;color:#4e607a}.lexora-admin-document{border:1px solid #e5eaf1;border-radius:10px;padding:20px;background:#fafcfe;margin:14px 0;line-height:1.7;font-size:14px}@media(max-width:640px){.lexora-admin-grid{grid-template-columns:1fr}}
+/* Parametres, compte */
+.settings-trigger{display:inline-flex;align-items:center;gap:9px;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:999px;min-height:44px;min-width:44px;justify-content:center;padding:0 16px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:none;backdrop-filter:none}
+.settings-trigger:hover{background:var(--track)}
+.settings-trigger:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 
-.lexora-generation-status{border:1px solid #cbd8e7;background:#f6f9fd;border-radius:12px;padding:20px}.lexora-generation-status ol{padding:0;margin:18px 0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.lexora-generation-status li{display:flex;align-items:center;gap:9px;font-size:12px;color:#5f6b7c}.lexora-generation-status li span{width:25px;height:25px;border-radius:100%;background:#e9edf2;color:#566377;display:grid;place-items:center;flex:none;font-weight:700}.lexora-generation-status li.active{color:#25476d;font-weight:700}.lexora-generation-status li.active span{background:#27456c;color:white}.lexora-generation-status li.done{color:#287761}.lexora-generation-status li.done span{background:#e3f4ec;color:#287761}@media(max-width:680px){.lexora-generation-status ol{grid-template-columns:1fr 1fr}}
-
-
-/* Shared Lexora visual language for every reading exercise, including Part 6,
-   answer feedback, explanations and score cards. Scoped to practice only. */
-.lexora-exercises{min-height:100vh;background:#f7f8fa;color:#172239}
-.lexora-exercises .lexora-practice-main{padding-top:42px;padding-bottom:84px}
-.lexora-exercises .lexora-practice-heading{margin:0 0 27px}
-.lexora-exercises .lexora-practice-heading h1{font-size:clamp(26px,3.3vw,38px);font-weight:780;letter-spacing:-1px;color:#172239;line-height:1.2;margin:8px 0}
-.lexora-exercises .glass,.lexora-exercises .glass-strong{background:#fff;border:1px solid #e5e9ef;border-radius:15px;box-shadow:0 3px 12px rgba(19,43,75,.035);backdrop-filter:none;-webkit-backdrop-filter:none}
-.lexora-exercises .glass-btn{background:#fff;border:1px solid #dbe1e9;border-radius:10px;color:#304461;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-.lexora-exercises .glass-btn:hover{background:#f0f4f9;border-color:#aebdd0}
-.lexora-exercises .chip{background:#edf3fa;border:1px solid #dce6f0;color:#38577a;font-weight:700}
-.lexora-exercises .gradient-text{background:none;color:#27456c;-webkit-text-fill-color:currentColor}
-.lexora-exercises [class*="text-white"]{color:#33465e}
-.lexora-exercises [class*="text-cyan"]{color:#294d79}
-.lexora-exercises [class*="bg-white/"]{background-color:#f1f5f9}
-.lexora-exercises [class*="border-white/"]{border-color:#dfe6ee}
-.lexora-exercises [class*="bg-gradient-to-r"]{background:#27456c;color:#fff;box-shadow:none}
-.lexora-exercises button[class*="bg-gradient-to-r"]:hover{background:#173251;opacity:1}
-.lexora-exercises .glass-btn[class*="hover:bg-white"]:hover{background:#eef3f9}
-.lexora-exercises .lexora-answer-key{background:#eaf0f7;color:#29476d}
-.lexora-exercises button[class*="border-violet"]{background:#edf3fa;border-color:#27456c;color:#213c5c}
-.lexora-exercises button[class*="border-emerald"]{background:#ecf9f3;border-color:#83c7a4;color:#176443}
-.lexora-exercises button[class*="border-red"]{background:#fff1f1;border-color:#e5a4a4;color:#9a3232}
-.lexora-exercises [class*="bg-emerald-500/10"],.lexora-exercises [class*="bg-emerald-500/15"]{background:#ecf9f3;color:#176443}
-.lexora-exercises [class*="bg-red-500/10"],.lexora-exercises [class*="bg-red-500/15"]{background:#fff1f1;color:#9a3232}
-.lexora-exercises [class*="text-emerald"]{color:#176443}
-.lexora-exercises [class*="text-red"]{color:#9a3232}
-.lexora-exercises .lexora-progress-track{background:#e5eaf1}
-.lexora-exercises .lexora-progress-fill{background:#294d79}
-.lexora-exercises .lexora-inline-trigger{background:#fff;border:1px solid #afc0d3;color:#29476d}
-.lexora-exercises .lexora-inline-trigger:hover{background:#edf3fa}
-.lexora-exercises .lexora-inline-trigger[data-status="correct"]{background:#ecf9f3;color:#176443;border-color:#83c7a4}
-.lexora-exercises .lexora-inline-trigger[data-status="incorrect"]{background:#fff1f1;color:#9a3232;border-color:#e5a4a4}
-.lexora-exercises .lexora-inline-menu{background:#fff;border:1px solid #dce4ec;box-shadow:0 12px 28px rgba(19,43,75,.15)}
-.lexora-exercises .lexora-inline-menu button{color:#233b58}
-.lexora-exercises .lexora-inline-menu button:hover{background:#edf3fa}
-.lexora-exercises .lexora-inline-menu button span:first-child{background:#edf3fa;color:#29476d}
-.lexora-exercises :is(button,a):focus-visible{outline:3px solid #91b0d4;outline-offset:3px}
-@media(max-width:700px){.lexora-exercises .lexora-practice-main{padding-top:28px;padding-bottom:60px}.lexora-exercises .lexora-nav{height:72px}.lexora-exercises .lexora-practice-heading h1{font-size:28px}}
-
-.lexora-lesson-hero{margin-top:22px;background:#f3f5fa}
-.lexora-lesson-list{display:grid;gap:14px;margin-top:30px}
-.lexora-lesson{padding:23px 27px}
-.lexora-lesson-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:20px;border:0;background:transparent;text-align:left;color:#172239;cursor:pointer;padding:0}
-.lexora-lesson-toggle strong{display:block;font-size:19px;margin-top:9px;line-height:1.35}
-.lexora-lesson-toggle>span:last-child{font-size:28px;color:#27456c}
-.lexora-lesson-content{border-top:1px solid #e5e9ef;margin-top:23px;padding-top:19px;line-height:1.75;color:#40516a}
-.lexora-lesson-content h3{font-size:16px;color:#172239;margin:21px 0 6px}
-.lexora-lesson-content p{white-space:pre-line}
-.lexora-lesson-content details{padding:13px 17px;background:#edf3fa;border-radius:9px;margin:14px 0}
-.lexora-lesson-content summary{font-weight:700;cursor:pointer;color:#27456c}
+/* Administration */
+.lexora-admin-input{display:block;width:100%;border:1px solid var(--line2);border-radius:14px;background:#fff;padding:12px;color:var(--ink);font-size:14px;margin-top:8px;outline-offset:2px}
+.lexora-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:19px}.lexora-admin-grid label,.lexora-card>label{font-size:13px;font-weight:600;color:#3E424C}.lexora-admin-question{padding:20px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.65}.lexora-admin-question p{margin:10px 0;color:var(--muted)}.lexora-admin-document{border:1px solid var(--line);border-radius:18px;padding:20px;background:var(--bg);margin:14px 0;line-height:1.7;font-size:14px}@media(max-width:640px){.lexora-admin-grid{grid-template-columns:1fr}}
+.lexora-generation-status{border:1px solid var(--line);background:#fff;border-radius:20px;padding:20px}.lexora-generation-status ol{padding:0;margin:18px 0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.lexora-generation-status li{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted)}.lexora-generation-status li span{width:25px;height:25px;border-radius:100%;background:var(--track);color:var(--muted);display:grid;place-items:center;flex:none;font-weight:700}.lexora-generation-status li.active{color:var(--ink);font-weight:700}.lexora-generation-status li.active span{background:var(--ink);color:var(--lime)}.lexora-generation-status li.done{color:#176443}.lexora-generation-status li.done span{background:var(--lime);color:var(--ink)}@media(max-width:680px){.lexora-generation-status ol{grid-template-columns:1fr 1fr}}

@@ -37,7 +37,7 @@ test("index.html référence le manifeste, les icônes et la couleur de thème",
   const html = read("index.html");
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(html, /rel="apple-touch-icon"/);
-  assert.match(html, /name="theme-color" content="#26446b"/);
+  assert.match(html, /name="theme-color" content="#15171C"/);
 });
 
 // --- service worker ------------------------------------------------------------

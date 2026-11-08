@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import TopNav from "@/components/TopNav";
 import type { Passage, Question } from "@/lib/types";
 import { loadQuestionsByIds } from "@/lib/data";
 import { dueNow, readCards, recordAnswer } from "@/lib/tracker";
 import { INTERVAL_DAYS } from "@/lib/srs";
 import QuestionView from "@/components/QuestionView";
 import ReportButton from "@/components/ReportButton";
-import SettingsButton from "@/components/SettingsButton";
-import AuthButton from "@/components/AuthButton";
 import "./lexora.css";
 import "./phase2.css";
 
@@ -42,10 +41,7 @@ export default function Review() {
   }, []);
 
   const header = (
-    <header className="lexora-nav"><div className="lexora-shell">
-      <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
-      <div className="lexora-navright"><a className="lexora-smalllink" href="#/stats">Statistiques</a><AuthButton /><SettingsButton withLabel /></div>
-    </div></header>
+    <TopNav active="review" />
   );
 
   const question = questions[index];

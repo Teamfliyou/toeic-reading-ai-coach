@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
+import TopNav from "@/components/TopNav";
 import { buildPlan, validateGoals, latestExamScore } from "@/lib/goals";
 import { readExamHistory, readGoals, saveGoals } from "@/lib/goalsStore";
 import { myAttempts } from "@/lib/tracker";
 import { computeStats } from "@/lib/stats";
 import GoalSummary from "@/components/GoalSummary";
-import SettingsButton from "@/components/SettingsButton";
-import AuthButton from "@/components/AuthButton";
 import categories from "../../data/categories.json";
 import "./lexora.css";
 import "./phase2.css";
@@ -47,10 +46,7 @@ export default function Goals() {
 
   return (
     <div className="lexora-page">
-      <header className="lexora-nav"><div className="lexora-shell">
-        <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
-        <div className="lexora-navright"><a className="lexora-smalllink" href="#/">Tableau de bord</a><AuthButton /><SettingsButton withLabel /></div>
-      </div></header>
+      <TopNav active="home" />
       <main className="lexora-shell lexora-content" style={{ maxWidth: 820 }}>
         <p className="lexora-eyebrow">Mon plan d'étude</p>
         <h1 className="lexora-heading">Mon objectif</h1>

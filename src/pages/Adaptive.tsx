@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import TopNav from "@/components/TopNav";
 import { buildAdaptivePlan, type Recommendation } from "@/lib/adaptive";
 import { answeredToday, latestExamScore } from "@/lib/goals";
 import { readExamHistory, readGoals } from "@/lib/goalsStore";
 import { DATA_EVENT, dueNow, myAttempts } from "@/lib/tracker";
-import SettingsButton from "@/components/SettingsButton";
-import AuthButton from "@/components/AuthButton";
 import categories from "../../data/categories.json";
 import "./lexora.css";
 import "./phase2.css";
@@ -41,12 +40,7 @@ export default function Adaptive() {
 
   return (
     <div className="lexora-page lexora-exercises">
-      <header className="lexora-nav">
-        <div className="lexora-shell">
-          <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
-          <div className="lexora-navright"><a className="lexora-smalllink" href="#/stats">Statistiques</a><AuthButton /><SettingsButton withLabel /></div>
-        </div>
-      </header>
+      <TopNav active="practice" />
       <main className="lexora-shell lexora-content" style={{ maxWidth: 900 }}>
         <p className="lexora-eyebrow">Entraînement adaptatif</p>
         <h1 className="lexora-heading">Votre séance du jour.</h1>

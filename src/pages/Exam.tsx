@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import TopNav from "@/components/TopNav";
 import type { Passage, Question } from "@/lib/types";
 import { loadExamPool, loadQuestionsByIds } from "@/lib/data";
 import { buildReadingExam, reducedNotice, EXAM_TARGET, type BuiltExam } from "@/lib/examBuilder";
@@ -18,8 +19,6 @@ import {
 } from "@/lib/exam";
 import QuestionView from "@/components/QuestionView";
 import ReportButton from "@/components/ReportButton";
-import SettingsButton from "@/components/SettingsButton";
-import AuthButton from "@/components/AuthButton";
 import { getPartInfo } from "@/lib/parts";
 import "./lexora.css";
 import "./phase2.css";
@@ -223,16 +222,7 @@ export default function Exam() {
   };
 
   const header = (
-    <header className="lexora-nav">
-      <div className="lexora-shell">
-        <a href="#/" className="lexora-brand"><span className="lexora-mark">N</span> Lernoviq</a>
-        <div className="lexora-navright">
-          <a className="lexora-smalllink" href="#/">Tableau de bord</a>
-          <AuthButton />
-          <SettingsButton withLabel />
-        </div>
-      </div>
-    </header>
+    <TopNav active="exam" />
   );
 
   if (loadError && (state ? !data : !prepared)) {

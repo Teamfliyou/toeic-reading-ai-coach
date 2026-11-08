@@ -253,11 +253,11 @@ export default function PracticeClient({
               )}
             </div>
 
-            <p className="text-lg leading-relaxed text-white/95">
+            <p className="lexora-question">
               {question.prompt}
             </p>
 
-            <div className="mt-5 space-y-2.5" role="group" aria-label="Choix de réponse">
+            <div className="space-y-3" role="group" aria-label="Choix de réponse">
               {options.map((opt) => {
                 const isSelected = selectedKey === opt.key;
                 const isCorrectOption = question.correctKey === opt.key;
@@ -281,7 +281,7 @@ export default function PracticeClient({
                     disabled={status !== "idle"}
                     aria-pressed={isSelected}
                     onClick={() => setSelectedKey(opt.key)}
-                    className={`${style} flex items-center gap-3 transition-all duration-150 ${
+                    className={`${style} lexora-choice flex items-center gap-3 transition-all duration-150 ${
                       status === "idle" ? "hover:bg-white/[0.12]" : "cursor-default"
                     }`}
                   >
@@ -324,7 +324,7 @@ export default function PracticeClient({
               <button
                 onClick={handleValidate}
                 disabled={!selectedKey}
-                className="mt-5 w-full rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="lexora-cta mt-5 w-full rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Valider ma réponse
               </button>
@@ -364,7 +364,7 @@ export default function PracticeClient({
               />
               <button
                 onClick={goNext}
-                className="w-full rounded-xl bg-white/[0.08] px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/[0.14]"
+                className="lexora-next w-full rounded-xl bg-white/[0.08] px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/[0.14]"
               >
                 Question suivante
               </button>
