@@ -110,3 +110,6 @@ main:focus{outline:none}
 .lexora-exercises .lexora-cta:disabled{background:var(--line2);color:#fff;opacity:1}
 .lexora-exercises .lexora-next{min-height:52px;border-radius:999px;background:var(--ink);color:#fff;font-weight:700}
 .lexora-exercises .lexora-next:hover{background:#000}
+
+.lexora-lesson-tag{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--lime);color:var(--ink);font-size:13px;font-weight:700}
+.lexora-lesson-toggle>span:first-child{min-width:0;flex:1}

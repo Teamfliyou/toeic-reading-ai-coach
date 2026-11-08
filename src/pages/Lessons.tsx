@@ -22,7 +22,7 @@ export default function Lessons() {
         <section className="lexora-lesson-list" aria-label="Leçons personnalisées">
           {lessons.map(l => <article key={l.id} className="lexora-card lexora-lesson">
             <button type="button" className="lexora-lesson-toggle" aria-expanded={expanded === l.id} onClick={() => setExpanded(expanded === l.id ? null : l.id)}>
-              <span><span className="lexora-partno">Partie {l.part} · {l.topic}</span><strong>{l.title}</strong></span><span aria-hidden="true">{expanded === l.id ? "−" : "+"}</span>
+              <span><span className="lexora-lesson-tag">Partie {l.part} · {l.topic}</span><strong>{l.title}</strong></span><span aria-hidden="true">{expanded === l.id ? "−" : "+"}</span>
             </button>
             {expanded === l.id && (l.status === "ready" ? <div className="lexora-lesson-content">
               <h3>La règle à retenir</h3><p>{l.rule}</p>
