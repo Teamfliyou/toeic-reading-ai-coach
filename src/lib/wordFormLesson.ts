@@ -147,4 +147,23 @@ export const SERIES: QuizSeries[] = [
       { prompt: "It is ___ to arrive early on the day of the interview.", options: ["advise", "advisable", "advisor", "advisably"], answer: "advisable", why: "Après « It is » : adjectif." },
     ],
   },
+  {
+    id: "form2",
+    title: "Exercice 4 · Entraînement supplémentaire",
+    intro: "Même principe, phrases plus longues : repérez les mots autour du trou.",
+    items: [
+      { prompt: "The marketing team made a ___ effort to meet the deadline.", options: ["considerable", "considerably", "consider", "consideration"], answer: "considerable", why: "Article + ___ + nom « effort » : adjectif." },
+      { prompt: "Customers can ___ their orders online at any time.", options: ["track", "tracking", "tracker", "trackable"], answer: "track", why: "Après le modal « can » : verbe à la base." },
+      { prompt: "The new printer is ___ faster than the old one.", options: ["significant", "significance", "significantly", "signify"], answer: "significantly", why: "Devant le comparatif « faster » : adverbe." },
+      { prompt: "Thank you for your ___ in our company.", options: ["interested", "interesting", "interest", "interestingly"], answer: "interest", why: "Possessif « your » + ___ + préposition « in » : nom." },
+      { prompt: "Please read the instructions ___ before assembling the desk.", options: ["careful", "carefully", "care", "caring"], answer: "carefully", why: "Fin de proposition, après le complément : adverbe de manière." },
+      { prompt: "The merger was ___ for both companies.", options: ["benefit", "beneficial", "beneficially", "beneficiary"], answer: "beneficial", why: "Après « was » : adjectif." },
+      { prompt: "Ms. Garcia was ___ promoted to regional director.", options: ["recent", "recently", "recency", "recentness"], answer: "recently", why: "Entre « was » et le participe « promoted » : adverbe." },
+      { prompt: "We will ___ you of any change to the schedule.", options: ["notify", "notice", "notification", "notifiable"], answer: "notify", why: "Après « will » et avant « you of » : verbe (notify someone of)." },
+      { prompt: "The ___ of renewable energy has increased this year.", options: ["use", "used", "usable", "usefully"], answer: "use", why: "Article « The » + ___ + « of » : nom (le verbe use ne convient pas ici)." },
+      { prompt: "Participants must submit a ___ form before entering the lab.", options: ["complete", "completion", "completely", "completes"], answer: "complete", why: "Article + ___ + nom « form » : adjectif (complete = rempli)." },
+      { prompt: "The speaker was ___ received by the audience.", options: ["enthusiasm", "enthusiastic", "enthusiastically", "enthuse"], answer: "enthusiastically", why: "Entre « was » et le participe « received » : adverbe." },
+      { prompt: "Our new model is ___ to the previous one.", options: ["superior", "superiority", "superiorly", "superiors"], answer: "superior", why: "Après « is » : adjectif (superior to)." },
+    ],
+  },
 ];

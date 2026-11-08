@@ -5,7 +5,7 @@ function Quiz({ series }: { series: QuizSeries }) {
   const [picked, setPicked] = useState<Record<number, string>>({});
   // On fait tourner les options pour que la bonne réponse ne soit pas toujours à la même place.
   const rows = useMemo(() => series.items.map((it, i) => {
-    if (series.id !== "form") return it;
+    if (!series.id.startsWith("form")) return it;
     const r = i % it.options.length;
     return { ...it, options: [...it.options.slice(r), ...it.options.slice(0, r)] };
   }), [series]);
